@@ -8,20 +8,25 @@
         :root { --primary: #4285F4; --success: #34A853; --error: #e53e3e; --bg: #f8f9fa; --text: #2d3748; }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 20px; color: var(--text); }
         .card { background: white; width: 100%; max-width: 440px; padding: 25px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); position: relative; overflow: hidden; }
+        
+        /* Status Header */
         #header-status { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #edf2f7; }
         .user-tag { font-weight: bold; color: var(--primary); }
         .status-on { color: var(--success); font-weight: bold; }
         .status-off { color: var(--error); font-weight: bold; animation: flash 1s infinite; }
         @keyframes flash { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
+
+        /* Navigation */
         .nav-tabs { display: flex; gap: 10px; margin-bottom: 20px; }
         .nav-tabs button { flex: 1; padding: 10px; font-size: 12px; background: #edf2f7; color: #4a5568; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; }
         .nav-tabs button.active { background: var(--primary); color: white; }
         
-        /* Camera Preview Styles */
-        #camera-container { width: 100%; border-radius: 12px; overflow: hidden; background: #000; margin-bottom: 15px; display: none; position: relative; aspect-ratio: 4/3; }
+        /* Camera UI */
+        #camera-container { width: 100%; border-radius: 12px; overflow: hidden; background: #000; margin-bottom: 15px; display: none; aspect-ratio: 4/3; border: 2px solid #edf2f7; }
         #video-preview { width: 100%; height: 100%; object-fit: cover; }
         #photo-canvas { display: none; }
 
+        /* Success Overlay */
         #success-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.95); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 100; text-align: center; }
         .checkmark { width: 80px; height: 80px; border-radius: 50%; display: block; stroke-width: 2; stroke: var(--success); stroke-miterlimit: 10; box-shadow: inset 0px 0px 0px var(--success); animation: fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s both; }
         .checkmark__circle { stroke-dasharray: 166; stroke-dashoffset: 166; stroke-width: 2; stroke: var(--success); fill: none; animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards; }
@@ -33,13 +38,16 @@
         .live-clock { text-align: center; font-family: monospace; font-size: 16px; background: #1a202c; padding: 12px; border-radius: 8px; margin-bottom: 20px; color: #cbd5e0; border: 1px solid #2d3748; }
         .step { border-left: 3px solid #eee; padding-left: 20px; margin-bottom: 25px; opacity: 0.3; transition: 0.4s; }
         .step.active { border-left-color: var(--primary); opacity: 1; }
+        
         button.action-btn { width: 100%; padding: 14px; border: none; border-radius: 8px; background: var(--primary); color: white; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        button:disabled { background: #cbd5e0; cursor: not-allowed; }
+        button:disabled { background: #cbd5e0 !important; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
         input { width: 92%; padding: 12px; margin: 10px 0; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 16px; text-align: center; }
+        
         #vault-view { display: none; max-height: 400px; overflow-y: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 12px; }
         th { text-align: left; padding: 10px; background: #f7fafc; border-bottom: 2px solid #edf2f7; }
         td { padding: 10px; border-bottom: 1px solid #edf2f7; color: #4a5568; }
+        
         #log { background: #1a202c; color: #68d391; padding: 12px; border-radius: 8px; font-size: 10px; height: 60px; overflow-y: auto; margin-top: 15px; font-family: monospace; }
     </style>
 </head>
@@ -48,7 +56,7 @@
 <div class="card">
     <div id="success-overlay">
         <svg class="checkmark" viewBox="0 0 52 52"><circle class="checkmark__circle" cx="26" cy="26" r="25" fill="none"/><path class="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" stroke="#fff" stroke-width="4"/></svg>
-        <p style="color:var(--success); font-weight:bold; margin-top:15px;">UPLOAD SECURE</p>
+        <p style="color:var(--success); font-weight:bold; margin-top:15px;">ROUTE SECURED</p>
     </div>
 
     <div id="header-status">
@@ -76,7 +84,7 @@
         <div id="step2" class="step">
             <p><b>2. Evidence</b></p>
             <button id="cameraBtn" class="action-btn" disabled onclick="toggleCamera()">Open Camera</button>
-            <button id="snapBtn" class="action-btn" style="display:none; background:var(--success);" onclick="takePhoto()">Take Image Proof</button>
+            <button id="snapBtn" class="action-btn" style="display:none;" disabled onclick="takePhoto()">Take Image Proof</button>
         </div>
         <div id="step3" class="step">
             <p><b>3. Handover</b></p>
@@ -89,7 +97,7 @@
         <h4 style="margin:0 0 15px 0; color:var(--primary);">Recent Activity</h4>
         <table><thead><tr><th>File Name</th><th>Date</th></tr></thead><tbody id="files-list"><tr><td colspan="2">Loading...</td></tr></tbody></table>
     </div>
-    <div id="log">> System Init...</div>
+    <div id="log">> Dual-Lock System Online...</div>
 </div>
 
 <script>
@@ -114,6 +122,19 @@
         l.scrollTop = l.scrollHeight;
     }
 
+    function updateDualLockStatus() {
+        const cameraActive = !!videoStream && videoStream.active;
+        const snapBtn = document.getElementById('snapBtn');
+        if (gpsActive && cameraActive) {
+            snapBtn.disabled = false;
+            snapBtn.style.background = "var(--success)";
+            log("Lock Confirmed: GPS & Camera Synced.");
+        } else {
+            snapBtn.disabled = true;
+            snapBtn.style.background = "#cbd5e0";
+        }
+    }
+
     function showView(view) {
         document.getElementById('recorder-view').style.display = view === 'recorder' ? 'block' : 'none';
         document.getElementById('vault-view').style.display = view === 'vault' ? 'block' : 'none';
@@ -123,19 +144,19 @@
     }
 
     async function validateUserSession() {
-        if (!accessToken) { forceReconnect("No session."); return; }
+        if (!accessToken) { forceReconnect("New session required."); return; }
         try {
             const resp = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {headers: {'Authorization': `Bearer ${accessToken}`}});
             const data = await resp.json();
-            if (!data.name && !data.email) throw new Error();
+            if (!data.email) throw new Error();
             const userTag = document.getElementById('user-name');
             userTag.innerText = data.name || "User";
-            userTag.setAttribute('data-email', data.email || "No Email");
+            userTag.setAttribute('data-email', data.email);
             document.getElementById('step1').style.display = 'none';
             document.getElementById('step2').classList.add('active');
             document.getElementById('cameraBtn').disabled = false;
-            log(`Active: ${data.email}`);
-        } catch(e) { forceReconnect("Expired."); }
+            log(`Session: ${data.email}`);
+        } catch(e) { forceReconnect("Session Expired."); }
     }
 
     function forceReconnect(reason) {
@@ -143,6 +164,7 @@
         document.getElementById('user-name').innerText = "Guest";
         document.getElementById('step1').style.display = 'block';
         document.getElementById('cameraBtn').disabled = true;
+        log(reason);
     }
 
     function initClient() {
@@ -160,59 +182,56 @@
     function startGPS() {
         navigator.geolocation.watchPosition((pos) => {
             userLocation = `Lat: ${pos.coords.latitude.toFixed(4)}, Lng: ${pos.coords.longitude.toFixed(4)}`;
-            document.getElementById('gps-indicator').className = "status-on";
-            document.getElementById('gps-indicator').innerText = "ON";
+            const ind = document.getElementById('gps-indicator');
+            ind.className = "status-on"; ind.innerText = "ON";
             gpsActive = true;
-        }, () => { gpsActive = false; log("GPS Error."); });
+            updateDualLockStatus();
+        }, () => { 
+            gpsActive = false; 
+            const ind = document.getElementById('gps-indicator');
+            ind.className = "status-off"; ind.innerText = "OFF";
+            updateDualLockStatus();
+        });
     }
 
-    // --- CAMERA LOGIC ---
     async function toggleCamera() {
-        if(!gpsActive) return alert("Enable GPS first!");
+        if(!gpsActive) return alert("CRITICAL: GPS is OFF. Turn on location first.");
         try {
-            videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
+            videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
             const video = document.getElementById('video-preview');
             video.srcObject = videoStream;
             document.getElementById('camera-container').style.display = 'block';
             document.getElementById('cameraBtn').style.display = 'none';
             document.getElementById('snapBtn').style.display = 'block';
-            log("Camera ready.");
-        } catch (err) { log("Camera access denied."); }
+            updateDualLockStatus();
+        } catch (err) { log("Camera Access Denied."); }
     }
 
     async function takePhoto() {
         const video = document.getElementById('video-preview');
         const canvas = document.getElementById('photo-canvas');
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
+        canvas.width = video.videoWidth; canvas.height = video.videoHeight;
         canvas.getContext('2d').drawImage(video, 0, 0);
-        
         canvas.toBlob((blob) => {
             imageBlob = blob;
-            log("Image Captured.");
-            // Stop Camera
-            videoStream.getTracks().forEach(track => track.stop());
+            videoStream.getTracks().forEach(t => t.stop());
             document.getElementById('camera-container').style.display = 'none';
             document.getElementById('snapBtn').style.display = 'none';
-            
-            // Move to Final Step
             document.getElementById('step2').classList.remove('active');
             document.getElementById('step3').classList.add('active');
-            document.getElementById('pinInput').disabled = false;
-            document.getElementById('pinBtn').disabled = false;
+            document.getElementById('pinInput').disabled = false; document.getElementById('pinBtn').disabled = false;
+            log("Image Proof Stamped.");
         }, 'image/jpeg', 0.8);
     }
 
     async function finalizeUpload() {
         if(document.getElementById('pinInput').value !== "1234") return alert("Wrong PIN");
-        log("Uploading Proof...");
+        log("Uploading Secure Proof...");
         const sharedId = `${Date.now()}`;
         const userEmail = document.getElementById('user-name').getAttribute('data-email');
-        const textContent = `Account: ${userEmail}\nRouteVault AI Proof\n--------------------------\nID: GP_${sharedId}\nDate: ${new Date().toLocaleDateString()}\nTime: ${new Date().toLocaleTimeString()}\nLocation: ${userLocation}\nPIN: 1234\nStatus: Verified & Secured`;
-        
+        const textContent = `Account: ${userEmail}\nRoute Stamp Proof\n--------------------------\nID: GP_${sharedId}\nDate: ${new Date().toLocaleDateString()}\nTime: ${new Date().toLocaleTimeString()}\nLocation: ${userLocation}\nPIN: 1234\nStatus: Verified & Secured`;
         await uploadFile(new Blob([textContent], {type:'text/plain'}), `Proof_GP_${sharedId}.txt`);
         await uploadFile(imageBlob, `Image_GP_${sharedId}.jpg`);
-        
         document.getElementById('success-overlay').style.display = 'flex';
         setTimeout(() => { location.reload(); }, 2500);
     }
