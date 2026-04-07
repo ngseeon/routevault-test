@@ -8,46 +8,31 @@
         :root { --primary: #4285F4; --success: #34A853; --error: #e53e3e; --bg: #f8f9fa; --text: #2d3748; }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 20px; color: var(--text); }
         .card { background: white; width: 100%; max-width: 440px; padding: 25px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); position: relative; overflow: hidden; }
-        
-        /* Status Header */
         #header-status { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #edf2f7; }
         .user-tag { font-weight: bold; color: var(--primary); }
         .status-on { color: var(--success); font-weight: bold; }
         .status-off { color: var(--error); font-weight: bold; animation: flash 1s infinite; }
         @keyframes flash { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
-
-        /* Navigation */
         .nav-tabs { display: flex; gap: 10px; margin-bottom: 20px; }
         .nav-tabs button { flex: 1; padding: 10px; font-size: 12px; background: #edf2f7; color: #4a5568; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; }
         .nav-tabs button.active { background: var(--primary); color: white; }
-        
-        /* Camera UI */
         #camera-container { width: 100%; border-radius: 12px; overflow: hidden; background: #000; margin-bottom: 15px; display: none; aspect-ratio: 4/3; border: 2px solid #edf2f7; }
         #video-preview { width: 100%; height: 100%; object-fit: cover; }
         #photo-canvas { display: none; }
-
-        /* Success Overlay */
         #success-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.95); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 100; text-align: center; }
         .checkmark { width: 80px; height: 80px; border-radius: 50%; display: block; stroke-width: 2; stroke: var(--success); stroke-miterlimit: 10; box-shadow: inset 0px 0px 0px var(--success); animation: fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s both; }
-        .checkmark__circle { stroke-dasharray: 166; stroke-dashoffset: 166; stroke-width: 2; stroke: var(--success); fill: none; animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards; }
-        .checkmark__check { transform-origin: 50% 50%; stroke-dasharray: 48; stroke-dashoffset: 48; animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards; }
-        @keyframes stroke { 100% { stroke-dashoffset: 0; } }
-        @keyframes scale { 0%, 100% { transform: none; } 50% { transform: scale3d(1.1, 1.1, 1); } }
         @keyframes fill { 100% { box-shadow: inset 0px 0px 0px 40px var(--success); } }
-        
         .live-clock { text-align: center; font-family: monospace; font-size: 16px; background: #1a202c; padding: 12px; border-radius: 8px; margin-bottom: 20px; color: #cbd5e0; border: 1px solid #2d3748; }
         .step { border-left: 3px solid #eee; padding-left: 20px; margin-bottom: 25px; opacity: 0.3; transition: 0.4s; }
         .step.active { border-left-color: var(--primary); opacity: 1; }
-        
+        .pin-hint { font-size: 10px; color: #718096; margin-bottom: 5px; font-weight: bold; }
         button.action-btn { width: 100%; padding: 14px; border: none; border-radius: 8px; background: var(--primary); color: white; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        button:disabled { background: #cbd5e0 !important; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
-        input { width: 92%; padding: 12px; margin: 10px 0; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 16px; text-align: center; }
-        
+        button:disabled { background: #cbd5e0 !important; cursor: not-allowed; }
+        input { width: 92%; padding: 12px; margin: 5px 0 15px 0; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 18px; text-align: center; font-weight: bold; letter-spacing: 2px; }
         #vault-view { display: none; max-height: 400px; overflow-y: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 12px; }
         th { text-align: left; padding: 10px; background: #f7fafc; border-bottom: 2px solid #edf2f7; }
         td { padding: 10px; border-bottom: 1px solid #edf2f7; color: #4a5568; }
-        
         #log { background: #1a202c; color: #68d391; padding: 12px; border-radius: 8px; font-size: 10px; height: 60px; overflow-y: auto; margin-top: 15px; font-family: monospace; }
     </style>
 </head>
@@ -55,8 +40,8 @@
 
 <div class="card">
     <div id="success-overlay">
-        <svg class="checkmark" viewBox="0 0 52 52"><circle class="checkmark__circle" cx="26" cy="26" r="25" fill="none"/><path class="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" stroke="#fff" stroke-width="4"/></svg>
-        <p style="color:var(--success); font-weight:bold; margin-top:15px;">ROUTE SECURED</p>
+        <svg class="checkmark" viewBox="0 0 52 52"><circle cx="26" cy="26" r="25" fill="none" stroke="#34A853" stroke-width="2"/><path fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" stroke="#fff" stroke-width="4"/></svg>
+        <p style="color:var(--success); font-weight:bold; margin-top:15px;">AUDIT SECURED</p>
     </div>
 
     <div id="header-status">
@@ -71,25 +56,22 @@
 
     <div id="recorder-view">
         <div class="live-clock"><span id="display-date"></span> | <span id="display-time"></span></div>
-        
-        <div id="camera-container">
-            <video id="video-preview" autoplay playsinline></video>
-        </div>
+        <div id="camera-container"><video id="video-preview" autoplay playsinline></video></div>
         <canvas id="photo-canvas"></canvas>
 
-        <div id="step1" class="step active">
-            <p><b>1. Connection</b></p>
-            <button class="action-btn" onclick="handleAuthClick()">Link Google Drive</button>
-        </div>
+        <div id="step1" class="step active"><p><b>1. Connection</b></p><button class="action-btn" onclick="handleAuthClick()">Link Google Drive</button></div>
+        
         <div id="step2" class="step">
             <p><b>2. Evidence</b></p>
             <button id="cameraBtn" class="action-btn" disabled onclick="toggleCamera()">Open Camera</button>
             <button id="snapBtn" class="action-btn" style="display:none;" disabled onclick="takePhoto()">Take Image Proof</button>
         </div>
+
         <div id="step3" class="step">
-            <p><b>3. Handover</b></p>
-            <input type="text" id="pinInput" placeholder="Enter PIN (1234)" disabled>
-            <button id="pinBtn" class="action-btn" disabled onclick="finalizeUpload()">Finalize & Upload</button>
+            <p><b>3. Handover Audit</b></p>
+            <div class="pin-hint">LOCATION PIN: <span id="pin-display" style="color:var(--primary)">----</span></div>
+            <input type="number" id="pinInput" placeholder="ENTER PIN" disabled>
+            <button id="pinBtn" class="action-btn" disabled onclick="finalizeUpload()">Finalize & Audit</button>
         </div>
     </div>
 
@@ -97,7 +79,7 @@
         <h4 style="margin:0 0 15px 0; color:var(--primary);">Recent Activity</h4>
         <table><thead><tr><th>File Name</th><th>Date</th></tr></thead><tbody id="files-list"><tr><td colspan="2">Loading...</td></tr></tbody></table>
     </div>
-    <div id="log">> Dual-Lock System Online...</div>
+    <div id="log">> Audit Protocol Active...</div>
 </div>
 
 <script>
@@ -105,6 +87,7 @@
     let tokenClient, imageBlob, videoStream;
     let userLocation = "Waiting for GPS...";
     let gpsActive = false;
+    let calculatedPin = "";
 
     const CLIENT_ID = '337753122620-5u4cn79jvit9k55a94h8u7vsqa74l49f.apps.googleusercontent.com'; // <--- PASTE YOUR CLIENT ID HERE
 
@@ -114,12 +97,18 @@
         document.getElementById('display-time').innerText = now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});
     }
     setInterval(updateClock, 1000);
-    updateClock();
 
     function log(msg) {
         const l = document.getElementById('log');
         l.innerHTML += `> ${msg}<br>`;
         l.scrollTop = l.scrollHeight;
+    }
+
+    function calculateLocationPin(lat, lng) {
+        const latPart = Math.round((lat % 1) * 10000);
+        const lngPart = Math.round((lng % 1) * 10000);
+        calculatedPin = (latPart + lngPart).toString();
+        document.getElementById('pin-display').innerText = calculatedPin;
     }
 
     function updateDualLockStatus() {
@@ -128,7 +117,7 @@
         if (gpsActive && cameraActive) {
             snapBtn.disabled = false;
             snapBtn.style.background = "var(--success)";
-            log("Lock Confirmed: GPS & Camera Synced.");
+            log("Lock Confirmed.");
         } else {
             snapBtn.disabled = true;
             snapBtn.style.background = "#cbd5e0";
@@ -144,27 +133,18 @@
     }
 
     async function validateUserSession() {
-        if (!accessToken) { forceReconnect("New session required."); return; }
+        if (!accessToken) return;
         try {
             const resp = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {headers: {'Authorization': `Bearer ${accessToken}`}});
             const data = await resp.json();
-            if (!data.email) throw new Error();
             const userTag = document.getElementById('user-name');
             userTag.innerText = data.name || "User";
             userTag.setAttribute('data-email', data.email);
             document.getElementById('step1').style.display = 'none';
             document.getElementById('step2').classList.add('active');
             document.getElementById('cameraBtn').disabled = false;
-            log(`Session: ${data.email}`);
-        } catch(e) { forceReconnect("Session Expired."); }
-    }
-
-    function forceReconnect(reason) {
-        localStorage.removeItem('rv_access_token'); accessToken = null;
-        document.getElementById('user-name').innerText = "Guest";
-        document.getElementById('step1').style.display = 'block';
-        document.getElementById('cameraBtn').disabled = true;
-        log(reason);
+            log(`Active: ${data.email}`);
+        } catch(e) { log("Re-Link Drive Account."); }
     }
 
     function initClient() {
@@ -177,29 +157,28 @@
         validateUserSession();
     }
 
-    function handleAuthClick() { tokenClient.requestAccessToken(); }
-
     function startGPS() {
         navigator.geolocation.watchPosition((pos) => {
-            userLocation = `Lat: ${pos.coords.latitude.toFixed(4)}, Lng: ${pos.coords.longitude.toFixed(4)}`;
-            const ind = document.getElementById('gps-indicator');
-            ind.className = "status-on"; ind.innerText = "ON";
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            userLocation = `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`;
+            document.getElementById('gps-indicator').className = "status-on";
+            document.getElementById('gps-indicator').innerText = "ON";
             gpsActive = true;
+            calculateLocationPin(lat, lng);
             updateDualLockStatus();
         }, () => { 
             gpsActive = false; 
-            const ind = document.getElementById('gps-indicator');
-            ind.className = "status-off"; ind.innerText = "OFF";
+            document.getElementById('gps-indicator').className = "status-off";
             updateDualLockStatus();
         });
     }
 
     async function toggleCamera() {
-        if(!gpsActive) return alert("CRITICAL: GPS is OFF. Turn on location first.");
+        if(!gpsActive) return alert("GPS Lock Required.");
         try {
             videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-            const video = document.getElementById('video-preview');
-            video.srcObject = videoStream;
+            document.getElementById('video-preview').srcObject = videoStream;
             document.getElementById('camera-container').style.display = 'block';
             document.getElementById('cameraBtn').style.display = 'none';
             document.getElementById('snapBtn').style.display = 'block';
@@ -225,11 +204,17 @@
     }
 
     async function finalizeUpload() {
-        if(document.getElementById('pinInput').value !== "1234") return alert("Wrong PIN");
-        log("Uploading Secure Proof...");
+        const inputPin = document.getElementById('pinInput').value;
+        const isVerified = (inputPin === calculatedPin);
+        const verificationStatus = isVerified ? "PASS ✅" : "FAIL ❌";
+
+        if(!isVerified) return alert("PIN Mismatch for current GPS location.");
+
+        log("Generating Final Audit...");
         const sharedId = `${Date.now()}`;
         const userEmail = document.getElementById('user-name').getAttribute('data-email');
-        const textContent = `Account: ${userEmail}\nRoute Stamp Proof\n--------------------------\nID: GP_${sharedId}\nDate: ${new Date().toLocaleDateString()}\nTime: ${new Date().toLocaleTimeString()}\nLocation: ${userLocation}\nPIN: 1234\nStatus: Verified & Secured`;
+        const textContent = `Account: ${userEmail}\nRoute Stamp Proof\n--------------------------\nID: GP_${sharedId}\nDate: ${new Date().toLocaleDateString()}\nTime: ${new Date().toLocaleTimeString()}\nLocation: ${userLocation}\nGen PIN: ${calculatedPin}\nEntered PIN: ${inputPin}\nVERIFICATION: ${verificationStatus}\n--------------------------\nStatus: Secured & Verified`;
+        
         await uploadFile(new Blob([textContent], {type:'text/plain'}), `Proof_GP_${sharedId}.txt`);
         await uploadFile(imageBlob, `Image_GP_${sharedId}.jpg`);
         document.getElementById('success-overlay').style.display = 'flex';
@@ -253,6 +238,8 @@
         const data = await resp.json();
         document.getElementById('files-list').innerHTML = data.files.map(f => `<tr><td>${f.name}</td><td>${new Date(f.createdTime).toLocaleDateString()}</td></tr>`).join('');
     }
+
+    function handleAuthClick() { tokenClient.requestAccessToken(); }
 </script>
 <script src="https://accounts.google.com/gsi/client" onload="initClient()"></script>
 </body>
