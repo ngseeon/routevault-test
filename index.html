@@ -77,7 +77,7 @@
 
     <div id="vault-view">
         <h4 style="margin:0 0 15px 0; color:var(--primary);">Recent Activity</h4>
-        <table><thead><tr><th>File Name</th><th>Date</th></tr></thead><tbody id="files-list"><tr><td colspan="2">Loading...</td></tr></tbody></table>
+        <table><thead><tr><th>File Name</th><th>Date</th><th>Time</th></tr></thead><tbody id="files-list"><tr><td colspan="3">Loading...</td></tr></tbody></table>
     </div>
     <div id="log">> Audit Protocol Active...</div>
 </div>
@@ -232,11 +232,26 @@
 
     async function fetchVaultFiles() {
         if(!accessToken) return;
-        const resp = await fetch('https://www.googleapis.com/drive/v3/files?pageSize=10&orderBy=createdTime desc&fields=files(name,createdTime)', {
-            headers: { 'Authorization': 'Bearer ' + accessToken }
-        });
-        const data = await resp.json();
-        document.getElementById('files-list').innerHTML = data.files.map(f => `<tr><td>${f.name}</td><td>${new Date(f.createdTime).toLocaleDateString()}</td></tr>`).join('');
+        try {
+            const resp = await fetch('https://www.googleapis.com/drive/v3/files?pageSize=10&orderBy=createdTime desc&fields=files(name,createdTime)', {
+                headers: { 'Authorization': 'Bearer ' + accessToken }
+            });
+            const data = await resp.json();
+            
+            document.getElementById('files-list').innerHTML = data.files.map(f => {
+                const dateObj = new Date(f.createdTime);
+                const dateStr = dateObj.toLocaleDateString();
+                const timeStr = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                
+                return `<tr>
+                            <td>${f.name}</td>
+                            <td>${dateStr}</td>
+                            <td>${timeStr}</td>
+                        </tr>`;
+            }).join('');
+        } catch (e) {
+            log("Error loading vault.");
+        }
     }
 
     function handleAuthClick() { tokenClient.requestAccessToken(); }
