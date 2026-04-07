@@ -106,20 +106,35 @@
         setTimeout(() => mediaRecorder.stop(), 3000); // Records for 3 seconds
     }
 
+    // ... (Keep the rest of your HTML/CSS the same, just replace the <script> section) ...
+
     async function finalizeUpload() {
         const pin = document.getElementById('pinInput').value;
         if(pin !== "1234") return alert("Wrong PIN");
 
-        log("Uploading Proof & Audio...");
-        
-        // 1. Upload Text Proof (with GPS)
-        const textContent = `RouteVault AI Proof\nTime: ${new Date().toLocaleString()}\nLocation: ${userLocation}\nPIN: ${pin}`;
-        await uploadFile(new Blob([textContent], {type:'text/plain'}), `Proof_${Date.now()}.txt`);
+        log("Processing naming convention...");
 
-        // 2. Upload Audio File
-        await uploadFile(audioBlob, `Voice_${Date.now()}.webm`);
+        // 1. Create a Shared Timestamp & Location String for both files
+        const now = new Date();
+        const dateStr = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
+        const timeStr = `${now.getHours()}-${now.getMinutes()}`;
         
-        alert("Success! Check Google Drive for 2 new files.");
+        // We use "GPS" if location failed, otherwise we use the coordinates or a generic label
+        const locLabel = userLocation.includes("Lat") ? "GelangPatah" : "UnknownLoc";
+        
+        const baseName = `${locLabel}_${dateStr}_${timeStr}`;
+
+        log("Uploading matching files...");
+        
+        // 2. Upload Text Proof
+        const textContent = `RouteVault AI Proof\nTime: ${now.toLocaleString()}\nLocation: ${userLocation}\nPIN: ${pin}`;
+        await uploadFile(new Blob([textContent], {type:'text/plain'}), `Proof_${baseName}.txt`);
+
+        // 3. Upload Audio File (using the SAME baseName)
+        await uploadFile(audioBlob, `Voice_${baseName}.webm`);
+        
+        log("SUCCESS: Linked files uploaded.");
+        alert(`Files saved as: ${baseName}`);
     }
 
     async function uploadFile(blob, fileName) {
