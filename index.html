@@ -1,24 +1,26 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RouteVault AI - ??????</title>
+    <title>RouteVault AI - Prototype</title>
     <script src="https://accounts.google.com/gsi/client" onload="initClient()"></script>
     <style>
-        :root { --primary: #4285F4; --bg: #f4f7f9; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 20px; }
-        .card { background: white; width: 100%; max-width: 400px; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        h2 { color: var(--primary); text-align: center; margin-bottom: 30px; }
-        .step { border-left: 3px solid #eee; padding-left: 20px; margin-bottom: 30px; position: relative; }
-        .step.active { border-left-color: var(--primary); }
+        :root { --primary: #4285F4; --success: #34A853; --bg: #f8f9fa; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 20px; color: #333; }
+        .card { background: white; width: 100%; max-width: 420px; padding: 30px; border-radius: 16px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); }
+        h2 { color: var(--primary); text-align: center; margin-bottom: 30px; font-weight: 600; }
+        .step { border-left: 3px solid #eee; padding-left: 25px; margin-bottom: 35px; position: relative; transition: 0.3s; }
+        .step.active { border-left-color: var(--primary); opacity: 1; }
+        .step:not(.active) { opacity: 0.5; }
         .step-num { position: absolute; left: -12px; top: 0; background: white; border: 2px solid #eee; border-radius: 50%; width: 20px; height: 20px; text-align: center; font-size: 12px; line-height: 20px; }
         .active .step-num { border-color: var(--primary); color: var(--primary); font-weight: bold; }
-        button { width: 100%; padding: 12px; border: none; border-radius: 8px; background: var(--primary); color: white; font-size: 16px; cursor: pointer; transition: 0.3s; }
-        button:disabled { background: #ccc; cursor: not-allowed; }
-        #log { background: #333; color: #0f0; padding: 10px; border-radius: 5px; font-family: monospace; font-size: 12px; height: 100px; overflow-y: auto; margin-top: 20px; }
-        .voice-btn { background: #34A853; margin-top: 10px; }
-        input { width: 100%; padding: 10px; margin-top: 10px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 5px; }
+        button { width: 100%; padding: 14px; border: none; border-radius: 10px; background: var(--primary); color: white; font-size: 15px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        button:hover { filter: brightness(1.1); }
+        button:disabled { background: #cbd5e0; cursor: not-allowed; }
+        .voice-btn { background: var(--success); margin-top: 10px; }
+        input { width: 100%; padding: 12px; margin: 15px 0; box-sizing: border-box; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
+        #log { background: #1a202c; color: #68d391; padding: 12px; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 11px; height: 120px; overflow-y: auto; margin-top: 25px; line-height: 1.5; }
     </style>
 </head>
 <body>
@@ -28,34 +30,34 @@
     
     <div id="step1" class="step active">
         <div class="step-num">1</div>
-        <p><b>?????????</b></p>
-        <button onclick="handleAuthClick()">?? Google Drive</button>
+        <p><b>Connect Digital Vault</b></p>
+        <button onclick="handleAuthClick()">Link Google Drive</button>
     </div>
 
     <div id="step2" class="step">
         <div class="step-num">2</div>
-        <p><b>??????</b></p>
-        <button class="voice-btn" id="voiceBtn" disabled onclick="startVoice()">???? "Arrived"</button>
-        <p id="voiceMsg" style="font-size: 12px; color: #666;"></p>
+        <p><b>Voice Command Verification</b></p>
+        <button class="voice-btn" id="voiceBtn" disabled onclick="startVoice()">Tap & Say "Arrived"</button>
+        <p id="voiceMsg" style="font-size: 11px; color: #718096; margin-top: 8px;">Waiting for voice input...</p>
     </div>
 
     <div id="step3" class="step">
         <div class="step-num">3</div>
-        <p><b>????? PIN ?</b></p>
-        <input type="text" id="pinInput" placeholder="??? 4 ? PIN (???: 1234)" disabled>
-        <button style="margin-top:10px;" id="pinBtn" disabled onclick="verifyPin()">?????</button>
+        <p><b>Recipient PIN Code</b></p>
+        <input type="text" id="pinInput" placeholder="Enter 4-digit PIN (Default: 1234)" disabled>
+        <button id="pinBtn" disabled onclick="verifyPin()">Verify & Upload Proof</button>
     </div>
 
-    <div id="log">????: ????...</div>
+    <div id="log">SYSTEM: Waiting for connection...</div>
 </div>
 
 <script>
     let tokenClient;
     let accessToken = null;
 
-    // --- ??? ---
-    const CLIENT_ID = 'YOUR_CLIENT_ID.apps.googleusercontent.com'; // ?????
-    // --------------
+    // --- CONFIGURATION ---
+    const CLIENT_ID = '337753122620-5u4cn79jvit9k55a94h8u7vsqa74l49f.apps.googleusercontent.com'; // REPLACE THIS!
+    // ---------------------
 
     function log(msg) {
         const l = document.getElementById('log');
@@ -64,18 +66,24 @@
     }
 
     function initClient() {
-        tokenClient = google.accounts.oauth2.initTokenClient({
-            client_id: CLIENT_ID,
-            scope: 'https://www.googleapis.com/auth/drive.file',
-            callback: (tokenResponse) => {
-                accessToken = tokenResponse.access_token;
-                log("Google Drive ???");
-                document.getElementById('step1').classList.remove('active');
-                document.getElementById('step2').classList.add('active');
-                document.getElementById('voiceBtn').disabled = false;
-            },
-        });
-        log("???????? Drive");
+        try {
+            tokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: CLIENT_ID,
+                scope: 'https://www.googleapis.com/auth/drive.file',
+                callback: (tokenResponse) => {
+                    if (tokenResponse && tokenResponse.access_token) {
+                        accessToken = tokenResponse.access_token;
+                        log("Success: Google Drive Linked.");
+                        document.getElementById('step1').classList.remove('active');
+                        document.getElementById('step2').classList.add('active');
+                        document.getElementById('voiceBtn').disabled = false;
+                    }
+                },
+            });
+            log("System Ready.");
+        } catch (e) {
+            log("Init Error: Check Client ID.");
+        }
     }
 
     function handleAuthClick() {
@@ -84,38 +92,41 @@
 
     function startVoice() {
         const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-        recognition.lang = 'zh-CN';
-        recognition.onstart = () => log("??????...");
+        recognition.lang = 'en-US';
+        recognition.onstart = () => log("Listening for 'Arrived'...");
         recognition.onresult = (event) => {
-            const result = event.results[0][0].transcript;
-            log(`??: "${result}"`);
-            if (result.includes("??") || result.toLowerCase().includes("arrived")) {
-                log("????????? PIN ???");
+            const result = event.results[0][0].transcript.toLowerCase();
+            log(`Heard: "${result}"`);
+            if (result.includes("arrived")) {
+                log("Voice Verified! Proceeding to PIN.");
                 document.getElementById('step2').classList.remove('active');
                 document.getElementById('step3').classList.add('active');
                 document.getElementById('pinInput').disabled = false;
                 document.getElementById('pinBtn').disabled = false;
+            } else {
+                log("Keyword not recognized. Try again.");
             }
         };
+        recognition.onerror = (e) => log("Voice Error: " + e.error);
         recognition.start();
     }
 
     async function verifyPin() {
         const pin = document.getElementById('pinInput').value;
-        if(pin === "1234") { // ??????
-            log("PIN ????????????...");
+        if(pin === "1234") {
+            log("PIN Correct. Generating Proof...");
             await uploadToDrive();
         } else {
-            alert("PIN ??????? (??: 1234)");
+            alert("Incorrect PIN. (Hint: 1234)");
         }
     }
 
     async function uploadToDrive() {
         const metadata = {
-            'name': `Proof_${new Date().getTime()}.txt`,
+            'name': `RouteVault_Proof_${new Date().getTime()}.txt`,
             'mimeType': 'text/plain'
         };
-        const content = `RouteVault AI ????\n??: ${new Date().toLocaleString()}\n????: ??+PIN\n??: ????????`;
+        const content = `RouteVault AI Proof of Delivery\nTime: ${new Date().toLocaleString()}\nVerification: Voice + PIN\nStatus: Secured in User Cloud`;
 
         const form = new FormData();
         form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
@@ -128,10 +139,10 @@
                 body: form
             });
             const result = await response.json();
-            log(`??????? ID: ${result.id}`);
-            alert("?????????? Google Drive???????????");
+            log(`UPLOAD SUCCESS! File ID: ${result.id}`);
+            alert("Proof Uploaded! Check your Google Drive.");
         } catch (err) {
-            log("????: " + err);
+            log("Upload Failed: " + err);
         }
     }
 </script>
