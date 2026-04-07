@@ -3,58 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RouteVault AI - Pro</title>
+    <title>RouteVault AI - Pro Dashboard</title>
     <style>
-        :root { --primary: #4285F4; --success: #34A853; --bg: #f8f9fa; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 20px; }
-        .card { background: white; width: 100%; max-width: 420px; padding: 30px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        h2 { color: var(--primary); text-align: center; }
-        .step { border-left: 3px solid #eee; padding-left: 20px; margin-bottom: 30px; opacity: 0.5; transition: 0.3s; }
+        :root { --primary: #4285F4; --success: #34A853; --bg: #f8f9fa; --text: #2d3748; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 20px; color: var(--text); }
+        .card { background: white; width: 100%; max-width: 420px; padding: 25px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        #user-profile { text-align: right; font-size: 12px; margin-bottom: 10px; display: none; padding: 5px; border-bottom: 1px solid #edf2f7; }
+        h2 { color: var(--primary); text-align: center; margin-top: 10px; }
+        .live-clock { text-align: center; font-family: monospace; font-size: 14px; background: #edf2f7; padding: 8px; border-radius: 8px; margin-bottom: 20px; color: #4a5568; }
+        .step { border-left: 3px solid #eee; padding-left: 20px; margin-bottom: 25px; opacity: 0.4; transition: 0.3s; }
         .step.active { border-left-color: var(--primary); opacity: 1; }
-        button { width: 100%; padding: 12px; border: none; border-radius: 8px; background: var(--primary); color: white; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        button:disabled { background: #ccc; }
-        #log { background: #1a202c; color: #68d391; padding: 10px; border-radius: 8px; font-size: 11px; height: 100px; overflow-y: auto; margin-top: 20px; }
+        button { width: 100%; padding: 14px; border: none; border-radius: 8px; background: var(--primary); color: white; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.2s; }
+        button:hover:not(:disabled) { filter: brightness(1.1); }
+        button:disabled { background: #cbd5e0; cursor: not-allowed; }
+        #log { background: #1a202c; color: #68d391; padding: 12px; border-radius: 8px; font-size: 11px; height: 100px; overflow-y: auto; margin-top: 20px; border: 1px solid #2d3748; }
+        input { width: 94%; padding: 12px; margin: 10px 0; border: 1px solid #e2e8f0; border-radius: 8px; outline: none; }
     </style>
 </head>
 <body>
 
 <div class="card">
+    <div id="user-profile">Connected: <span id="user-name" style="font-weight:bold; color:var(--primary);"></span></div>
+    
     <h2>RouteVault AI</h2>
+
+    <div class="live-clock">
+        <span id="display-date"></span> | <span id="display-time"></span>
+    </div>
     
     <div id="step1" class="step active">
-        <p><b>1. Connection</b></p>
-        <button onclick="handleAuthClick()">Link Google Drive</button>
+        <p><b>1. Digital Vault Connection</b></p>
+        <button id="authBtn" onclick="handleAuthClick()">Link Google Drive</button>
     </div>
 
     <div id="step2" class="step">
-        <p><b>2. Voice & GPS Record</b></p>
+        <p><b>2. Voice & GPS Verification</b></p>
         <button id="voiceBtn" disabled onclick="startRecording()">Hold to Record "Arrived"</button>
     </div>
 
     <div id="step3" class="step">
-        <p><b>3. Finalize</b></p>
-        <input type="text" id="pinInput" placeholder="Enter PIN (1234)" style="width:90%; padding:10px; margin:10px 0;" disabled>
-        <button id="pinBtn" disabled onclick="finalizeUpload()">Verify & Upload All</button>
+        <p><b>3. Finalize Handover</b></p>
+        <input type="text" id="pinInput" placeholder="Enter 4-digit PIN (1234)" disabled>
+        <button id="pinBtn" disabled onclick="finalizeUpload()">Verify & Secure Proof</button>
     </div>
 
-    <div id="live-status" style="text-align: center; font-size: 13px; color: #718096; margin-bottom: 10px; font-weight: bold;">
-    <span id="display-date"></span> | <span id="display-time"></span>
-    </div>
-    
-    <div id="log">> System Initializing...</div>
+    <div id="log">> System Booting...</div>
 </div>
 
 <script>
-    let accessToken = null;
+    let accessToken = localStorage.getItem('rv_access_token');
     let tokenClient;
     let mediaRecorder;
     let audioChunks = [];
     let audioBlob;
-    let userLocation = "Location Access Denied";
+    let userLocation = "Waiting for GPS...";
 
     // --- CONFIGURATION ---
     const CLIENT_ID = '337753122620-5u4cn79jvit9k55a94h8u7vsqa74l49f.apps.googleusercontent.com'; 
     // ---------------------
+
+    // 1. LIVE CLOCK LOGIC
+    function updateClock() {
+        const now = new Date();
+        document.getElementById('display-date').innerText = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        document.getElementById('display-time').innerText = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
 
     function log(msg) {
         const l = document.getElementById('log');
@@ -62,36 +77,45 @@
         l.scrollTop = l.scrollHeight;
     }
 
-    function updateClock() {
-        const now = new Date();
-        // Format Date: e.g., Apr 7, 2026
-        document.getElementById('display-date').innerText = now.toLocaleDateString('en-US', { 
-            month: 'short', day: 'numeric', year: 'numeric' 
-        });
-        // Format Time: e.g., 12:45:01 PM
-        document.getElementById('display-time').innerText = now.toLocaleTimeString('en-US', { 
-            hour: '2-digit', minute: '2-digit', second: '2-digit' 
-        });
-    }
-
-    // Update the clock every 1 second
-    setInterval(updateClock, 1000);
-    updateClock(); // Run immediately on load
-
+    // 2. GOOGLE DRIVE & IDENTITY LOGIC
     function initClient() {
         tokenClient = google.accounts.oauth2.initTokenClient({
             client_id: CLIENT_ID,
-            scope: 'https://www.googleapis.com/auth/drive.file',
+            scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile',
             callback: (resp) => {
                 accessToken = resp.access_token;
-                log("Drive Linked.");
-                document.getElementById('step1').classList.remove('active');
-                document.getElementById('step2').classList.add('active');
-                document.getElementById('voiceBtn').disabled = false;
-                getGPS();
+                localStorage.setItem('rv_access_token', accessToken);
+                onAuthSuccess();
             },
         });
-        log("System Ready.");
+
+        if (accessToken) {
+            onAuthSuccess();
+        } else {
+            log("Ready. Awaiting Connection.");
+        }
+    }
+
+    async function onAuthSuccess() {
+        log("Auth Success.");
+        document.getElementById('step1').style.display = 'none';
+        document.getElementById('step2').classList.add('active');
+        document.getElementById('voiceBtn').disabled = false;
+        
+        // Get User Profile Name
+        try {
+            const response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                headers: { 'Authorization': `Bearer ${accessToken}` }
+            });
+            const data = await response.json();
+            document.getElementById('user-name').innerText = data.name;
+            document.getElementById('user-profile').style.display = 'block';
+            log(`Welcome, ${data.name}`);
+        } catch (e) {
+            log("Session expired. Please re-link.");
+            localStorage.removeItem('rv_access_token');
+        }
+        getGPS();
     }
 
     function handleAuthClick() { tokenClient.requestAccessToken(); }
@@ -102,59 +126,49 @@
                 userLocation = `Lat: ${pos.coords.latitude}, Lng: ${pos.coords.longitude}`;
                 log("GPS Locked.");
             },
-            () => log("GPS Failed. Check permissions.")
+            () => log("GPS Access Denied.")
         );
     }
 
     async function startRecording() {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorder = new MediaRecorder(stream);
-        audioChunks = [];
-        
-        mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-        mediaRecorder.onstop = () => {
-            audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-            log("Voice Recorded.");
-            document.getElementById('step2').classList.remove('active');
-            document.getElementById('step3').classList.add('active');
-            document.getElementById('pinInput').disabled = false;
-            document.getElementById('pinBtn').disabled = false;
-        };
-
-        log("Recording... Say 'Arrived'");
-        mediaRecorder.start();
-        setTimeout(() => mediaRecorder.stop(), 3000); // Records for 3 seconds
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            audioChunks = [];
+            mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+            mediaRecorder.onstop = () => {
+                audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                log("Voice Captured.");
+                document.getElementById('step2').classList.remove('active');
+                document.getElementById('step3').classList.add('active');
+                document.getElementById('pinInput').disabled = false;
+                document.getElementById('pinBtn').disabled = false;
+            };
+            log("Recording... Speak now.");
+            mediaRecorder.start();
+            setTimeout(() => mediaRecorder.stop(), 3000);
+        } catch (err) {
+            log("Mic Error: " + err);
+        }
     }
-
-    // ... (Keep the rest of your HTML/CSS the same, just replace the <script> section) ...
 
     async function finalizeUpload() {
         const pin = document.getElementById('pinInput').value;
-        if(pin !== "1234") return alert("Wrong PIN");
+        if(pin !== "1234") return alert("Invalid PIN");
 
-        log("Processing naming convention...");
-
-        // 1. Create a Shared Timestamp & Location String for both files
+        log("Syncing to Cloud...");
         const now = new Date();
-        const dateStr = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
-        const timeStr = `${now.getHours()}-${now.getMinutes()}`;
-        
-        // We use "GPS" if location failed, otherwise we use the coordinates or a generic label
-        const locLabel = userLocation.includes("Lat") ? "GelangPatah" : "UnknownLoc";
-        
-        const baseName = `${locLabel}_${dateStr}_${timeStr}`;
+        const dateTag = `${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}`;
+        const timeTag = `${now.getHours()}-${now.getMinutes()}`;
+        const sharedName = `GelangPatah_${dateTag}_${timeTag}`;
 
-        log("Uploading matching files...");
+        const textContent = `RouteVault AI Proof\nUser: ${document.getElementById('user-name').innerText}\nTime: ${now.toLocaleString()}\nLocation: ${userLocation}\nPIN: ${pin}`;
         
-        // 2. Upload Text Proof
-        const textContent = `RouteVault AI Proof\nTime: ${now.toLocaleString()}\nLocation: ${userLocation}\nPIN: ${pin}`;
-        await uploadFile(new Blob([textContent], {type:'text/plain'}), `Proof_${baseName}.txt`);
-
-        // 3. Upload Audio File (using the SAME baseName)
-        await uploadFile(audioBlob, `Voice_${baseName}.webm`);
+        await uploadFile(new Blob([textContent], {type:'text/plain'}), `Proof_${sharedName}.txt`);
+        await uploadFile(audioBlob, `Voice_${sharedName}.webm`);
         
-        log("SUCCESS: Linked files uploaded.");
-        alert(`Files saved as: ${baseName}`);
+        log("SUCCESS: Secure Handover Complete.");
+        alert("Upload Successful!");
     }
 
     async function uploadFile(blob, fileName) {
@@ -168,7 +182,7 @@
             headers: { 'Authorization': 'Bearer ' + accessToken },
             body: form
         });
-        log(`Uploaded: ${fileName}`);
+        log(`Saved: ${fileName}`);
     }
 </script>
 <script src="https://accounts.google.com/gsi/client" onload="initClient()"></script>
