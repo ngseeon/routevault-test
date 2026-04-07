@@ -7,47 +7,32 @@
     <style>
         :root { --primary: #4285F4; --success: #34A853; --error: #e53e3e; --bg: #f8f9fa; --text: #2d3748; }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 20px; color: var(--text); }
-        
-        /* Main Container */
         .card { background: white; width: 100%; max-width: 440px; padding: 25px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); position: relative; overflow: hidden; }
-        
-        /* Top Header Status */
         #header-status { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #edf2f7; }
         .user-tag { font-weight: bold; color: var(--primary); }
         .status-on { color: var(--success); font-weight: bold; }
         .status-off { color: var(--error); font-weight: bold; animation: flash 1s infinite; }
         @keyframes flash { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
-
-        /* Navigation */
         .nav-tabs { display: flex; gap: 10px; margin-bottom: 20px; }
         .nav-tabs button { flex: 1; padding: 10px; font-size: 12px; background: #edf2f7; color: #4a5568; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; }
         .nav-tabs button.active { background: var(--primary); color: white; }
-
-        /* Success Animation Overlay */
         #success-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.95); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 100; text-align: center; }
         .checkmark { width: 80px; height: 80px; border-radius: 50%; display: block; stroke-width: 2; stroke: var(--success); stroke-miterlimit: 10; box-shadow: inset 0px 0px 0px var(--success); animation: fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s both; }
-        .checkmark__circle { stroke-dasharray: 166; stroke-dashoffset: 166; stroke-width: 2; stroke-miterlimit: 10; stroke: var(--success); fill: none; animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards; }
+        .checkmark__circle { stroke-dasharray: 166; stroke-dashoffset: 166; stroke-width: 2; stroke: var(--success); fill: none; animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards; }
         .checkmark__check { transform-origin: 50% 50%; stroke-dasharray: 48; stroke-dashoffset: 48; animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards; }
         @keyframes stroke { 100% { stroke-dashoffset: 0; } }
         @keyframes scale { 0%, 100% { transform: none; } 50% { transform: scale3d(1.1, 1.1, 1); } }
         @keyframes fill { 100% { box-shadow: inset 0px 0px 0px 40px var(--success); } }
-
-        /* Clock & Steps */
         .live-clock { text-align: center; font-family: monospace; font-size: 16px; background: #1a202c; padding: 12px; border-radius: 8px; margin-bottom: 20px; color: #cbd5e0; border: 1px solid #2d3748; }
         .step { border-left: 3px solid #eee; padding-left: 20px; margin-bottom: 25px; opacity: 0.3; transition: 0.4s; }
         .step.active { border-left-color: var(--primary); opacity: 1; }
-        
-        /* Form Elements */
         button.action-btn { width: 100%; padding: 14px; border: none; border-radius: 8px; background: var(--primary); color: white; font-weight: bold; cursor: pointer; transition: 0.2s; }
         button:disabled { background: #cbd5e0; cursor: not-allowed; }
         input { width: 92%; padding: 12px; margin: 10px 0; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 16px; text-align: center; }
-
-        /* Vault Table */
         #vault-view { display: none; max-height: 400px; overflow-y: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 12px; }
         th { text-align: left; padding: 10px; background: #f7fafc; border-bottom: 2px solid #edf2f7; }
         td { padding: 10px; border-bottom: 1px solid #edf2f7; color: #4a5568; }
-
         #log { background: #1a202c; color: #68d391; padding: 12px; border-radius: 8px; font-size: 10px; height: 60px; overflow-y: auto; margin-top: 15px; font-family: monospace; }
     </style>
 </head>
@@ -55,15 +40,12 @@
 
 <div class="card">
     <div id="success-overlay">
-        <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
-            <circle class="checkmark__circle" cx="26" cy="26" r="25" fill="none"/>
-            <path class="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" stroke="#fff" stroke-width="4"/>
-        </svg>
+        <svg class="checkmark" viewBox="0 0 52 52"><circle class="checkmark__circle" cx="26" cy="26" r="25" fill="none"/><path class="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" stroke="#fff" stroke-width="4"/></svg>
         <p style="color:var(--success); font-weight:bold; margin-top:15px;">UPLOAD SECURE</p>
     </div>
 
     <div id="header-status">
-        <div>User: <span id="user-name" class="user-tag" data-email="">Guest</span></div>
+        <div>User: <span id="user-name" class="user-tag" data-email="">Detecting...</span></div>
         <div>GPS: <span id="gps-indicator" class="status-off">OFF</span></div>
     </div>
 
@@ -74,30 +56,15 @@
 
     <div id="recorder-view">
         <div class="live-clock"><span id="display-date"></span> | <span id="display-time"></span></div>
-        
-        <div id="step1" class="step active">
-            <p><b>1. Connection</b></p>
-            <button class="action-btn" onclick="handleAuthClick()">Link Google Drive</button>
-        </div>
-        <div id="step2" class="step">
-            <p><b>2. Evidence</b></p>
-            <button id="voiceBtn" class="action-btn" disabled onclick="startRecording()">Record Voice Proof</button>
-        </div>
-        <div id="step3" class="step">
-            <p><b>3. Handover</b></p>
-            <input type="text" id="pinInput" placeholder="Enter PIN (1234)" disabled>
-            <button id="pinBtn" class="action-btn" disabled onclick="finalizeUpload()">Finalize & Upload</button>
-        </div>
+        <div id="step1" class="step active"><p><b>1. Connection</b></p><button class="action-btn" onclick="handleAuthClick()">Link Google Drive</button></div>
+        <div id="step2" class="step"><p><b>2. Evidence</b></p><button id="voiceBtn" class="action-btn" disabled onclick="startRecording()">Record Voice Proof</button></div>
+        <div id="step3" class="step"><p><b>3. Handover</b></p><input type="text" id="pinInput" placeholder="Enter PIN (1234)" disabled><button id="pinBtn" class="action-btn" disabled onclick="finalizeUpload()">Finalize & Upload</button></div>
     </div>
 
     <div id="vault-view">
         <h4 style="margin:0 0 15px 0; color:var(--primary);">Recent Activity</h4>
-        <table>
-            <thead><tr><th>File Name</th><th>Date</th></tr></thead>
-            <tbody id="files-list"><tr><td colspan="2">Loading vault...</td></tr></tbody>
-        </table>
+        <table><thead><tr><th>File Name</th><th>Date</th></tr></thead><tbody id="files-list"><tr><td colspan="2">Loading...</td></tr></tbody></table>
     </div>
-
     <div id="log">> System Init...</div>
 </div>
 
@@ -107,14 +74,12 @@
     let userLocation = "Waiting for GPS...";
     let gpsActive = false;
 
-    // --- CONFIG ---
     const CLIENT_ID = '337753122620-5u4cn79jvit9k55a94h8u7vsqa74l49f.apps.googleusercontent.com';
 
-    // 1. CLOCK
     function updateClock() {
         const now = new Date();
         document.getElementById('display-date').innerText = now.toLocaleDateString();
-        document.getElementById('display-time').innerText = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
+        document.getElementById('display-time').innerText = now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});
     }
     setInterval(updateClock, 1000);
     updateClock();
@@ -125,7 +90,6 @@
         l.scrollTop = l.scrollHeight;
     }
 
-    // 2. VIEW TOGGLE
     function showView(view) {
         document.getElementById('recorder-view').style.display = view === 'recorder' ? 'block' : 'none';
         document.getElementById('vault-view').style.display = view === 'vault' ? 'block' : 'none';
@@ -134,125 +98,117 @@
         if(view === 'vault') fetchVaultFiles();
     }
 
-    // 3. AUTH & IDENTITY
-    function initClient() {
-        tokenClient = google.accounts.oauth2.initTokenClient({
-            client_id: CLIENT_ID,
-            scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/drive.metadata.readonly',
-            callback: (resp) => {
-                accessToken = resp.access_token;
-                localStorage.setItem('rv_access_token', accessToken);
-                onAuthSuccess();
-            },
-        });
-        startGPS();
-        if (accessToken) onAuthSuccess();
-    }
-
-    async function onAuthSuccess() {
+    // --- NEW: AUTO-DETECTION & VALIDATION ---
+    async function validateUserSession() {
+        if (!accessToken) {
+            forceReconnect("No session found.");
+            return;
+        }
         try {
-            const resp = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {headers:{'Authorization':`Bearer ${accessToken}`}});
+            const resp = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                headers: {'Authorization': `Bearer ${accessToken}`}
+            });
             const data = await resp.json();
+            
+            // If data is missing name or email, it's an "undefined" state
+            if (!data.name && !data.email) {
+                throw new Error("Invalid User Data");
+            }
+
             const userTag = document.getElementById('user-name');
-            userTag.innerText = data.name;
-            userTag.setAttribute('data-email', data.email);
+            userTag.innerText = data.name || data.given_name || "Authorized User";
+            userTag.setAttribute('data-email', data.email || "No Email Found");
             
             document.getElementById('step1').style.display = 'none';
             document.getElementById('step2').classList.add('active');
             document.getElementById('voiceBtn').disabled = false;
-            log(`Connected: ${data.email}`);
-        } catch(e) { 
-            localStorage.removeItem('rv_access_token');
-            log("Session expired. Please Re-Link.");
+            log(`Session Active: ${data.email}`);
+        } catch(e) {
+            forceReconnect("Session Expired or Undefined.");
         }
     }
+
+    function forceReconnect(reason) {
+        log(reason);
+        localStorage.removeItem('rv_access_token');
+        accessToken = null;
+        document.getElementById('user-name').innerText = "Guest";
+        document.getElementById('step1').style.display = 'block';
+        document.getElementById('step2').classList.remove('active');
+        document.getElementById('voiceBtn').disabled = true;
+    }
+
+    function initClient() {
+        tokenClient = google.accounts.oauth2.initTokenClient({
+            client_id: CLIENT_ID,
+            scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/drive.metadata.readonly',
+            callback: (resp) => {
+                accessToken = resp.access_token;
+                localStorage.setItem('rv_access_token', accessToken);
+                validateUserSession();
+            },
+        });
+        startGPS();
+        validateUserSession();
+    }
+
+    function handleAuthClick() { tokenClient.requestAccessToken(); }
 
     function startGPS() {
         navigator.geolocation.watchPosition((pos) => {
             userLocation = `Lat: ${pos.coords.latitude.toFixed(4)}, Lng: ${pos.coords.longitude.toFixed(4)}`;
             const ind = document.getElementById('gps-indicator');
-            ind.className = "status-on";
-            ind.innerText = "ON";
+            ind.className = "status-on"; ind.innerText = "ON";
             gpsActive = true;
-        }, () => {
-            gpsActive = false;
-            log("GPS Blocked!");
-        });
+        }, () => { gpsActive = false; log("GPS Error."); });
     }
 
-    // 4. EVIDENCE CAPTURE
     async function startRecording() {
-        if(!gpsActive) return alert("Enable GPS first!");
+        if(!gpsActive) return alert("Enable GPS!");
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         mediaRecorder = new MediaRecorder(stream);
         audioChunks = [];
         mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
         mediaRecorder.onstop = () => {
             audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-            log("Voice Saved.");
             document.getElementById('step2').classList.remove('active');
             document.getElementById('step3').classList.add('active');
-            document.getElementById('pinInput').disabled = false;
-            document.getElementById('pinBtn').disabled = false;
+            document.getElementById('pinInput').disabled = false; document.getElementById('pinBtn').disabled = false;
         };
         log("Recording 3s...");
         mediaRecorder.start();
         setTimeout(() => mediaRecorder.stop(), 3000);
     }
 
-    // 5. UPLOAD & VAULT
     async function finalizeUpload() {
         if(document.getElementById('pinInput').value !== "1234") return alert("Wrong PIN");
-        log("Uploading to Vault...");
-        
-        const now = new Date();
+        log("Uploading...");
         const sharedId = `GP_${Date.now()}`;
         const userEmail = document.getElementById('user-name').getAttribute('data-email');
-
-        const textContent = `Account: ${userEmail}
-RouteVault AI Proof
---------------------------
-ID: ${sharedId}
-Date: ${now.toLocaleDateString()}
-Time: ${now.toLocaleTimeString()}
-Location: ${userLocation}
-PIN: ${document.getElementById('pinInput').value}
-Status: Verified & Secured`;
-        
+        const textContent = `Account: ${userEmail}\nRouteVault AI Proof\n--------------------------\nID: ${sharedId}\nDate: ${new Date().toLocaleDateString()}\nTime: ${new Date().toLocaleTimeString()}\nLocation: ${userLocation}\nPIN: 1234\nStatus: Verified & Secured`;
         await uploadFile(new Blob([textContent], {type:'text/plain'}), `Proof_${sharedId}.txt`);
         await uploadFile(audioBlob, `Voice_${sharedId}.webm`);
-        
-        const overlay = document.getElementById('success-overlay');
-        overlay.style.display = 'flex';
-        setTimeout(() => { overlay.style.display = 'none'; location.reload(); }, 2500);
+        document.getElementById('success-overlay').style.display = 'flex';
+        setTimeout(() => { document.getElementById('success-overlay').style.display = 'none'; location.reload(); }, 2500);
     }
 
     async function uploadFile(blob, name) {
-        const metadata = { name: name, mimeType: blob.type };
         const form = new FormData();
-        form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+        form.append('metadata', new Blob([JSON.stringify({ name: name, mimeType: blob.type })], { type: 'application/json' }));
         form.append('file', blob);
         await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-            method: 'POST',
-            headers: { 'Authorization': 'Bearer ' + accessToken },
-            body: form
+            method: 'POST', headers: { 'Authorization': 'Bearer ' + accessToken }, body: form
         });
-        log(`Saved ${name}`);
     }
 
     async function fetchVaultFiles() {
         if(!accessToken) return;
-        try {
-            const resp = await fetch('https://www.googleapis.com/drive/v3/files?pageSize=10&orderBy=createdTime desc&fields=files(name,createdTime)', {
-                headers: { 'Authorization': 'Bearer ' + accessToken }
-            });
-            const data = await resp.json();
-            const list = document.getElementById('files-list');
-            list.innerHTML = data.files.map(f => `<tr><td>${f.name}</td><td>${new Date(f.createdTime).toLocaleDateString()}</td></tr>`).join('');
-        } catch(e) { log("Vault fetch failed."); }
+        const resp = await fetch('https://www.googleapis.com/drive/v3/files?pageSize=10&orderBy=createdTime desc&fields=files(name,createdTime)', {
+            headers: { 'Authorization': 'Bearer ' + accessToken }
+        });
+        const data = await resp.json();
+        document.getElementById('files-list').innerHTML = data.files.map(f => `<tr><td>${f.name}</td><td>${new Date(f.createdTime).toLocaleDateString()}</td></tr>`).join('');
     }
-
-    function handleAuthClick() { tokenClient.requestAccessToken(); }
 </script>
 <script src="https://accounts.google.com/gsi/client" onload="initClient()"></script>
 </body>
