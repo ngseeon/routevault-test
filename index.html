@@ -37,6 +37,10 @@
         <button id="pinBtn" disabled onclick="finalizeUpload()">Verify & Upload All</button>
     </div>
 
+    <div id="live-status" style="text-align: center; font-size: 13px; color: #718096; margin-bottom: 10px; font-weight: bold;">
+    <span id="display-date"></span> | <span id="display-time"></span>
+    </div>
+    
     <div id="log">> System Initializing...</div>
 </div>
 
@@ -57,6 +61,22 @@
         l.innerHTML += `> ${msg}<br>`;
         l.scrollTop = l.scrollHeight;
     }
+
+    function updateClock() {
+        const now = new Date();
+        // Format Date: e.g., Apr 7, 2026
+        document.getElementById('display-date').innerText = now.toLocaleDateString('en-US', { 
+            month: 'short', day: 'numeric', year: 'numeric' 
+        });
+        // Format Time: e.g., 12:45:01 PM
+        document.getElementById('display-time').innerText = now.toLocaleTimeString('en-US', { 
+            hour: '2-digit', minute: '2-digit', second: '2-digit' 
+        });
+    }
+
+    // Update the clock every 1 second
+    setInterval(updateClock, 1000);
+    updateClock(); // Run immediately on load
 
     function initClient() {
         tokenClient = google.accounts.oauth2.initTokenClient({
