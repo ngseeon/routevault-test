@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RouteVault AI - Master Data</title>
+    <title>RouteVault AI - Mobile Stable</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root { --primary: #1a202c; --wa: #25d366; --gmail: #EA4335; --bg: #f7fafc; --blue: #4285F4; }
@@ -62,13 +62,11 @@
                 <button onclick="shareWhatsApp()" class="btn-link" style="background:var(--wa);">WhatsApp</button>
                 <button onclick="shareEmail()" class="btn-link" style="background:var(--gmail);">Gmail</button>
             </div>
-            
             <div id="email-prompt-box" style="display:none; margin-top:15px; border-top: 1px solid #cbd5e0; padding-top:10px;">
                 <p style="font-size:11px; font-weight:bold; margin-bottom:5px;">Recipient email</p>
                 <input type="email" id="custom-email" placeholder="Enter recipient email">
                 <button onclick="executeGmail()" class="action-btn" style="background:var(--primary);">Open Gmail</button>
             </div>
-
             <button class="action-btn" style="background:#718096; margin-top:20px;" onclick="location.reload()">Start New Audit</button>
         </div>
     </div>
@@ -143,25 +141,32 @@
         const timeStr = now.toLocaleTimeString();
         const userName = localStorage.getItem('rv_name') || "User";
         
-        const qrSize = 100;
-        const qrX = (now.getDate() % 2 !== 0) ? 20 : (canvas.width - 120);
-
-        // DATA PAYLOAD FOR QR & TEXT
         const dataPayload = `User: ${userName}\nUnixTS: ${unixTs}\nDate: ${dateStr}\nTime: ${timeStr}\nLoc: ${currentArea}\nCoords: ${userLocation}\nPIN: ${window.calculatedPin}`;
         
         const qrDiv = document.createElement("div");
-        new QRCode(qrDiv, { text: dataPayload, width: qrSize, height: qrSize });
+        new QRCode(qrDiv, { text: dataPayload, width: 120, height: 120 });
 
+        // WAIT FOR QR IMAGE TO ACTUALLY EXIST
         setTimeout(() => {
-            ctx.drawImage(qrDiv.querySelector('img'), qrX, canvas.height - 120, qrSize, qrSize);
-            canvas.toBlob(blob => {
-                imageBlob = blob;
-                videoStream.getTracks().forEach(t => t.stop());
-                document.getElementById('camera-container').style.display = 'none';
-                document.getElementById('snapBtn').style.display = 'none';
-                document.getElementById('final-step').style.display = 'block';
-            }, 'image/jpeg', 0.9);
-        }, 500);
+            const qrImg = qrDiv.querySelector('img');
+            if (qrImg) {
+                // Determine placement based on date (alternating corners)
+                const qrSize = 120;
+                const qrX = (now.getDate() % 2 !== 0) ? 20 : (canvas.width - (qrSize + 20));
+                
+                ctx.drawImage(qrImg, qrX, canvas.height - (qrSize + 20), qrSize, qrSize);
+                
+                canvas.toBlob(blob => {
+                    imageBlob = blob;
+                    if(videoStream) videoStream.getTracks().forEach(t => t.stop());
+                    document.getElementById('camera-container').style.display = 'none';
+                    document.getElementById('snapBtn').style.display = 'none';
+                    document.getElementById('final-step').style.display = 'block';
+                }, 'image/jpeg', 0.9);
+            } else {
+                alert("QR Generation Error. Please try again.");
+            }
+        }, 800); // Increased mobile buffer
     }
 
     function processAudit() {
@@ -186,7 +191,7 @@
 
     function shareWhatsApp() {
         const phone = localStorage.getItem('rv_phone');
-        if (!phone) return alert("Please set your phone number in Settings first.");
+        if (!phone) return alert("Set phone in Settings.");
         const msg = encodeURIComponent(lastReport + "\n\n(Attach audit JPG/TXT from downloads)");
         window.location.href = `whatsapp://send?phone=${phone.replace(/\D/g,'')}&text=${msg}`;
     }
@@ -198,7 +203,7 @@
 
     function executeGmail() {
         const email = document.getElementById('custom-email').value;
-        if (!email) return alert("Enter email first.");
+        if (!email) return alert("Enter email.");
         const sub = encodeURIComponent(`Audit: ${unixTs} (${localStorage.getItem('rv_name')})`);
         const body = encodeURIComponent(lastReport + "\n\n(Attach audit JPG/TXT from downloads)");
         window.location.href = `https://mail.google.com/mail/?view=cm&fs=1&to=${email}&su=${sub}&body=${body}`;
