@@ -57,7 +57,6 @@
         l.scrollTop = l.scrollHeight;
     }
 
-    // NEW: Auto-retry logic for Google SDK
     function tryInit() {
         if (typeof google !== 'undefined' && google.accounts) {
             log("Google SDK Found.");
@@ -75,8 +74,7 @@
             });
             document.getElementById('authBtn').innerText = "Link Google Account";
         } else {
-            log("Waiting for Google SDK...");
-            setTimeout(tryInit, 1000); // Try again in 1 second
+            setTimeout(tryInit, 1000);
         }
     }
 
@@ -88,7 +86,7 @@
 
     function handleAuthClick() {
         if (tokenClient) tokenClient.requestAccessToken();
-        else log("SDK not ready yet.");
+        else log("SDK not ready.");
     }
 
     async function validateUser() {
@@ -108,14 +106,95 @@
         navigator.geolocation.watchPosition((pos) => {
             document.getElementById('gps-indicator').className = "status-on";
             document.getElementById('gps-indicator').innerText = "ON";
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            const latP = Math.round((lat % 1) * 10000);
+            const lngP = Math.round((lng % 1) * 10000);
+            window.calculatedPin = (latP + lngP).toString();
+            document.getElementById('pin-display').innerText = window.calculatedPin;
         }, () => { log("GPS Denied."); });
     }
 
     async function toggleCamera() {
-        videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-        document.getElementById('video-preview').srcObject = videoStream;
-        document.getElementById('camera-container').style.display = 'block';
-        log("Camera Active.");
+        try {
+            log("Starting Camera...");
+            videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+            document.getElementById('video-preview').srcObject = videoStream;
+            
+            // UI Switch: Hide Open, Show Snap
+            document.getElementById('camera-container').style.display = 'block';
+            document.getElementById('cameraBtn').style.display = 'none'; 
+            document.getElementById('snapBtn').style.display = 'block';
+            document.getElementById('snapBtn').disabled = false;
+            
+            log("Camera Ready. Take Photo.");
+        } catch (err) {
+            log("Camera Error: " + err.message);
+        }
+    }
+
+    async function takePhoto() {
+        log("Stamping Image...");
+        const video = document.getElementById('video-preview');
+        const canvas = document.getElementById('photo-canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = video.videoWidth; 
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0);
+
+        const day = new Date().getDate();
+        const isOdd = (day % 2 !== 0);
+        const qrX = isOdd ? 20 : (canvas.width - 160); 
+        const qrY = canvas.height - 180;
+
+        const qrDiv = document.createElement("div");
+        new QRCode(qrDiv, { text: `Audit-GP-${Date.now()}`, width: 120, height: 120 });
+
+        setTimeout(() => {
+            ctx.fillStyle = "white";
+            ctx.fillRect(qrX - 5, qrY - 5, 130, 150);
+            ctx.drawImage(qrDiv.querySelector('img'), qrX, qrY, 120, 120);
+            ctx.fillStyle = "#4285F4"; ctx.font = "bold 12px Arial";
+            ctx.fillText(isOdd ? "ODD-DAY" : "EVEN-DAY", qrX + 25, qrY + 140);
+
+            canvas.toBlob((blob) => {
+                imageBlob = blob;
+                videoStream.getTracks().forEach(t => t.stop());
+                document.getElementById('camera-container').style.display = 'none';
+                document.getElementById('snapBtn').style.display = 'none';
+                document.getElementById('step2').classList.remove('active');
+                document.getElementById('step3').classList.add('active');
+                document.getElementById('pinInput').disabled = false;
+                document.getElementById('pinBtn').disabled = false;
+                log("Snapshot Captured.");
+            }, 'image/jpeg', 0.9);
+        }, 500);
+    }
+
+    async function finalizeUpload() {
+        const inputPin = document.getElementById('pinInput').value;
+        if (inputPin !== window.calculatedPin) return alert("Wrong PIN.");
+        
+        log("Uploading to Drive...");
+        const email = document.getElementById('user-name').innerText;
+        const ts = Date.now();
+        
+        const metadata = { name: `Audit_GP_${ts}_${email}.jpg`, mimeType: 'image/jpeg' };
+        const form = new FormData();
+        form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+        form.append('file', imageBlob);
+
+        const resp = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+            method: 'POST', headers: { 'Authorization': `Bearer ${accessToken}` }, body: form
+        });
+
+        if(resp.ok) {
+            log("✅ UPLOAD SUCCESS!");
+            alert("AUDIT SECURED & UPLOADED!");
+            location.reload();
+        } else {
+            log("❌ Upload failed.");
+        }
     }
 
     function updateTime() {
