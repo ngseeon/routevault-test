@@ -3,219 +3,145 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RouteVault AI - Master Audit</title>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <title>RouteVault AI - Hybrid</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        :root { --primary: #4285F4; --success: #34A853; --error: #e53e3e; --bg: #f8f9fa; --text: #2d3748; }
+        :root { --primary: #075e54; --secondary: #25d366; --bg: #f0f2f5; --text: #111b21; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 20px; color: var(--text); margin: 0; }
-        .card { background: white; width: 100%; max-width: 480px; padding: 25px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
-        #header-status { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #edf2f7; }
-        .user-tag { font-weight: bold; color: var(--primary); }
-        .nav-tabs { display: flex; gap: 8px; margin-bottom: 20px; }
-        .nav-tabs button { flex: 1; padding: 10px; font-size: 12px; background: #edf2f7; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; }
-        .nav-tabs button.active { background: var(--primary); color: white; }
-        .live-clock { text-align: center; font-family: monospace; font-size: 16px; background: #1a202c; padding: 12px; border-radius: 8px; margin-bottom: 20px; color: #cbd5e0; }
-        #camera-container { width: 100%; border-radius: 12px; overflow: hidden; background: #000; margin-bottom: 15px; display: none; aspect-ratio: 4/3; }
+        .card { background: white; width: 100%; max-width: 440px; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .header { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 15px; font-weight: bold; color: var(--primary); }
+        .live-clock { text-align: center; font-family: monospace; font-size: 18px; background: #111b21; padding: 10px; border-radius: 8px; margin-bottom: 15px; color: #00ff00; }
+        #camera-container { width: 100%; border-radius: 8px; overflow: hidden; background: #000; margin-bottom: 15px; display: none; aspect-ratio: 4/3; }
         #video-preview { width: 100%; height: 100%; object-fit: cover; }
-        #photo-canvas { display: none; }
-        .step { border-left: 3px solid #eee; padding-left: 20px; margin-bottom: 25px; opacity: 0.3; transition: 0.4s; }
-        .step.active { border-left-color: var(--primary); opacity: 1; }
-        button.action-btn { width: 100%; padding: 14px; border: none; border-radius: 8px; background: var(--primary); color: white; font-weight: bold; cursor: pointer; }
-        #vault-view { display: none; min-height: 250px; }
-        table { width: 100%; border-collapse: collapse; font-size: 10px; margin-top: 10px; table-layout: fixed; }
-        th { background: #f7fafc; color: #718096; text-transform: uppercase; font-size: 9px; }
-        td, th { padding: 10px 5px; border-bottom: 1px solid #edf2f7; text-align: left; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-        #log { background: #1a202c; color: #68d391; padding: 12px; border-radius: 8px; font-size: 10px; height: 80px; overflow-y: auto; margin-top: 15px; font-family: monospace; }
+        canvas { display: none; }
+        .input-group { margin-bottom: 15px; }
+        label { font-size: 11px; color: #667781; display: block; margin-bottom: 4px; }
+        input { width: 94%; padding: 12px; border: 1px solid #d1d7db; border-radius: 8px; font-size: 14px; }
+        .action-btn { width: 100%; padding: 14px; border: none; border-radius: 8px; background: var(--primary); color: white; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .share-btn { background: var(--secondary); display: none; margin-top: 10px; text-decoration: none; text-align: center; color: white; line-height: 3; font-weight: bold; border-radius: 8px; }
+        #log { background: #e9edef; padding: 10px; border-radius: 8px; font-size: 11px; height: 60px; overflow-y: auto; margin-top: 15px; font-family: monospace; white-space: pre-wrap; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <div id="header-status">
-        <div>User: <span id="user-name" class="user-tag">Pending...</span></div>
-        <div>GPS: <span id="gps-indicator" style="color:red">OFF</span></div>
+    <div class="header">
+        <div>📍 Gelang Patah Audit</div>
+        <div id="gps-status" style="color:red">GPS: OFF</div>
     </div>
 
-    <div class="nav-tabs">
-        <button id="tab-audit" class="active" onclick="showView('audit')">Audit Stamp</button>
-        <button id="tab-vault" onclick="showView('vault')">Cloud Vault</button>
+    <div class="live-clock"><span id="display-date"></span> | <span id="display-time"></span></div>
+
+    <div class="input-group">
+        <label>RECIPIENT WHATSAPP (e.g. 60123456789)</label>
+        <input type="text" id="wa-num" placeholder="Enter Mobile Number">
     </div>
 
-    <div id="audit-view">
-        <div class="live-clock"><span id="display-date"></span> | <span id="display-time"></span></div>
-        <div id="camera-container"><video id="video-preview" autoplay playsinline></video></div>
-        <canvas id="photo-canvas"></canvas>
-
-        <div id="step1" class="step active"><p><b>1. Connection</b></p><button class="action-btn" onclick="handleAuthClick()">Link Google Account</button></div>
-        <div id="step2" class="step"><p><b>2. Evidence</b></p><button id="cameraBtn" class="action-btn" disabled onclick="toggleCamera()">Open Camera</button><button id="snapBtn" class="action-btn" style="display:none; background:var(--success);" onclick="takePhoto()">Take Image Proof</button></div>
-        <div id="step3" class="step"><p><b>3. Handover Audit</b></p><div style="font-size:11px;">PIN: <span id="pin-display" style="color:var(--primary); font-weight:bold;">----</span></div><input type="number" id="pinInput" placeholder="PIN" disabled style="width:100px; padding:10px; font-size:18px; text-align:center; display:block; margin:10px auto;"><button id="pinBtn" class="action-btn" disabled onclick="finalizeUpload()">Finalize & Upload</button></div>
+    <div id="camera-container">
+        <video id="video-preview" autoplay playsinline></video>
     </div>
 
-    <div id="vault-view">
-        <p id="vault-status" style="font-size:11px; text-align:center; color:#718096; margin-top:40px;">Loading Files...</p>
-        <table id="vault-table" style="display:none;">
-            <thead>
-                <tr>
-                    <th style="width: 45%;">File</th>
-                    <th style="width: 28%;">Date</th>
-                    <th style="width: 27%;">Time</th>
-                </tr>
-            </thead>
-            <tbody id="vault-list"></tbody>
-        </table>
+    <div id="ui-controls">
+        <button id="cameraBtn" class="action-btn" onclick="startCamera()">Open Camera</button>
+        <button id="snapBtn" class="action-btn" style="display:none; background:var(--secondary);" onclick="takePhoto()">Stamp Evidence</button>
+        
+        <div id="final-step" style="display:none;">
+            <label id="pin-label" style="font-weight:bold; color:var(--primary);"></label>
+            <input type="number" id="pinInput" placeholder="Enter GPS PIN">
+            <button class="action-btn" onclick="processLocalSave()">Save & Generate Share</button>
+        </div>
+
+        <a id="waShare" class="share-btn" target="_blank">Open WhatsApp & Send Log</a>
     </div>
 
-    <div id="log">> System Init...<br></div>
+    <div id="log">System Ready. No Login Required.</div>
 </div>
 
 <script>
-    let accessToken = null;
-    let tokenClient, videoStream, imageBlob;
-    let userLocation = "Unknown";
-    const CLIENT_ID = '337753122620-5u4cn79jvit9k55a94h8u7vsqa74l49f.apps.googleusercontent.com';
+    let videoStream, imageBlob, userLocation = "Searching...", rawCoords = "";
+    
+    function log(msg) { document.getElementById('log').innerText += `\n> ${msg}`; }
 
-    function log(msg) { const l = document.getElementById('log'); l.innerHTML += `> ${msg}<br>`; l.scrollTop = l.scrollHeight; }
-
-    function showView(view) {
-        document.getElementById('audit-view').style.display = view === 'audit' ? 'block' : 'none';
-        document.getElementById('vault-view').style.display = view === 'vault' ? 'block' : 'none';
-        document.getElementById('tab-audit').className = view === 'audit' ? 'active' : '';
-        document.getElementById('tab-vault').className = view === 'vault' ? 'active' : '';
-        if(view === 'vault' && accessToken) fetchVault();
-    }
-
-    function tryInit() {
-        if (typeof google !== 'undefined' && google.accounts) {
-            tokenClient = google.accounts.oauth2.initTokenClient({
-                client_id: CLIENT_ID,
-                scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/drive.metadata.readonly',
-                callback: (resp) => { if (resp.access_token) { accessToken = resp.access_token; validateUser(); } },
-            });
-            log("SDK Ready.");
-        } else { setTimeout(tryInit, 1000); }
-    }
-
-    window.onload = () => { tryInit(); updateTime(); startGPS(); };
-    function handleAuthClick() { if (tokenClient) tokenClient.requestAccessToken(); }
-
-    async function validateUser() {
-        const resp = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {headers: {'Authorization': `Bearer ${accessToken}`}});
-        const data = await resp.json();
-        document.getElementById('user-name').innerText = data.email;
-        document.getElementById('step1').style.display = 'none';
-        document.getElementById('step2').classList.add('active');
-        document.getElementById('cameraBtn').disabled = false;
-        log("Linked: " + data.email);
-    }
-
-    function startGPS() {
-        navigator.geolocation.watchPosition((pos) => {
-            document.getElementById('gps-indicator').innerText = "ON"; document.getElementById('gps-indicator').style.color = "green";
-            userLocation = `Lat: ${pos.coords.latitude.toFixed(4)}, Lng: ${pos.coords.longitude.toFixed(4)}`;
+    window.onload = () => {
+        updateTime();
+        navigator.geolocation.watchPosition(pos => {
+            const lat = pos.coords.latitude.toFixed(4);
+            const lng = pos.coords.longitude.toFixed(4);
+            userLocation = `Lat: ${lat}, Lng: ${lng}`;
+            document.getElementById('gps-status').innerText = "GPS: ON";
+            document.getElementById('gps-status').style.color = "green";
+            
+            // Security PIN calculation
             const pin = (Math.round((pos.coords.latitude % 1) * 10000) + Math.round((pos.coords.longitude % 1) * 10000)).toString();
-            window.calculatedPin = pin; document.getElementById('pin-display').innerText = pin;
+            window.calculatedPin = pin;
+            document.getElementById('pin-label').innerText = `SECURITY PIN: ${pin}`;
         });
-    }
+    };
 
-    async function toggleCamera() {
+    async function startCamera() {
         videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
         document.getElementById('video-preview').srcObject = videoStream;
         document.getElementById('camera-container').style.display = 'block';
-        document.getElementById('cameraBtn').style.display = 'none'; 
+        document.getElementById('cameraBtn').style.display = 'none';
         document.getElementById('snapBtn').style.display = 'block';
     }
 
     async function takePhoto() {
         const video = document.getElementById('video-preview');
-        const canvas = document.getElementById('photo-canvas');
+        const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         canvas.width = video.videoWidth; canvas.height = video.videoHeight;
         ctx.drawImage(video, 0, 0);
 
-        const email = document.getElementById('user-name').innerText;
-        const isOdd = (new Date().getDate() % 2 !== 0);
         const qrSize = 80;
-        const qrX = isOdd ? 20 : (canvas.width - (qrSize + 20)); 
-        const qrY = canvas.height - (qrSize + 20);
+        const isOdd = (new Date().getDate() % 2 !== 0);
+        const qrX = isOdd ? 20 : (canvas.width - 100);
+        const qrY = canvas.height - 100;
 
         const qrDiv = document.createElement("div");
-        new QRCode(qrDiv, { text: `Audit: ${Date.now()}\nBy: ${email}\n${userLocation}`, width: qrSize, height: qrSize });
+        new QRCode(qrDiv, { text: `Audit: ${Date.now()}\nLoc: ${userLocation}`, width: qrSize, height: qrSize });
 
         setTimeout(() => {
             ctx.drawImage(qrDiv.querySelector('img'), qrX, qrY, qrSize, qrSize);
-            canvas.toBlob((blob) => {
+            canvas.toBlob(blob => {
                 imageBlob = blob;
                 videoStream.getTracks().forEach(t => t.stop());
                 document.getElementById('camera-container').style.display = 'none';
                 document.getElementById('snapBtn').style.display = 'none';
-                document.getElementById('step2').classList.remove('active');
-                document.getElementById('step3').classList.add('active');
-                document.getElementById('pinInput').disabled = false;
-                document.getElementById('pinBtn').disabled = false;
-                log("Capture Ready.");
+                document.getElementById('final-step').style.display = 'block';
+                log("Image Stamped.");
             }, 'image/jpeg', 0.9);
         }, 500);
     }
 
-    async function finalizeUpload() {
+    function processLocalSave() {
         if (document.getElementById('pinInput').value !== window.calculatedPin) return alert("Wrong PIN.");
-        log("Uploading Dual Audit...");
-        const email = document.getElementById('user-name').innerText;
+
         const now = new Date();
-        const tsString = now.toISOString().replace(/[:.]/g, '-');
+        const ts = now.toISOString().replace(/[:.]/g, '-');
+        const report = `AUDIT LOG\nTime: ${now.toLocaleString()}\nLoc: ${userLocation}\nPIN: ${window.calculatedPin}`;
+
+        // 1. Download Text Log
+        downloadFile(new Blob([report], {type:'text/plain'}), `Log_${ts}.txt`);
+        // 2. Download Stamped Image
+        downloadFile(imageBlob, `Audit_${ts}.jpg`);
+
+        // 3. Prepare WhatsApp Share
+        const waNum = document.getElementById('wa-num').value;
+        const encodedMsg = encodeURIComponent(report + "\n(Note: Please attach the Audit Image from your downloads)");
+        const waUrl = `https://wa.me/${waNum}?text=${encodedMsg}`;
         
-        const textLog = `AUDIT REPORT\n------------\nTimestamp: ${now.toLocaleString()}\nUser: ${email}\nLocation: ${userLocation}\nPIN: ${window.calculatedPin}\n------------`;
-        
-        const tOk = await uploadToDrive(new Blob([textLog], {type:'text/plain'}), `Log_${tsString}_${email}.txt`);
-        const iOk = await uploadToDrive(imageBlob, `Audit_${tsString}_${email}.jpg`);
-
-        if(tOk && iOk) { 
-            log("✅ Success."); alert("SECURED & UPLOADED"); resetUI();
-            if(document.getElementById('vault-view').style.display === 'block') fetchVault(); 
-        }
+        const shareBtn = document.getElementById('waShare');
+        shareBtn.href = waUrl;
+        shareBtn.style.display = 'block';
+        log("Files saved to device. Ready to share.");
     }
 
-    function resetUI() {
-        document.getElementById('step3').classList.remove('active');
-        document.getElementById('step2').classList.add('active');
-        document.getElementById('pinInput').value = "";
-        document.getElementById('pinInput').disabled = true;
-        document.getElementById('pinBtn').disabled = true;
-        document.getElementById('cameraBtn').style.display = 'block';
-        document.getElementById('cameraBtn').disabled = false;
-    }
-
-    async function uploadToDrive(blob, name) {
-        const form = new FormData();
-        form.append('metadata', new Blob([JSON.stringify({ name: name, mimeType: blob.type })], { type: 'application/json' }));
-        form.append('file', blob);
-        const resp = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-            method: 'POST', headers: { 'Authorization': `Bearer ${accessToken}` }, body: form
-        });
-        return resp.ok;
-    }
-
-    async function fetchVault() {
-        if(!accessToken) return;
-        try {
-            const resp = await fetch('https://www.googleapis.com/drive/v3/files?pageSize=12&orderBy=createdTime desc&fields=files(name,createdTime)', {
-                headers: { 'Authorization': `Bearer ${accessToken}` }
-            });
-            const data = await resp.json();
-            if(data.files) {
-                document.getElementById('vault-status').style.display = 'none';
-                document.getElementById('vault-table').style.display = 'table';
-                document.getElementById('vault-list').innerHTML = data.files.map(f => {
-                    const dt = new Date(f.createdTime);
-                    return `<tr>
-                        <td title="${f.name}">${f.name.slice(0,20)}...</td>
-                        <td>${dt.toLocaleDateString()}</td>
-                        <td style="color:#718096">${dt.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td>
-                    </tr>`;
-                }).join('');
-            }
-        } catch(e) { log("Vault Error."); }
+    function downloadFile(blob, name) {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = name;
+        a.click();
     }
 
     function updateTime() {
