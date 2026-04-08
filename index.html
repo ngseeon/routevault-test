@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RouteVault AI - Universal</title>
+    <title>RouteVault AI - Master Data</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root { --primary: #1a202c; --wa: #25d366; --gmail: #EA4335; --bg: #f7fafc; --blue: #4285F4; }
@@ -29,9 +29,9 @@
 <div class="card">
     <div id="settings-ui">
         <h3>User Settings</h3>
-        <input type="text" id="set-name" placeholder="Full Name">
-        <input type="email" id="set-email" placeholder="Default Manager Email">
-        <input type="text" id="set-phone" placeholder="Default WhatsApp (601...)">
+        <input type="text" id="set-name" placeholder="Your Name">
+        <input type="email" id="set-email" placeholder="Default Recipient Email">
+        <input type="text" id="set-phone" placeholder="Your WhatsApp (601...)">
         <button class="action-btn" onclick="saveSettings()">Save & Close</button>
     </div>
 
@@ -53,19 +53,20 @@
         <div id="final-step" style="display:none; text-align:center;">
             <p style="font-size:11px; font-weight:bold;">GPS SECURITY PIN: <span id="pin-display" style="color:var(--blue);">--</span></p>
             <input type="number" id="pinInput" placeholder="PIN" style="font-size:24px; text-align:center; width:140px;">
-            <button class="action-btn" onclick="processAudit()">Save Audit</button>
+            <button class="action-btn" onclick="processAudit()">Save Audit Bundle</button>
         </div>
 
         <div id="share-hub">
-            <p style="font-size:12px; font-weight:bold; color:var(--primary);">SELECT SENDING METHOD</p>
+            <p style="font-size:12px; font-weight:bold; color:var(--primary);">AUDIT SAVED. SHARE NOW?</p>
             <div class="share-grid">
-                <button onclick="triggerShare('wa')" class="btn-link" style="background:var(--wa);">WhatsApp</button>
-                <button onclick="triggerShare('email')" class="btn-link" style="background:var(--gmail);">Gmail</button>
+                <button onclick="shareWhatsApp()" class="btn-link" style="background:var(--wa);">WhatsApp</button>
+                <button onclick="shareEmail()" class="btn-link" style="background:var(--gmail);">Gmail</button>
             </div>
             
-            <div id="contact-entry" style="display:none; margin-top:15px; border-top: 1px solid #cbd5e0; padding-top:10px;">
-                <input type="text" id="target-contact" placeholder="">
-                <button id="final-send-btn" class="action-btn" style="background:var(--primary);">Open App Now</button>
+            <div id="email-prompt-box" style="display:none; margin-top:15px; border-top: 1px solid #cbd5e0; padding-top:10px;">
+                <p style="font-size:11px; font-weight:bold; margin-bottom:5px;">Recipient email</p>
+                <input type="email" id="custom-email" placeholder="Enter recipient email">
+                <button onclick="executeGmail()" class="action-btn" style="background:var(--primary);">Open Gmail</button>
             </div>
 
             <button class="action-btn" style="background:#718096; margin-top:20px;" onclick="location.reload()">Start New Audit</button>
@@ -138,15 +139,21 @@
 
         const now = new Date();
         unixTs = Math.floor(now.getTime() / 1000);
+        const dateStr = now.toLocaleDateString();
+        const timeStr = now.toLocaleTimeString();
         const userName = localStorage.getItem('rv_name') || "User";
-        const qrSize = 90;
-        const qrX = (now.getDate() % 2 !== 0) ? 20 : (canvas.width - 110);
+        
+        const qrSize = 100;
+        const qrX = (now.getDate() % 2 !== 0) ? 20 : (canvas.width - 120);
 
+        // DATA PAYLOAD FOR QR & TEXT
+        const dataPayload = `User: ${userName}\nUnixTS: ${unixTs}\nDate: ${dateStr}\nTime: ${timeStr}\nLoc: ${currentArea}\nCoords: ${userLocation}\nPIN: ${window.calculatedPin}`;
+        
         const qrDiv = document.createElement("div");
-        new QRCode(qrDiv, { text: `User: ${userName}\nUnixTS: ${unixTs}\nTime: ${now.toLocaleString()}\nLoc: ${currentArea}\nPIN: ${window.calculatedPin}`, width: qrSize, height: qrSize });
+        new QRCode(qrDiv, { text: dataPayload, width: qrSize, height: qrSize });
 
         setTimeout(() => {
-            ctx.drawImage(qrDiv.querySelector('img'), qrX, canvas.height - 110, qrSize, qrSize);
+            ctx.drawImage(qrDiv.querySelector('img'), qrX, canvas.height - 120, qrSize, qrSize);
             canvas.toBlob(blob => {
                 imageBlob = blob;
                 videoStream.getTracks().forEach(t => t.stop());
@@ -164,7 +171,7 @@
         const fileTs = now.toLocaleDateString().replace(/\//g, '-') + "_" + now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}).replace(/[: ]/g,'');
         const fileName = `${userName}_${unixTs}_${fileTs}`;
 
-        lastReport = `AUDIT REPORT\nUser: ${userName}\nUnix Timestamp: ${unixTs}\nLocation: ${currentArea}\nCoords: ${userLocation}\nPIN: ${window.calculatedPin}`;
+        lastReport = `--- AUDIT REPORT ---\nUser Name: ${userName}\nUnix Timestamp: ${unixTs}\nDate: ${now.toLocaleDateString()}\nTime: ${now.toLocaleTimeString()}\nLocation: ${currentArea}\nCoords: ${userLocation}\nPIN: ${window.calculatedPin}`;
 
         const a = document.createElement('a');
         a.href = URL.createObjectURL(imageBlob); a.download = `${fileName}.jpg`; a.click();
@@ -172,33 +179,29 @@
         const b = document.createElement('a');
         b.href = URL.createObjectURL(new Blob([lastReport], {type:'text/plain'})); b.download = `${fileName}.txt`; b.click();
 
-        document.getElementById('vault-list').innerHTML = `<tr><td>${fileName.slice(0,20)}...</td><td>${unixTs}</td></tr>` + document.getElementById('vault-list').innerHTML;
+        document.getElementById('vault-list').innerHTML = `<tr><td>${fileName.slice(0,22)}...</td><td>${unixTs}</td></tr>` + document.getElementById('vault-list').innerHTML;
         document.getElementById('final-step').style.display = 'none';
         document.getElementById('share-hub').style.display = 'block';
     }
 
-    function triggerShare(type) {
-        const area = document.getElementById('contact-entry');
-        const input = document.getElementById('target-contact');
-        const btn = document.getElementById('final-send-btn');
-        area.style.display = 'block';
+    function shareWhatsApp() {
+        const phone = localStorage.getItem('rv_phone');
+        if (!phone) return alert("Please set your phone number in Settings first.");
+        const msg = encodeURIComponent(lastReport + "\n\n(Attach audit JPG/TXT from downloads)");
+        window.location.href = `whatsapp://send?phone=${phone.replace(/\D/g,'')}&text=${msg}`;
+    }
 
-        if(type === 'wa') {
-            input.placeholder = "WhatsApp Number (601...)";
-            input.value = localStorage.getItem('rv_phone');
-            btn.onclick = () => {
-                const msg = encodeURIComponent(lastReport + "\n\n(Note: Attach image from downloads)");
-                window.location.href = `whatsapp://send?phone=${input.value.replace(/\D/g,'')}&text=${msg}`;
-            }
-        } else {
-            input.placeholder = "Email Address";
-            input.value = localStorage.getItem('rv_email');
-            btn.onclick = () => {
-                const sub = encodeURIComponent(`Audit: ${unixTs} (${localStorage.getItem('rv_name')})`);
-                const body = encodeURIComponent(lastReport + "\n\n(Note: Attach image from downloads)");
-                window.location.href = `https://mail.google.com/mail/?view=cm&fs=1&to=${input.value}&su=${sub}&body=${body}`;
-            }
-        }
+    function shareEmail() {
+        document.getElementById('email-prompt-box').style.display = 'block';
+        document.getElementById('custom-email').value = localStorage.getItem('rv_email');
+    }
+
+    function executeGmail() {
+        const email = document.getElementById('custom-email').value;
+        if (!email) return alert("Enter email first.");
+        const sub = encodeURIComponent(`Audit: ${unixTs} (${localStorage.getItem('rv_name')})`);
+        const body = encodeURIComponent(lastReport + "\n\n(Attach audit JPG/TXT from downloads)");
+        window.location.href = `https://mail.google.com/mail/?view=cm&fs=1&to=${email}&su=${sub}&body=${body}`;
     }
 
     function updateTime() {
