@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RouteVault AI - Final Audit</title>
+    <title>RouteVault AI - Direct Stamp</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root { --primary: #1a202c; --wa: #25d366; --gmail: #EA4335; --bg: #f7fafc; --blue: #4285F4; }
@@ -20,24 +20,23 @@
         #share-hub { display: none; margin-top: 15px; background: #f1f5f9; padding: 15px; border-radius: 12px; text-align: center; }
         .share-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
         .btn-link { padding: 12px; border-radius: 8px; border: none; color: white; font-weight: bold; font-size: 13px; cursor: pointer; }
-        #qr-buffer { position: absolute; left: -9999px; top: 0; background: white; padding: 10px; } /* Hidden but rendered */
+        #qr-hidden { display: none; }
     </style>
 </head>
 <body>
 
-<div id="qr-buffer"></div> <div class="card">
+<div id="qr-hidden"></div>
+
+<div class="card">
     <div id="settings-ui">
         <h3>App Settings</h3>
         <label>YOUR DETAILS</label>
         <input type="text" id="set-name" placeholder="Your Name">
         <input type="text" id="set-phone" placeholder="Your WhatsApp (60...)">
-        
         <hr style="margin: 15px 0; border: 0; border-top: 1px solid #eee;">
-        
         <label>RECIPIENT DETAILS</label>
         <input type="text" id="set-rec-phone" placeholder="Recipient WhatsApp (60...)">
         <input type="email" id="set-rec-email" placeholder="Recipient Email">
-        
         <button class="action-btn" onclick="saveSettings()">Save & Close</button>
     </div>
 
@@ -124,12 +123,12 @@
         document.getElementById('snapBtn').style.display = 'block';
     }
 
-    async function takePhoto() {
+    function takePhoto() {
         const video = document.getElementById('video-preview');
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = video.videoWidth; 
-        canvas.height = video.videoHeight;
+        const mainCanvas = document.createElement('canvas');
+        const ctx = mainCanvas.getContext('2d');
+        mainCanvas.width = video.videoWidth; 
+        mainCanvas.height = video.videoHeight;
         ctx.drawImage(video, 0, 0);
 
         const now = new Date();
@@ -138,38 +137,42 @@
         
         const dataPayload = `${userName}\n${unixTs}\n${now.toLocaleDateString()}\n${now.toLocaleTimeString()}\n${currentArea}\n${userLocation}\nPIN: ${window.calculatedPin}`;
         
-        // Render QR in a visible buffer (mobile workaround)
-        const buffer = document.getElementById('qr-buffer');
-        buffer.innerHTML = ""; 
-        const qr = new QRCode(buffer, { text: dataPayload, width: 200, height: 200, correctLevel: QRCode.CorrectLevel.H });
+        // Use an invisible div for the QR engine
+        const qrContainer = document.getElementById('qr-hidden');
+        qrContainer.innerHTML = "";
+        
+        // Create QR
+        new QRCode(qrContainer, { text: dataPayload, width: 250, height: 250, correctLevel: QRCode.CorrectLevel.M });
 
-        // Wait specifically for the canvas/img to be created and filled
-        const checkQR = setInterval(() => {
-            const qrImg = buffer.querySelector('img');
-            if (qrImg && qrImg.complete && qrImg.naturalWidth > 0) {
-                clearInterval(checkQR);
+        // Instant Check: Grab the canvas QR directly
+        setTimeout(() => {
+            const qrCanvas = qrContainer.querySelector('canvas');
+            if (qrCanvas) {
+                const qrSize = Math.floor(mainCanvas.width * 0.25); // Dynamic size: 25% of photo width
+                const margin = 40;
+                const qrX = (now.getDate() % 2 !== 0) ? margin : (mainCanvas.width - qrSize - margin);
+                const qrY = mainCanvas.height - qrSize - margin;
+
+                // Draw QR canvas onto Photo canvas
+                ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
                 
-                const qrSize = 180;
-                const qrX = (now.getDate() % 2 !== 0) ? 40 : (canvas.width - (qrSize + 40));
-                
-                ctx.drawImage(qrImg, qrX, canvas.height - (qrSize + 40), qrSize, qrSize);
-                
-                canvas.toBlob(blob => {
+                mainCanvas.toBlob(blob => {
                     imageBlob = blob;
                     if(videoStream) videoStream.getTracks().forEach(t => t.stop());
                     document.getElementById('camera-container').style.display = 'none';
                     document.getElementById('snapBtn').style.display = 'none';
                     document.getElementById('final-step').style.display = 'block';
                 }, 'image/jpeg', 0.9);
+            } else {
+                alert("QR Engine Error - Retrying...");
             }
-        }, 100);
+        }, 300); // 300ms is standard for mobile UI processing
     }
 
     function processAudit() {
         if (document.getElementById('pinInput').value !== window.calculatedPin) return alert("PIN Mismatch");
         const now = new Date();
         const userName = localStorage.getItem('rv_name') || "User";
-        const fileTs = now.toLocaleDateString().replace(/\//g, '-') + "_" + now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}).replace(/[: ]/g,'');
         
         emailBody = `${userName}\n${unixTs}\n${now.toLocaleDateString()}\n${now.toLocaleTimeString()}\n${currentArea}\n${userLocation}`;
 
@@ -183,15 +186,15 @@
     }
 
     function shareWhatsApp() {
-        const phone = localStorage.getItem('rv_rec_phone') || localStorage.getItem('rv_phone');
+        const phone = (localStorage.getItem('rv_rec_phone') || "").replace(/\D/g,'');
         const msg = encodeURIComponent(emailBody + "\n\n(Attach image from downloads)");
-        window.location.href = `whatsapp://send?phone=${phone.replace(/\D/g,'')}&text=${msg}`;
+        window.location.href = `whatsapp://send?phone=${phone}&text=${msg}`;
     }
 
     function shareEmail() {
-        const email = localStorage.getItem('rv_rec_email');
+        const email = localStorage.getItem('rv_rec_email') || "";
         const sub = `Audit: ${unixTs} (${localStorage.getItem('rv_name')})`;
-        const body = `${emailBody}\n\n[Please attach the audit image]`;
+        const body = `${emailBody}\n\n[Attach audit image]`;
         window.location.href = `mailto:${email}?subject=${encodeURIComponent(sub)}&body=${encodeURIComponent(body)}`;
     }
 
