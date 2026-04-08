@@ -3,24 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RouteVault AI - Direct Stamp</title>
+    <title>RouteVault AI - Stabilized</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root { --primary: #1a202c; --wa: #25d366; --gmail: #EA4335; --bg: #f7fafc; --blue: #4285F4; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 10px; margin: 0; color: #2d3748; }
         .card { background: white; width: 100%; max-width: 460px; padding: 20px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); position: relative; min-height: 90vh; }
         .header { display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid #edf2f7; padding-bottom: 8px; align-items: center; }
+        
+        /* Settings UI */
         #settings-ui { display: none; background: #fff; position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; padding: 20px; box-sizing: border-box; border-radius: 16px; border: 2px solid var(--blue); overflow-y: auto; }
-        .live-clock { text-align: center; font-family: monospace; font-size: 18px; background: var(--primary); padding: 12px; border-radius: 8px; margin-bottom: 15px; color: #68d391; }
-        #camera-container { width: 100%; border-radius: 12px; overflow: hidden; background: #000; margin-bottom: 15px; display: none; aspect-ratio: 4/3; }
+        
+        /* Camera & Loading Overlay */
+        #camera-container { width: 100%; border-radius: 12px; overflow: hidden; background: #000; margin-bottom: 15px; display: none; aspect-ratio: 4/3; position: relative; }
         #video-preview { width: 100%; height: 100%; object-fit: cover; }
+        #loading-overlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 10; }
+        
+        .live-clock { text-align: center; font-family: monospace; font-size: 18px; background: var(--primary); padding: 12px; border-radius: 8px; margin-bottom: 15px; color: #68d391; }
         .action-btn { width: 100%; padding: 14px; border: none; border-radius: 8px; background: var(--blue); color: white; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 14px; }
         input { width: 94%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; margin-bottom: 10px; display: block; }
         label { font-size: 11px; font-weight: bold; color: #718096; margin-left: 5px; }
+        
         #share-hub { display: none; margin-top: 15px; background: #f1f5f9; padding: 15px; border-radius: 12px; text-align: center; }
         .share-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
         .btn-link { padding: 12px; border-radius: 8px; border: none; color: white; font-weight: bold; font-size: 13px; cursor: pointer; }
-        #qr-hidden { display: none; }
+        #qr-hidden { position: absolute; left: -9999px; }
     </style>
 </head>
 <body>
@@ -49,7 +56,15 @@
     </div>
 
     <div class="live-clock"><span id="display-date"></span> | <span id="display-time"></span></div>
-    <div id="camera-container"><video id="video-preview" autoplay playsinline></video></div>
+    
+    <div id="camera-container">
+        <video id="video-preview" autoplay playsinline></video>
+        <div id="loading-overlay" style="display: none;">
+            <div style="font-size: 30px; margin-bottom: 10px;">📸</div>
+            <b>STAMPING IN PROGRESS...</b>
+            <p style="font-size: 11px;">Waiting for QR engine...</p>
+        </div>
+    </div>
 
     <div id="ui-main">
         <button id="cameraBtn" class="action-btn" onclick="startCamera()">Open Audit Camera</button>
@@ -125,6 +140,9 @@
 
     function takePhoto() {
         const video = document.getElementById('video-preview');
+        const overlay = document.getElementById('loading-overlay');
+        overlay.style.display = 'flex'; // Show "Waiting..." message
+        
         const mainCanvas = document.createElement('canvas');
         const ctx = mainCanvas.getContext('2d');
         mainCanvas.width = video.videoWidth; 
@@ -134,26 +152,23 @@
         const now = new Date();
         unixTs = Math.floor(now.getTime() / 1000);
         const userName = localStorage.getItem('rv_name') || "User";
-        
         const dataPayload = `${userName}\n${unixTs}\n${now.toLocaleDateString()}\n${now.toLocaleTimeString()}\n${currentArea}\n${userLocation}\nPIN: ${window.calculatedPin}`;
         
-        // Use an invisible div for the QR engine
         const qrContainer = document.getElementById('qr-hidden');
         qrContainer.innerHTML = "";
         
-        // Create QR
-        new QRCode(qrContainer, { text: dataPayload, width: 250, height: 250, correctLevel: QRCode.CorrectLevel.M });
+        // Generate QR code
+        new QRCode(qrContainer, { text: dataPayload, width: 256, height: 256, correctLevel: QRCode.CorrectLevel.M });
 
-        // Instant Check: Grab the canvas QR directly
+        // Give the handphone 1.5 seconds to fully render and process
         setTimeout(() => {
             const qrCanvas = qrContainer.querySelector('canvas');
             if (qrCanvas) {
-                const qrSize = Math.floor(mainCanvas.width * 0.25); // Dynamic size: 25% of photo width
+                const qrSize = Math.floor(mainCanvas.width * 0.25);
                 const margin = 40;
                 const qrX = (now.getDate() % 2 !== 0) ? margin : (mainCanvas.width - qrSize - margin);
                 const qrY = mainCanvas.height - qrSize - margin;
 
-                // Draw QR canvas onto Photo canvas
                 ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
                 
                 mainCanvas.toBlob(blob => {
@@ -161,19 +176,20 @@
                     if(videoStream) videoStream.getTracks().forEach(t => t.stop());
                     document.getElementById('camera-container').style.display = 'none';
                     document.getElementById('snapBtn').style.display = 'none';
+                    overlay.style.display = 'none'; // Hide "Waiting..."
                     document.getElementById('final-step').style.display = 'block';
                 }, 'image/jpeg', 0.9);
             } else {
-                alert("QR Engine Error - Retrying...");
+                alert("Stamping Error. Please try again.");
+                location.reload();
             }
-        }, 300); // 300ms is standard for mobile UI processing
+        }, 1500); // 1.5 Second pause to ensure QR is ready
     }
 
     function processAudit() {
         if (document.getElementById('pinInput').value !== window.calculatedPin) return alert("PIN Mismatch");
         const now = new Date();
         const userName = localStorage.getItem('rv_name') || "User";
-        
         emailBody = `${userName}\n${unixTs}\n${now.toLocaleDateString()}\n${now.toLocaleTimeString()}\n${currentArea}\n${userLocation}`;
 
         const a = document.createElement('a');
