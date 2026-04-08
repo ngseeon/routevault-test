@@ -1,48 +1,56 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RouteVault AI - Signal Audit</title>
+    <title>RouteVault AI - Master Audit</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root { --primary: #4285F4; --success: #34A853; --error: #e53e3e; --bg: #f8f9fa; --text: #2d3748; }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 20px; color: var(--text); }
         .card { background: white; width: 100%; max-width: 440px; padding: 25px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); position: relative; overflow: hidden; }
+        
+        /* Status Bar */
         #header-status { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #edf2f7; }
         .user-tag { font-weight: bold; color: var(--primary); }
         .status-on { color: var(--success); font-weight: bold; }
         .status-off { color: var(--error); font-weight: bold; animation: flash 1s infinite; }
         @keyframes flash { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
+
+        /* Tabs */
         .nav-tabs { display: flex; gap: 10px; margin-bottom: 20px; }
         .nav-tabs button { flex: 1; padding: 10px; font-size: 12px; background: #edf2f7; color: #4a5568; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; }
         .nav-tabs button.active { background: var(--primary); color: white; }
+        
+        /* Camera & Canvas */
         #camera-container { width: 100%; border-radius: 12px; overflow: hidden; background: #000; margin-bottom: 15px; display: none; aspect-ratio: 4/3; border: 2px solid #edf2f7; }
         #video-preview { width: 100%; height: 100%; object-fit: cover; }
         #photo-canvas { display: none; }
+
+        /* Clock & Steps */
         .live-clock { text-align: center; font-family: monospace; font-size: 16px; background: #1a202c; padding: 12px; border-radius: 8px; margin-bottom: 20px; color: #cbd5e0; border: 1px solid #2d3748; }
         .step { border-left: 3px solid #eee; padding-left: 20px; margin-bottom: 25px; opacity: 0.3; transition: 0.4s; }
         .step.active { border-left-color: var(--primary); opacity: 1; }
-        .pin-hint { font-size: 11px; color: #718096; margin-bottom: 5px; font-weight: bold; }
+        
+        /* Controls */
         button.action-btn { width: 100%; padding: 14px; border: none; border-radius: 8px; background: var(--primary); color: white; font-weight: bold; cursor: pointer; transition: 0.2s; }
         button:disabled { background: #cbd5e0 !important; cursor: not-allowed; }
         input { width: 92%; padding: 12px; margin: 5px 0 15px 0; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 18px; text-align: center; font-weight: bold; }
+        
         #success-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.95); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 100; text-align: center; }
-        .checkmark { width: 80px; height: 80px; border-radius: 50%; display: block; stroke-width: 2; stroke: var(--success); stroke-miterlimit: 10; box-shadow: inset 0px 0px 0px var(--success); animation: fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s both; }
-        @keyframes fill { 100% { box-shadow: inset 0px 0px 0px 40px var(--success); } }
         #vault-view { display: none; max-height: 400px; overflow-y: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 11px; }
         th { text-align: left; padding: 8px; background: #f7fafc; border-bottom: 2px solid #edf2f7; }
         td { padding: 8px; border-bottom: 1px solid #edf2f7; color: #4a5568; }
-        #log { background: #1a202c; color: #68d391; padding: 12px; border-radius: 8px; font-size: 10px; height: 60px; overflow-y: auto; margin-top: 15px; font-family: monospace; }
+        #log { background: #1a202c; color: #68d391; padding: 12px; border-radius: 8px; font-size: 10px; height: 70px; overflow-y: auto; margin-top: 15px; font-family: monospace; }
     </style>
 </head>
 <body>
 
 <div class="card">
     <div id="success-overlay">
-        <svg class="checkmark" viewBox="0 0 52 52"><circle cx="26" cy="26" r="25" fill="none" stroke="#34A853" stroke-width="2"/><path fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" stroke="#fff" stroke-width="4"/></svg>
-        <p style="color:var(--success); font-weight:bold; margin-top:15px;">AUDIT SECURED</p>
+        <p style="color:var(--success); font-weight:bold; font-size: 24px;">AUDIT SECURED</p>
+        <p>Syncing to Cloud...</p>
     </div>
 
     <div id="header-status">
@@ -52,7 +60,7 @@
 
     <div class="nav-tabs">
         <button id="btn-recorder" class="active" onclick="showView('recorder')">Route Stamp</button>
-        <button id="btn-vault" onclick="showView('vault')">Cloud Vault</button>
+        <button id="btn-vault" onclick="showView('vault')">Vault</button>
     </div>
 
     <div id="recorder-view">
@@ -70,34 +78,32 @@
 
         <div id="step3" class="step">
             <p><b>3. Handover Audit</b></p>
-            <div class="pin-hint">LOCATION PIN: <span id="pin-display" style="color:var(--primary)">----</span></div>
+            <div style="font-size:11px; margin-bottom:5px;">LOCATION PIN: <span id="pin-display" style="color:var(--primary); font-weight:bold;">----</span></div>
             <input type="number" id="pinInput" placeholder="ENTER PIN" disabled>
-            <button id="pinBtn" class="action-btn" disabled onclick="finalizeUpload()">Finalize & Audit</button>
+            <button id="pinBtn" class="action-btn" disabled onclick="finalizeUpload()">Finalize & Upload</button>
         </div>
     </div>
 
     <div id="vault-view">
-        <h4 style="margin:0 0 15px 0; color:var(--primary);">Recent Activity</h4>
-        <table><thead><tr><th>File Name</th><th>Date</th><th>Time</th></tr></thead><tbody id="files-list"><tr><td colspan="3">Loading...</td></tr></tbody></table>
+        <table><thead><tr><th>File</th><th>Date</th><th>Time</th></tr></thead><tbody id="files-list"></tbody></table>
     </div>
-    <div id="log">> Initializing Network Audit...</div>
+    <div id="log">> Initializing Audit Protocols...</div>
 </div>
 
 <script>
     let accessToken = localStorage.getItem('rv_access_token');
     let tokenClient, imageBlob, videoStream;
-    let userLocation = "Waiting for GPS...";
-    let cellTowerData = "Searching Cell ID...";
+    let userLocation = "GPS Pending...";
+    let cellMetadata = "Calculating Signal...";
     let gpsActive = false;
     let calculatedPin = "";
 
-    // INTEGRATED CLIENT ID
     const CLIENT_ID = '337753122620-5u4cn79jvit9k55a94h8u7vsqa74l49f.apps.googleusercontent.com';
 
     function updateClock() {
         const now = new Date();
         document.getElementById('display-date').innerText = now.toLocaleDateString();
-        document.getElementById('display-time').innerText = now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+        document.getElementById('display-time').innerText = now.toLocaleTimeString();
     }
     setInterval(updateClock, 1000);
 
@@ -107,31 +113,19 @@
         l.scrollTop = l.scrollHeight;
     }
 
-    function calculateLocationPin(lat, lng) {
-        const latPart = Math.round((lat % 1) * 10000);
-        const lngPart = Math.round((lng % 1) * 10000);
-        calculatedPin = (latPart + lngPart).toString();
-        document.getElementById('pin-display').innerText = calculatedPin;
-    }
-
-    async function getCellTower() {
+    async function getNetworkInfo() {
         if ('connection' in navigator) {
             const conn = navigator.connection;
-            cellTowerData = `Type: ${conn.effectiveType || 'N/A'}, RTT: ${conn.rtt}ms`;
-            log("Signal Metadata Found.");
+            cellMetadata = `Net: ${conn.effectiveType || 'N/A'}, Latency: ${conn.rtt}ms`;
+            log("Signal Data Cached.");
         }
     }
 
-    function updateDualLockStatus() {
-        const cameraActive = !!videoStream && videoStream.active;
-        const snapBtn = document.getElementById('snapBtn');
-        if (gpsActive && cameraActive) {
-            snapBtn.disabled = false;
-            snapBtn.style.background = "var(--success)";
-        } else {
-            snapBtn.disabled = true;
-            snapBtn.style.background = "#cbd5e0";
-        }
+    function calculatePin(lat, lng) {
+        const latP = Math.round((lat % 1) * 10000);
+        const lngP = Math.round((lng % 1) * 10000);
+        calculatedPin = (latP + lngP).toString();
+        document.getElementById('pin-display').innerText = calculatedPin;
     }
 
     function showView(view) {
@@ -147,16 +141,20 @@
         try {
             const resp = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {headers: {'Authorization': `Bearer ${accessToken}`}});
             const data = await resp.json();
-            const displayName = data.name || data.given_name || data.email || "Authorized User";
-            const userEmail = data.email || "Unknown Email";
+            
+            // Identity Force Patch
+            const userEmail = data.email || data.email_address || "User_" + (data.sub ? data.sub.slice(-5) : "Unknown");
+            const displayName = data.name || userEmail;
+            
             const userTag = document.getElementById('user-name');
             userTag.innerText = displayName;
             userTag.setAttribute('data-email', userEmail);
+            
             document.getElementById('step1').style.display = 'none';
             document.getElementById('step2').classList.add('active');
             document.getElementById('cameraBtn').disabled = false;
             log(`Linked: ${userEmail}`);
-        } catch(e) { log("Session Expired. Please Re-Link."); }
+        } catch(e) { log("Please Re-Link Account."); }
     }
 
     function initClient() {
@@ -166,7 +164,7 @@
             callback: (resp) => { accessToken = resp.access_token; localStorage.setItem('rv_access_token', accessToken); validateUserSession(); },
         });
         startGPS();
-        getCellTower();
+        getNetworkInfo();
         validateUserSession();
     }
 
@@ -178,25 +176,24 @@
             document.getElementById('gps-indicator').className = "status-on";
             document.getElementById('gps-indicator').innerText = "ON";
             gpsActive = true;
-            calculateLocationPin(lat, lng);
-            updateDualLockStatus();
+            calculatePin(lat, lng);
+            if(videoStream) document.getElementById('snapBtn').disabled = false;
         }, () => { 
-            gpsActive = false; 
             document.getElementById('gps-indicator').className = "status-off";
-            updateDualLockStatus();
+            gpsActive = false;
         });
     }
 
     async function toggleCamera() {
-        if(!gpsActive) return alert("GPS Lock Required.");
+        if(!gpsActive) return alert("Waiting for GPS Lock...");
         try {
             videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
             document.getElementById('video-preview').srcObject = videoStream;
             document.getElementById('camera-container').style.display = 'block';
             document.getElementById('cameraBtn').style.display = 'none';
             document.getElementById('snapBtn').style.display = 'block';
-            updateDualLockStatus();
-        } catch (err) { log("Camera Denied."); }
+            document.getElementById('snapBtn').disabled = !gpsActive;
+        } catch (err) { log("Camera Access Denied."); }
     }
 
     async function takePhoto() {
@@ -207,16 +204,16 @@
         canvas.height = video.videoHeight;
         ctx.drawImage(video, 0, 0);
 
-        const qrData = `RV ID: GP_${Date.now()}\nLoc: ${userLocation}\nSignal: ${cellTowerData}\nTime: ${new Date().toLocaleString()}`;
-        const todayDay = new Date().getDate();
-        const isOdd = (todayDay % 2 !== 0);
+        const qrData = `RV-AUDIT\nID: GP_${Date.now()}\nLoc: ${userLocation}\nSignal: ${cellMetadata}\nTime: ${new Date().toLocaleString()}`;
+        const day = new Date().getDate();
+        const isOdd = (day % 2 !== 0);
         
-        // Logic: Odd = Left, Even = Right
+        // Odd = Left (20px), Even = Right (canvas width - 160px)
         const qrX = isOdd ? 20 : (canvas.width - 160); 
         const qrY = canvas.height - 180;
 
         const qrDiv = document.createElement("div");
-        const qr = new QRCode(qrDiv, { text: qrData, width: 120, height: 120, correctLevel: QRCode.CorrectLevel.H });
+        const qr = new QRCode(qrDiv, { text: qrData, width: 120, height: 120 });
 
         setTimeout(() => {
             const qrImg = qrDiv.querySelector('img');
@@ -225,7 +222,7 @@
             ctx.drawImage(qrImg, qrX, qrY, 120, 120);
             ctx.fillStyle = "#4285F4";
             ctx.font = "bold 12px Arial";
-            ctx.fillText(isOdd ? "ODD-AUTH (L)" : "EVEN-AUTH (R)", qrX + 15, qrY + 140);
+            ctx.fillText(isOdd ? "ODD-AUTH" : "EVEN-AUTH", qrX + 25, qrY + 140);
 
             canvas.toBlob((blob) => {
                 imageBlob = blob;
@@ -236,25 +233,24 @@
                 document.getElementById('step3').classList.add('active');
                 document.getElementById('pinInput').disabled = false; 
                 document.getElementById('pinBtn').disabled = false;
-                log(`QR Placed ${isOdd ? "Left" : "Right"}`);
+                log(`Image Stamped (${isOdd ? "Left" : "Right"})`);
             }, 'image/jpeg', 0.9);
         }, 400);
     }
 
     async function finalizeUpload() {
-        const inputPin = document.getElementById('pinInput').value;
-        const isVerified = (inputPin === calculatedPin);
-        if(!isVerified) return alert("PIN Mismatch.");
+        const pin = document.getElementById('pinInput').value;
+        if(pin !== calculatedPin) return alert("Verification Failed: PIN Mismatch.");
 
-        log("Final Audit Sync...");
-        const timestamp = Date.now();
+        log("Cloud Sync in Progress...");
+        const ts = Date.now();
         const userEmail = document.getElementById('user-name').getAttribute('data-email');
         
-        const textContent = `Account: ${userEmail}\nAudit Proof\n--------------------------\nID: GP_${timestamp}\nDate: ${new Date().toLocaleDateString()}\nTime: ${new Date().toLocaleTimeString()}\nLocation: ${userLocation}\nSignal: ${cellTowerData}\nPIN: ${inputPin}\nVERIFICATION: PASS ✅`;
+        const logContent = `User: ${userEmail}\nID: GP_${ts}\nGPS: ${userLocation}\nSignal: ${cellMetadata}\nPIN: ${pin}\nStatus: PASS`;
         
-        // Naming: Type_ID_Email
-        await uploadFile(new Blob([textContent], {type:'text/plain'}), `Proof_GP_${timestamp}_${userEmail}.txt`);
-        await uploadFile(imageBlob, `Image_GP_${timestamp}_${userEmail}.jpg`);
+        // Final Filenames with Email Tag
+        await uploadFile(new Blob([logContent], {type:'text/plain'}), `Proof_GP_${ts}_${userEmail}.txt`);
+        await uploadFile(imageBlob, `Image_GP_${ts}_${userEmail}.jpg`);
         
         document.getElementById('success-overlay').style.display = 'flex';
         setTimeout(() => { location.reload(); }, 2500);
@@ -272,15 +268,15 @@
     async function fetchVaultFiles() {
         if(!accessToken) return;
         try {
-            const resp = await fetch('https://www.googleapis.com/drive/v3/files?pageSize=10&orderBy=createdTime desc&fields=files(name,createdTime)', {
+            const resp = await fetch('https://www.googleapis.com/drive/v3/files?pageSize=8&orderBy=createdTime desc&fields=files(name,createdTime)', {
                 headers: { 'Authorization': 'Bearer ' + accessToken }
             });
             const data = await resp.json();
             document.getElementById('files-list').innerHTML = data.files.map(f => {
                 const d = new Date(f.createdTime);
-                return `<tr><td>${f.name}</td><td>${d.toLocaleDateString()}</td><td>${d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td></tr>`;
+                return `<tr><td>${f.name.slice(0,18)}...</td><td>${d.toLocaleDateString()}</td><td>${d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td></tr>`;
             }).join('');
-        } catch (e) { log("Vault Sync Error."); }
+        } catch (e) { log("Sync Fail."); }
     }
 
     function handleAuthClick() { tokenClient.requestAccessToken(); }
