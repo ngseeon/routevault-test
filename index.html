@@ -20,7 +20,7 @@
         #photo-canvas { display: none; }
         .step { border-left: 3px solid #eee; padding-left: 20px; margin-bottom: 25px; opacity: 0.3; transition: 0.4s; }
         .step.active { border-left-color: var(--primary); opacity: 1; }
-        button.action-btn { width: 100%; padding: 14px; border: none; border-radius: 8px; background: var(--primary); color: white; font-weight: bold; cursor: pointer; }
+        button.action-btn { width: 100%; padding: 14px; border: none; border-radius: 8px; background: var(--primary); color: white; font-weight: bold; cursor: pointer; transition: 0.2s; }
         button:disabled { background: #cbd5e0 !important; cursor: not-allowed; }
         input { width: 92%; padding: 12px; margin: 5px 0 15px 0; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 18px; text-align: center; }
         #log { background: #1a202c; color: #68d391; padding: 12px; border-radius: 8px; font-size: 10px; height: 100px; overflow-y: auto; margin-top: 15px; font-family: monospace; }
@@ -34,6 +34,7 @@
         <div>GPS: <span id="gps-indicator" class="status-off">OFF</span></div>
     </div>
     <div class="live-clock"><span id="display-date"></span> | <span id="display-time"></span></div>
+    
     <div id="camera-container"><video id="video-preview" autoplay playsinline></video></div>
     <canvas id="photo-canvas"></canvas>
 
@@ -41,8 +42,20 @@
         <p><b>1. Connection</b></p>
         <button id="authBtn" class="action-btn" onclick="handleAuthClick()">Checking Google...</button>
     </div>
-    <div id="step2" class="step"><p><b>2. Evidence</b></p><button id="cameraBtn" class="action-btn" disabled onclick="toggleCamera()">Open Camera</button></div>
-    <div id="step3" class="step"><p><b>3. Handover Audit</b></p><input type="number" id="pinInput" placeholder="ENTER PIN" disabled><button id="pinBtn" class="action-btn" disabled onclick="finalizeUpload()">Upload</button></div>
+
+    <div id="step2" class="step">
+        <p><b>2. Evidence</b></p>
+        <button id="cameraBtn" class="action-btn" disabled onclick="toggleCamera()">Open Camera</button>
+        <button id="snapBtn" class="action-btn" style="display:none; background:var(--success);" onclick="takePhoto()">Take Image Proof</button>
+    </div>
+
+    <div id="step3" class="step">
+        <p><b>3. Handover Audit</b></p>
+        <div style="font-size:11px; margin-bottom:5px;">LOCATION PIN: <span id="pin-display" style="color:var(--primary); font-weight:bold;">----</span></div>
+        <input type="number" id="pinInput" placeholder="ENTER PIN" disabled>
+        <button id="pinBtn" class="action-btn" disabled onclick="finalizeUpload()">Upload to Drive</button>
+    </div>
+
     <div id="log">> Booting...<br></div>
 </div>
 
@@ -53,8 +66,7 @@
 
     function log(msg) {
         const l = document.getElementById('log');
-        l.innerHTML += `> ${msg}<br>`;
-        l.scrollTop = l.scrollHeight;
+        if(l) { l.innerHTML += `> ${msg}<br>`; l.scrollTop = l.scrollHeight; }
     }
 
     function tryInit() {
@@ -78,11 +90,7 @@
         }
     }
 
-    window.onload = () => {
-        tryInit();
-        updateTime();
-        startGPS();
-    };
+    window.onload = () => { tryInit(); updateTime(); startGPS(); };
 
     function handleAuthClick() {
         if (tokenClient) tokenClient.requestAccessToken();
@@ -90,16 +98,18 @@
     }
 
     async function validateUser() {
-        const resp = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-            headers: {'Authorization': `Bearer ${accessToken}`}
-        });
-        const data = await resp.json();
-        const email = data.email || "Unknown User";
-        document.getElementById('user-name').innerText = email;
-        document.getElementById('step1').style.display = 'none';
-        document.getElementById('step2').classList.add('active');
-        document.getElementById('cameraBtn').disabled = false;
-        log(`Linked to: ${email}`);
+        try {
+            const resp = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                headers: {'Authorization': `Bearer ${accessToken}`}
+            });
+            const data = await resp.json();
+            const email = data.email || "User";
+            document.getElementById('user-name').innerText = email;
+            document.getElementById('step1').style.display = 'none';
+            document.getElementById('step2').classList.add('active');
+            document.getElementById('cameraBtn').disabled = false;
+            log(`Linked to: ${email}`);
+        } catch (e) { log("Validation failed."); }
     }
 
     function startGPS() {
@@ -112,7 +122,7 @@
             const lngP = Math.round((lng % 1) * 10000);
             window.calculatedPin = (latP + lngP).toString();
             document.getElementById('pin-display').innerText = window.calculatedPin;
-        }, () => { log("GPS Denied."); });
+        }, () => { log("GPS Required."); });
     }
 
     async function toggleCamera() {
@@ -121,20 +131,17 @@
             videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
             document.getElementById('video-preview').srcObject = videoStream;
             
-            // UI Switch: Hide Open, Show Snap
             document.getElementById('camera-container').style.display = 'block';
             document.getElementById('cameraBtn').style.display = 'none'; 
             document.getElementById('snapBtn').style.display = 'block';
-            document.getElementById('snapBtn').disabled = false;
-            
-            log("Camera Ready. Take Photo.");
+            log("Camera Ready.");
         } catch (err) {
-            log("Camera Error: " + err.message);
+            log("Camera Blocked.");
         }
     }
 
     async function takePhoto() {
-        log("Stamping Image...");
+        log("Stamping...");
         const video = document.getElementById('video-preview');
         const canvas = document.getElementById('photo-canvas');
         const ctx = canvas.getContext('2d');
@@ -148,14 +155,14 @@
         const qrY = canvas.height - 180;
 
         const qrDiv = document.createElement("div");
-        new QRCode(qrDiv, { text: `Audit-GP-${Date.now()}`, width: 120, height: 120 });
+        new QRCode(qrDiv, { text: `RV-${Date.now()}`, width: 120, height: 120 });
 
         setTimeout(() => {
             ctx.fillStyle = "white";
             ctx.fillRect(qrX - 5, qrY - 5, 130, 150);
             ctx.drawImage(qrDiv.querySelector('img'), qrX, qrY, 120, 120);
             ctx.fillStyle = "#4285F4"; ctx.font = "bold 12px Arial";
-            ctx.fillText(isOdd ? "ODD-DAY" : "EVEN-DAY", qrX + 25, qrY + 140);
+            ctx.fillText(isOdd ? "ODD-DAY (L)" : "EVEN-DAY (R)", qrX + 15, qrY + 140);
 
             canvas.toBlob((blob) => {
                 imageBlob = blob;
@@ -166,7 +173,7 @@
                 document.getElementById('step3').classList.add('active');
                 document.getElementById('pinInput').disabled = false;
                 document.getElementById('pinBtn').disabled = false;
-                log("Snapshot Captured.");
+                log("Capture Done.");
             }, 'image/jpeg', 0.9);
         }, 500);
     }
@@ -175,11 +182,10 @@
         const inputPin = document.getElementById('pinInput').value;
         if (inputPin !== window.calculatedPin) return alert("Wrong PIN.");
         
-        log("Uploading to Drive...");
+        log("Uploading...");
         const email = document.getElementById('user-name').innerText;
         const ts = Date.now();
-        
-        const metadata = { name: `Audit_GP_${ts}_${email}.jpg`, mimeType: 'image/jpeg' };
+        const metadata = { name: `Audit_${ts}_${email}.jpg`, mimeType: 'image/jpeg' };
         const form = new FormData();
         form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
         form.append('file', imageBlob);
@@ -189,11 +195,11 @@
         });
 
         if(resp.ok) {
-            log("✅ UPLOAD SUCCESS!");
-            alert("AUDIT SECURED & UPLOADED!");
+            log("✅ SUCCESS!");
+            alert("UPLOADED TO DRIVE!");
             location.reload();
         } else {
-            log("❌ Upload failed.");
+            log("❌ Failed.");
         }
     }
 
