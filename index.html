@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RouteVault AI - Expert</title>
+    <title>RouteVault AI - Pro</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root { --primary: #1a202c; --wa: #25d366; --gmail: #EA4335; --bg: #f7fafc; --blue: #4285F4; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 15px; margin: 0; color: #2d3748; }
         .card { background: white; width: 100%; max-width: 460px; padding: 20px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); position: relative; }
         
-        /* Header & Settings */
         .header { display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid #edf2f7; padding-bottom: 8px; align-items: center; }
         #settings-ui { display: none; background: #fff; position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; padding: 20px; box-sizing: border-box; border-radius: 16px; border: 2px solid var(--blue); }
         
@@ -36,17 +35,17 @@
 <div class="card">
     <div id="settings-ui">
         <h3>User Settings</h3>
-        <label style="font-size:11px;">FULL NAME (Embedded in Audit)</label><br>
+        <label style="font-size:11px;">FULL NAME</label><br>
         <input type="text" id="set-name" placeholder="E.g. John Doe"><br>
         <label style="font-size:11px;">DEFAULT EMAIL</label><br>
-        <input type="email" id="set-email" placeholder="E.g. boss@company.com"><br>
-        <label style="font-size:11px;">DEFAULT WHATSAPP (With Country Code)</label><br>
+        <input type="email" id="set-email" placeholder="E.g. manager@company.com"><br>
+        <label style="font-size:11px;">DEFAULT WHATSAPP (601...)</label><br>
         <input type="text" id="set-phone" placeholder="E.g. 60123456789"><br>
         <button class="action-btn" onclick="saveSettings()">Save & Close</button>
     </div>
 
     <div class="header">
-        <div id="location-name">📍 DETECTING LOCATION...</div>
+        <div id="location-name">📍 DETECTING...</div>
         <div style="display:flex; gap:10px; align-items:center;">
             <span id="gps-status" style="color:red">GPS: OFF</span>
             <span onclick="toggleSettings()" style="cursor:pointer; font-size:16px;">⚙️</span>
@@ -63,24 +62,24 @@
         
         <div id="final-step" style="display:none; text-align:center;">
             <p style="font-size:11px; font-weight:bold;">GPS SECURITY PIN: <span id="pin-display" style="color:var(--blue);">--</span></p>
-            <input type="number" id="pinInput" placeholder="Enter PIN" style="font-size:24px; text-align:center; width:140px;">
-            <button class="action-btn" onclick="processAudit()">Save Audit Locally</button>
+            <input type="number" id="pinInput" placeholder="PIN" style="font-size:24px; text-align:center; width:140px;">
+            <button class="action-btn" onclick="processAudit()">Save Locally</button>
         </div>
 
         <div id="share-hub">
-            <p style="font-size:12px; font-weight:bold; margin-top:0;">1. COPY IMAGE FOR PASTE</p>
-            <button class="action-btn" style="background:#2d3748; margin-top:0;" onclick="copyImageToClipboard()">📋 Click to Copy Image</button>
-            <div class="instruction-box">After clicking, you can "Paste" directly into WhatsApp or Email.</div>
+            <p style="font-size:12px; font-weight:bold; margin-top:0;">1. PREPARE IMAGE</p>
+            <button class="action-btn" style="background:#2d3748; margin-top:0;" onclick="copyImageToClipboard()">📋 Copy Image to Clipboard</button>
+            <div class="instruction-box">Copied! Now you can "Paste" into any app.</div>
 
-            <p style="font-size:12px; font-weight:bold; margin-top:15px;">2. CHOOSE SENDING METHOD</p>
+            <p style="font-size:12px; font-weight:bold; margin-top:15px;">2. CHOOSE METHOD</p>
             <div class="share-grid">
                 <button onclick="prepareShare('wa')" class="btn-link" style="background:var(--wa);">WhatsApp</button>
                 <button onclick="prepareShare('email')" class="btn-link" style="background:var(--gmail);">Gmail</button>
             </div>
             
-            <div id="contact-input-area" style="display:none; border-top:1px solid #cbd5e0; padding-top:10px;">
+            <div id="contact-input-area" style="display:none; margin-top:10px;">
                 <input type="text" id="dynamic-contact" placeholder="">
-                <button id="send-btn" class="action-btn" style="background:var(--primary);">Open App & Send Log</button>
+                <button id="send-btn" class="action-btn" style="background:var(--primary);">Send Report</button>
             </div>
 
             <button class="action-btn" style="background:#718096; margin-top:20px;" onclick="location.reload()">Start New Audit</button>
@@ -97,7 +96,7 @@
 </div>
 
 <script>
-    let videoStream, imageBlob, userLocation = "Searching...", lastReport = "", currentArea = "DETECTING...";
+    let videoStream, imageBlob, userLocation = "N/A", lastReport = "", currentArea = "DETECTING...";
 
     function toggleSettings() {
         const ui = document.getElementById('settings-ui');
@@ -121,7 +120,7 @@
         try {
             const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
             const data = await res.json();
-            currentArea = data.address.suburb || data.address.town || data.address.city || "UNKNOWN";
+            currentArea = data.address.suburb || data.address.town || data.address.city || "Audit Site";
             document.getElementById('location-name').innerText = `📍 ${currentArea.toUpperCase()}`;
         } catch(e) { document.getElementById('location-name').innerText = "📍 GPS ACTIVE"; }
     }
@@ -162,7 +161,7 @@
         const qrX = (now.getDate() % 2 !== 0) ? 20 : (canvas.width - 110);
 
         const qrDiv = document.createElement("div");
-        new QRCode(qrDiv, { text: `User: ${userName}\nTime: ${now.toLocaleString()}\nLoc: ${currentArea}\nCoords: ${userLocation}\nPIN: ${window.calculatedPin}`, width: qrSize, height: qrSize });
+        new QRCode(qrDiv, { text: `User: ${userName}\nTime: ${now.toLocaleString()}\nLoc: ${currentArea}\nPIN: ${window.calculatedPin}`, width: qrSize, height: qrSize });
 
         setTimeout(() => {
             ctx.drawImage(qrDiv.querySelector('img'), qrX, canvas.height - 110, qrSize, qrSize);
@@ -180,19 +179,16 @@
         try {
             const item = new ClipboardItem({ "image/png": imageBlob });
             await navigator.clipboard.write([item]);
-            alert("Image copied! Now go to WhatsApp/Gmail and select 'Paste'.");
-        } catch (err) {
-            alert("Copy failed. Please use the traditional attachment method.");
-        }
+            alert("Image copied! Just 'Paste' in WhatsApp or Email.");
+        } catch (err) { alert("Use traditional attachment method."); }
     }
 
     function processAudit() {
         if (document.getElementById('pinInput').value !== window.calculatedPin) return alert("PIN Mismatch");
-
         const now = new Date();
         const userName = localStorage.getItem('rv_name') || "User";
         const fileTs = now.toLocaleDateString().replace(/\//g, '-') + "_" + now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}).replace(/[: ]/g,'');
-        const fileName = `${userName}_${currentArea}_${fileTs}`;
+        const fileName = `${userName}_${currentArea.replace(/\s/g,'')}_${fileTs}`;
 
         lastReport = `AUDIT REPORT\nName: ${userName}\nLocation: ${currentArea}\nFile: ${fileName}\nTimestamp: ${now.toLocaleString()}\nSecurity PIN: ${window.calculatedPin}`;
 
@@ -214,15 +210,15 @@
             inputField.placeholder = "WhatsApp Number (601...)";
             inputField.value = localStorage.getItem('rv_phone');
             sendBtn.onclick = () => {
-                const msg = encodeURIComponent(lastReport + "\n\n(Long-press to PASTE the audit image here)");
+                const msg = encodeURIComponent(lastReport + "\n\n(Paste audit image here)");
                 window.location.href = `whatsapp://send?phone=${inputField.value.replace(/\D/g,'')}&text=${msg}`;
             };
         } else {
             inputField.placeholder = "Email Address";
             inputField.value = localStorage.getItem('rv_email');
             sendBtn.onclick = () => {
-                const sub = encodeURIComponent(`Audit Report: ${currentArea} (${localStorage.getItem('rv_name')})`);
-                const body = encodeURIComponent(lastReport + "\n\n(Paste the audit image below)");
+                const sub = encodeURIComponent(`Audit: ${currentArea} (${localStorage.getItem('rv_name')})`);
+                const body = encodeURIComponent(lastReport + "\n\n(Paste audit image below)");
                 window.location.href = `https://mail.google.com/mail/?view=cm&fs=1&to=${inputField.value}&su=${sub}&body=${body}`;
             };
         }
