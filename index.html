@@ -3,21 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RouteVault AI - Final Proof</title>
+    <title>RouteVault AI - Proof Review</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root { --primary: #1a202c; --wa: #25d366; --gmail: #EA4335; --bg: #f7fafc; --blue: #4285F4; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 10px; margin: 0; color: #2d3748; }
         .card { background: white; width: 100%; max-width: 460px; padding: 20px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); position: relative; min-height: 90vh; }
         .header { display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid #edf2f7; padding-bottom: 8px; align-items: center; }
+        
         #settings-ui { display: none; background: #fff; position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; padding: 20px; box-sizing: border-box; border-radius: 16px; border: 2px solid var(--blue); overflow-y: auto; }
+        
         #camera-container { width: 100%; border-radius: 12px; overflow: hidden; background: #000; margin-bottom: 15px; display: none; aspect-ratio: 4/3; position: relative; }
         #video-preview { width: 100%; height: 100%; object-fit: cover; }
         #loading-overlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 10; text-align: center; }
+        
+        /* New Review Image Style */
+        #review-img { width: 100%; border-radius: 12px; margin-bottom: 15px; border: 2px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        
         .live-clock { text-align: center; font-family: monospace; font-size: 18px; background: var(--primary); padding: 12px; border-radius: 8px; margin-bottom: 15px; color: #68d391; }
         .action-btn { width: 100%; padding: 14px; border: none; border-radius: 8px; background: var(--blue); color: white; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 14px; }
         input { width: 94%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; margin-bottom: 10px; display: block; }
         label { font-size: 11px; font-weight: bold; color: #718096; margin-left: 5px; }
+        
         #share-hub { display: none; margin-top: 15px; background: #f1f5f9; padding: 15px; border-radius: 12px; text-align: center; }
         .share-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
         .btn-link { padding: 12px; border-radius: 8px; border: none; color: white; font-weight: bold; font-size: 13px; cursor: pointer; }
@@ -67,11 +74,13 @@
         <div id="final-step" style="display:none; text-align:center;">
             <p style="font-size:11px; font-weight:bold;">GPS SECURITY PIN: <span id="pin-display" style="color:var(--blue);">--</span></p>
             <input type="number" id="pinInput" placeholder="Enter PIN" style="font-size:24px; text-align:center; width:160px; margin: 10px auto; display: block;">
-            <button class="action-btn" onclick="processAudit()">Save Audit Image</button>
+            <button class="action-btn" onclick="processAudit()">Verify & Save</button>
         </div>
 
         <div id="share-hub">
-            <p style="font-size:12px; font-weight:bold; color:var(--primary);">AUDIT SAVED</p>
+            <p style="font-size:11px; font-weight:bold; color:#718096; margin-bottom:10px;">PROOF PREVIEW</p>
+            <img id="review-img" src="" alt="Proof Review">
+            
             <div class="share-grid">
                 <button onclick="shareWhatsApp()" class="btn-link" style="background:var(--wa);">WhatsApp</button>
                 <button onclick="shareEmail()" class="btn-link" style="background:var(--gmail);">Email</button>
@@ -146,7 +155,7 @@
         const now = new Date();
         unixTs = Math.floor(now.getTime() / 1000);
         const userName = localStorage.getItem('rv_name') || "User";
-        const dataPayload = `${userName}\n${unixTs}\n${now.toLocaleDateString()}\n${now.toLocaleTimeString()}\n${currentArea}\n${userLocation}\nPIN: ${window.calculatedPin}`;
+        const dataPayload = `See On NG\n${userName}\n${unixTs}\n${now.toLocaleDateString()}\n${now.toLocaleTimeString()}\n${currentArea}\n${userLocation}`;
         
         const qrContainer = document.getElementById('qr-hidden');
         qrContainer.innerHTML = "";
@@ -156,7 +165,7 @@
         setTimeout(() => {
             const qrCanvas = qrContainer.querySelector('canvas');
             if (qrCanvas) {
-                const qrSize = Math.floor(mainCanvas.width * 0.25);
+                const qrSize = Math.floor(mainCanvas.width * 0.28);
                 const margin = 40;
                 const qrX = (now.getDate() % 2 !== 0) ? margin : (mainCanvas.width - qrSize - margin);
                 const qrY = mainCanvas.height - qrSize - margin;
@@ -182,10 +191,17 @@
         if (document.getElementById('pinInput').value !== window.calculatedPin) return alert("PIN Mismatch");
         const now = new Date();
         const userName = localStorage.getItem('rv_name') || "User";
-        emailBody = `${userName}\n${unixTs}\n${now.toLocaleDateString()}\n${now.toLocaleTimeString()}\n${currentArea}\n${userLocation}`;
+        
+        // Formatted Email/WA body
+        emailBody = `See On NG\n${unixTs}\n${now.toLocaleDateString()}\n${now.toLocaleTimeString()}\n${currentArea}\n${userLocation}`;
 
+        // Set the review image source
+        const imgUrl = URL.createObjectURL(imageBlob);
+        document.getElementById('review-img').src = imgUrl;
+
+        // Auto Download
         const a = document.createElement('a');
-        a.href = URL.createObjectURL(imageBlob); 
+        a.href = imgUrl; 
         a.download = `Audit_${unixTs}.jpg`; 
         a.click();
         
