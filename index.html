@@ -3,25 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RouteVault AI - Final Master</title>
+    <title>RouteVault AI - Field Ready</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        :root { --primary: #1a202c; --wa: #25d366; --gmail: #EA4335; --bg: #f7fafc; }
+        :root { --primary: #1a202c; --wa: #25d366; --gmail: #EA4335; --bg: #f7fafc; --blue: #4285F4; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 15px; margin: 0; color: #2d3748; }
         .card { background: white; width: 100%; max-width: 460px; padding: 20px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
         .header { display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid #edf2f7; padding-bottom: 8px; }
         .live-clock { text-align: center; font-family: monospace; font-size: 18px; background: var(--primary); padding: 12px; border-radius: 8px; margin-bottom: 15px; color: #68d391; }
         #camera-container { width: 100%; border-radius: 12px; overflow: hidden; background: #000; margin-bottom: 15px; display: none; aspect-ratio: 4/3; }
         #video-preview { width: 100%; height: 100%; object-fit: cover; }
-        .action-btn { width: 100%; padding: 14px; border: none; border-radius: 8px; background: #4285F4; color: white; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 14px; }
-        .share-group { display: none; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
-        .share-btn { padding: 12px; border-radius: 8px; border: none; color: white; font-weight: bold; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .action-btn { width: 100%; padding: 14px; border: none; border-radius: 8px; background: var(--blue); color: white; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 14px; }
+        
+        /* Share Area */
+        #share-hub { display: none; margin-top: 15px; background: #f1f5f9; padding: 15px; border-radius: 12px; }
+        .share-input { width: 90%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; margin-bottom: 10px; font-size: 14px; }
+        .share-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .btn-link { padding: 12px; border-radius: 8px; text-decoration: none; text-align: center; color: white; font-weight: bold; font-size: 13px; border: none; cursor: pointer; }
+        
         .vault-section { margin-top: 25px; border-top: 2px solid #edf2f7; padding-top: 15px; }
         table { width: 100%; border-collapse: collapse; font-size: 10px; margin-top: 10px; }
-        th { text-align: left; color: #718096; padding: 8px; background: #f7fafc; }
-        td { padding: 8px; border-bottom: 1px solid #f1f5f9; }
-        #log { font-size: 10px; color: #a0aec0; margin-top: 10px; font-family: monospace; }
-        input { width: 90%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 18px; text-align: center; margin: 10px 0; }
+        td, th { padding: 8px; border-bottom: 1px solid #f1f5f9; text-align: left; }
+        input#pinInput { width: 120px; font-size: 24px; text-align: center; margin: 10px 0; border: 2px solid var(--blue); border-radius: 8px; }
     </style>
 </head>
 <body>
@@ -41,24 +44,31 @@
         <button id="snapBtn" class="action-btn" style="display:none; background:#2d3748;" onclick="takePhoto()">Capture & Stamp</button>
         
         <div id="final-step" style="display:none; text-align:center;">
-            <p style="font-size:12px; font-weight:bold;">PIN: <span id="pin-display" style="color:#4285F4">--</span></p>
-            <input type="number" id="pinInput" placeholder="Enter PIN">
-            <button class="action-btn" onclick="processAudit()">Save Locally</button>
+            <p style="font-size:12px; font-weight:bold;">PIN: <span id="pin-display" style="color:var(--blue)">--</span></p>
+            <input type="number" id="pinInput" placeholder="PIN">
+            <button class="action-btn" onclick="processAudit()">Save & Continue</button>
         </div>
 
-        <div id="share-hub" class="share-group">
-            <button class="share-btn" style="background:var(--wa);" onclick="shareWhatsApp()">WhatsApp</button>
-            <button class="share-btn" style="background:var(--gmail);" onclick="shareEmail()">Gmail</button>
+        <div id="share-hub">
+            <p style="font-size:11px; font-weight:bold; margin-top:0;">CHOOSE SHARING METHOD:</p>
+            
+            <input type="text" id="share-contact" class="share-input" placeholder="Phone (6012...) or Email">
+            
+            <div class="share-grid">
+                <button onclick="doWhatsApp()" class="btn-link" style="background:var(--wa);">WhatsApp</button>
+                <button onclick="doGmail()" class="btn-link" style="background:var(--gmail);">Gmail</button>
+            </div>
+            
+            <button class="action-btn" style="background:#718096; margin-top:15px;" onclick="resetApp()">+ Start New Audit</button>
         </div>
     </div>
 
     <div class="vault-section">
-        <b style="font-size: 11px;">SESSION VAULT (Today)</b>
+        <b style="font-size: 11px;">SESSION HISTORY</b>
         <table id="vault-table">
-            <thead><tr><th>File Name</th><th>Date</th><th>Time</th></tr></thead>
+            <thead><tr><th>File</th><th>Date</th><th>Time</th></tr></thead>
             <tbody id="vault-list"></tbody>
         </table>
-        <div id="log">Ready.</div>
     </div>
 </div>
 
@@ -81,7 +91,7 @@
             const pin = (Math.round((pos.coords.latitude % 1) * 10000) + Math.round((pos.coords.longitude % 1) * 10000)).toString();
             window.calculatedPin = pin;
             document.getElementById('pin-display').innerText = pin;
-        });
+        }, null, {enableHighAccuracy:true});
     };
 
     async function startCamera() {
@@ -103,13 +113,13 @@
         const timestamp = now.toLocaleString();
         const isOdd = (now.getDate() % 2 !== 0);
         const qrSize = 90;
-        const qrPos = isOdd ? 20 : (canvas.width - 110);
+        const qrX = isOdd ? 20 : (canvas.width - 110);
 
         const qrDiv = document.createElement("div");
         new QRCode(qrDiv, { text: `TIME: ${timestamp}\nLOC: ${userLocation}\nPIN: ${window.calculatedPin}`, width: qrSize, height: qrSize });
 
         setTimeout(() => {
-            ctx.drawImage(qrDiv.querySelector('img'), qrPos, canvas.height - 110, qrSize, qrSize);
+            ctx.drawImage(qrDiv.querySelector('img'), qrX, canvas.height - 110, qrSize, qrSize);
             canvas.toBlob(blob => {
                 imageBlob = blob;
                 videoStream.getTracks().forEach(t => t.stop());
@@ -121,13 +131,12 @@
     }
 
     function processAudit() {
-        if (document.getElementById('pinInput').value !== window.calculatedPin) return alert("Incorrect PIN");
+        if (document.getElementById('pinInput').value !== window.calculatedPin) return alert("PIN Mismatch");
 
         const now = new Date();
         const dateStr = now.toLocaleDateString().replace(/\//g, '-');
         const timeStr = now.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}).replace(/[: ]/g, '');
-        const fullTs = `${dateStr}_${timeStr}`;
-        const fileName = `Audit_${fullTs}`;
+        const fileName = `Audit_${dateStr}_${timeStr}`;
 
         lastReport = `AUDIT LOG\nFile: ${fileName}\nTimestamp: ${now.toLocaleString()}\nLocation: ${userLocation}\nSecurity PIN: ${window.calculatedPin}`;
 
@@ -135,29 +144,26 @@
         downloadFile(imageBlob, `${fileName}.jpg`);
 
         const list = document.getElementById('vault-list');
-        list.innerHTML = `<tr><td>${fileName}</td><td>${now.toLocaleDateString()}</td><td>${now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td></tr>` + list.innerHTML;
+        list.innerHTML = `<tr><td>${fileName.slice(0,15)}...</td><td>${now.toLocaleDateString()}</td><td>${now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td></tr>` + list.innerHTML;
 
         document.getElementById('final-step').style.display = 'none';
-        document.getElementById('share-hub').style.display = 'grid';
-        document.getElementById('log').innerText = "Files saved. Choose sharing method:";
+        document.getElementById('share-hub').style.display = 'block';
     }
 
-    function shareWhatsApp() {
-        const num = prompt("Enter Recipient WhatsApp Number (with country code, e.g., 60123456789):");
-        if (num) {
-            const msg = encodeURIComponent(lastReport + "\n\n(Please attach the Audit image from your downloads)");
-            window.open(`https://wa.me/${num.replace(/\D/g,'')}?text=${msg}`, '_blank');
-        }
+    function doWhatsApp() {
+        const contact = document.getElementById('share-contact').value;
+        if(!contact) return alert("Enter Phone Number first");
+        const cleanNum = contact.replace(/\D/g,'');
+        const msg = encodeURIComponent(lastReport + "\n\n(Note: Attach image from your downloads)");
+        window.location.href = `whatsapp://send?phone=${cleanNum}&text=${msg}`;
     }
 
-    function shareEmail() {
-        const email = prompt("Enter Recipient Email Address:");
-        if (email) {
-            const subject = encodeURIComponent("Audit Report: " + userLocation);
-            const body = encodeURIComponent(lastReport + "\n\n(Please attach the Audit image from your downloads)");
-            // Optimized Gmail trigger
-            window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${email}&su=${subject}&body=${body}`, '_blank');
-        }
+    function doGmail() {
+        const contact = document.getElementById('share-contact').value;
+        if(!contact) return alert("Enter Email address first");
+        const subject = encodeURIComponent("Audit Report - " + userLocation);
+        const body = encodeURIComponent(lastReport + "\n\n(Note: Attach image from your downloads)");
+        window.location.href = `https://mail.google.com/mail/?view=cm&fs=1&to=${contact}&su=${subject}&body=${body}`;
     }
 
     function downloadFile(blob, name) {
@@ -165,6 +171,13 @@
         a.href = URL.createObjectURL(blob);
         a.download = name;
         a.click();
+    }
+
+    function resetApp() {
+        document.getElementById('share-hub').style.display = 'none';
+        document.getElementById('cameraBtn').style.display = 'block';
+        document.getElementById('pinInput').value = "";
+        document.getElementById('share-contact').value = "";
     }
 </script>
 </body>
