@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -9,40 +9,25 @@
         :root { --primary: #4285F4; --success: #34A853; --error: #e53e3e; --bg: #f8f9fa; --text: #2d3748; }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 20px; color: var(--text); }
         .card { background: white; width: 100%; max-width: 440px; padding: 25px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); position: relative; overflow: hidden; }
-        
-        /* Status Bar */
         #header-status { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #edf2f7; }
         .user-tag { font-weight: bold; color: var(--primary); }
         .status-on { color: var(--success); font-weight: bold; }
         .status-off { color: var(--error); font-weight: bold; animation: flash 1s infinite; }
         @keyframes flash { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
-
-        /* Tabs */
         .nav-tabs { display: flex; gap: 10px; margin-bottom: 20px; }
         .nav-tabs button { flex: 1; padding: 10px; font-size: 12px; background: #edf2f7; color: #4a5568; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; }
         .nav-tabs button.active { background: var(--primary); color: white; }
-        
-        /* Camera & Canvas */
         #camera-container { width: 100%; border-radius: 12px; overflow: hidden; background: #000; margin-bottom: 15px; display: none; aspect-ratio: 4/3; border: 2px solid #edf2f7; }
         #video-preview { width: 100%; height: 100%; object-fit: cover; }
         #photo-canvas { display: none; }
-
-        /* Clock & Steps */
         .live-clock { text-align: center; font-family: monospace; font-size: 16px; background: #1a202c; padding: 12px; border-radius: 8px; margin-bottom: 20px; color: #cbd5e0; border: 1px solid #2d3748; }
         .step { border-left: 3px solid #eee; padding-left: 20px; margin-bottom: 25px; opacity: 0.3; transition: 0.4s; }
         .step.active { border-left-color: var(--primary); opacity: 1; }
-        
-        /* Controls */
         button.action-btn { width: 100%; padding: 14px; border: none; border-radius: 8px; background: var(--primary); color: white; font-weight: bold; cursor: pointer; transition: 0.2s; }
         button:disabled { background: #cbd5e0 !important; cursor: not-allowed; }
         input { width: 92%; padding: 12px; margin: 5px 0 15px 0; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 18px; text-align: center; font-weight: bold; }
-        
         #success-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.95); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 100; text-align: center; }
-        #vault-view { display: none; max-height: 400px; overflow-y: auto; }
-        table { width: 100%; border-collapse: collapse; font-size: 11px; }
-        th { text-align: left; padding: 8px; background: #f7fafc; border-bottom: 2px solid #edf2f7; }
-        td { padding: 8px; border-bottom: 1px solid #edf2f7; color: #4a5568; }
-        #log { background: #1a202c; color: #68d391; padding: 12px; border-radius: 8px; font-size: 10px; height: 70px; overflow-y: auto; margin-top: 15px; font-family: monospace; }
+        #log { background: #1a202c; color: #68d391; padding: 12px; border-radius: 8px; font-size: 10px; height: 80px; overflow-y: auto; margin-top: 15px; font-family: monospace; }
     </style>
 </head>
 <body>
@@ -50,7 +35,7 @@
 <div class="card">
     <div id="success-overlay">
         <p style="color:var(--success); font-weight:bold; font-size: 24px;">AUDIT SECURED</p>
-        <p>Syncing to Cloud...</p>
+        <p>Verified & Uploaded.</p>
     </div>
 
     <div id="header-status">
@@ -59,8 +44,7 @@
     </div>
 
     <div class="nav-tabs">
-        <button id="btn-recorder" class="active" onclick="showView('recorder')">Route Stamp</button>
-        <button id="btn-vault" onclick="showView('vault')">Vault</button>
+        <button class="active">Route Stamp</button>
     </div>
 
     <div id="recorder-view">
@@ -68,7 +52,7 @@
         <div id="camera-container"><video id="video-preview" autoplay playsinline></video></div>
         <canvas id="photo-canvas"></canvas>
 
-        <div id="step1" class="step active"><p><b>1. Connection</b></p><button class="action-btn" onclick="handleAuthClick()">Link Google Drive</button></div>
+        <div id="step1" class="step active"><p><b>1. Connection</b></p><button class="action-btn" onclick="handleAuthClick()">Link Google Account</button></div>
         
         <div id="step2" class="step">
             <p><b>2. Evidence</b></p>
@@ -84,9 +68,6 @@
         </div>
     </div>
 
-    <div id="vault-view">
-        <table><thead><tr><th>File</th><th>Date</th><th>Time</th></tr></thead><tbody id="files-list"></tbody></table>
-    </div>
     <div id="log">> Initializing Audit Protocols...</div>
 </div>
 
@@ -113,27 +94,11 @@
         l.scrollTop = l.scrollHeight;
     }
 
-    async function getNetworkInfo() {
-        if ('connection' in navigator) {
-            const conn = navigator.connection;
-            cellMetadata = `Net: ${conn.effectiveType || 'N/A'}, Latency: ${conn.rtt}ms`;
-            log("Signal Data Cached.");
-        }
-    }
-
     function calculatePin(lat, lng) {
         const latP = Math.round((lat % 1) * 10000);
         const lngP = Math.round((lng % 1) * 10000);
         calculatedPin = (latP + lngP).toString();
         document.getElementById('pin-display').innerText = calculatedPin;
-    }
-
-    function showView(view) {
-        document.getElementById('recorder-view').style.display = view === 'recorder' ? 'block' : 'none';
-        document.getElementById('vault-view').style.display = view === 'vault' ? 'block' : 'none';
-        document.getElementById('btn-recorder').className = view === 'recorder' ? 'active' : '';
-        document.getElementById('btn-vault').className = view === 'vault' ? 'active' : '';
-        if(view === 'vault') fetchVaultFiles();
     }
 
     async function validateUserSession() {
@@ -142,7 +107,7 @@
             const resp = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {headers: {'Authorization': `Bearer ${accessToken}`}});
             const data = await resp.json();
             
-            // Identity Force Patch
+            // Explicit check for email
             const userEmail = data.email || data.email_address || "User_" + (data.sub ? data.sub.slice(-5) : "Unknown");
             const displayName = data.name || userEmail;
             
@@ -154,17 +119,18 @@
             document.getElementById('step2').classList.add('active');
             document.getElementById('cameraBtn').disabled = false;
             log(`Linked: ${userEmail}`);
+            if(userEmail.includes("Unknown")) log("⚠️ ERROR: Email Permission Missing.");
         } catch(e) { log("Please Re-Link Account."); }
     }
 
     function initClient() {
         tokenClient = google.accounts.oauth2.initTokenClient({
             client_id: CLIENT_ID,
-            scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/drive.metadata.readonly',
+            scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
+            prompt: 'consent', // Forces the checkbox screen to show up
             callback: (resp) => { accessToken = resp.access_token; localStorage.setItem('rv_access_token', accessToken); validateUserSession(); },
         });
         startGPS();
-        getNetworkInfo();
         validateUserSession();
     }
 
@@ -177,23 +143,18 @@
             document.getElementById('gps-indicator').innerText = "ON";
             gpsActive = true;
             calculatePin(lat, lng);
-            if(videoStream) document.getElementById('snapBtn').disabled = false;
-        }, () => { 
-            document.getElementById('gps-indicator').className = "status-off";
-            gpsActive = false;
-        });
+        }, () => { document.getElementById('gps-indicator').className = "status-off"; gpsActive = false; });
     }
 
     async function toggleCamera() {
-        if(!gpsActive) return alert("Waiting for GPS Lock...");
         try {
             videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
             document.getElementById('video-preview').srcObject = videoStream;
             document.getElementById('camera-container').style.display = 'block';
             document.getElementById('cameraBtn').style.display = 'none';
             document.getElementById('snapBtn').style.display = 'block';
-            document.getElementById('snapBtn').disabled = !gpsActive;
-        } catch (err) { log("Camera Access Denied."); }
+            document.getElementById('snapBtn').disabled = false;
+        } catch (err) { log("Camera Denied."); }
     }
 
     async function takePhoto() {
@@ -204,16 +165,14 @@
         canvas.height = video.videoHeight;
         ctx.drawImage(video, 0, 0);
 
-        const qrData = `RV-AUDIT\nID: GP_${Date.now()}\nLoc: ${userLocation}\nSignal: ${cellMetadata}\nTime: ${new Date().toLocaleString()}`;
+        const qrData = `RV-AUDIT\nLoc: ${userLocation}\nTime: ${new Date().toLocaleString()}`;
         const day = new Date().getDate();
         const isOdd = (day % 2 !== 0);
-        
-        // Odd = Left (20px), Even = Right (canvas width - 160px)
         const qrX = isOdd ? 20 : (canvas.width - 160); 
         const qrY = canvas.height - 180;
 
         const qrDiv = document.createElement("div");
-        const qr = new QRCode(qrDiv, { text: qrData, width: 120, height: 120 });
+        new QRCode(qrDiv, { text: qrData, width: 120, height: 120 });
 
         setTimeout(() => {
             const qrImg = qrDiv.querySelector('img');
@@ -222,7 +181,7 @@
             ctx.drawImage(qrImg, qrX, qrY, 120, 120);
             ctx.fillStyle = "#4285F4";
             ctx.font = "bold 12px Arial";
-            ctx.fillText(isOdd ? "ODD-AUTH" : "EVEN-AUTH", qrX + 25, qrY + 140);
+            ctx.fillText(isOdd ? "ODD-DAY" : "EVEN-DAY", qrX + 25, qrY + 140);
 
             canvas.toBlob((blob) => {
                 imageBlob = blob;
@@ -233,50 +192,50 @@
                 document.getElementById('step3').classList.add('active');
                 document.getElementById('pinInput').disabled = false; 
                 document.getElementById('pinBtn').disabled = false;
-                log(`Image Stamped (${isOdd ? "Left" : "Right"})`);
+                log(`Image Ready (${isOdd ? "Left" : "Right"})`);
             }, 'image/jpeg', 0.9);
-        }, 400);
+        }, 500);
     }
 
     async function finalizeUpload() {
         const pin = document.getElementById('pinInput').value;
-        if(pin !== calculatedPin) return alert("Verification Failed: PIN Mismatch.");
+        if(pin !== calculatedPin) return alert("PIN Incorrect.");
 
-        log("Cloud Sync in Progress...");
+        log("Attempting Upload...");
         const ts = Date.now();
         const userEmail = document.getElementById('user-name').getAttribute('data-email');
         
-        const logContent = `User: ${userEmail}\nID: GP_${ts}\nGPS: ${userLocation}\nSignal: ${cellMetadata}\nPIN: ${pin}\nStatus: PASS`;
+        const logContent = `User: ${userEmail}\nGPS: ${userLocation}\nPIN: ${pin}\nStatus: PASS`;
         
-        // Final Filenames with Email Tag
-        await uploadFile(new Blob([logContent], {type:'text/plain'}), `Proof_GP_${ts}_${userEmail}.txt`);
-        await uploadFile(imageBlob, `Image_GP_${ts}_${userEmail}.jpg`);
+        const ok1 = await uploadFile(new Blob([logContent], {type:'text/plain'}), `Proof_${ts}_${userEmail}.txt`);
+        const ok2 = await uploadFile(imageBlob, `Image_${ts}_${userEmail}.jpg`);
         
-        document.getElementById('success-overlay').style.display = 'flex';
-        setTimeout(() => { location.reload(); }, 2500);
+        if(ok1 && ok2) {
+            document.getElementById('success-overlay').style.display = 'flex';
+            setTimeout(() => { location.reload(); }, 3000);
+        }
     }
 
     async function uploadFile(blob, name) {
         const form = new FormData();
         form.append('metadata', new Blob([JSON.stringify({ name: name, mimeType: blob.type })], { type: 'application/json' }));
         form.append('file', blob);
-        await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-            method: 'POST', headers: { 'Authorization': 'Bearer ' + accessToken }, body: form
-        });
-    }
-
-    async function fetchVaultFiles() {
-        if(!accessToken) return;
+        
         try {
-            const resp = await fetch('https://www.googleapis.com/drive/v3/files?pageSize=8&orderBy=createdTime desc&fields=files(name,createdTime)', {
-                headers: { 'Authorization': 'Bearer ' + accessToken }
+            const resp = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+                method: 'POST', headers: { 'Authorization': 'Bearer ' + accessToken }, body: form
             });
-            const data = await resp.json();
-            document.getElementById('files-list').innerHTML = data.files.map(f => {
-                const d = new Date(f.createdTime);
-                return `<tr><td>${f.name.slice(0,18)}...</td><td>${d.toLocaleDateString()}</td><td>${d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td></tr>`;
-            }).join('');
-        } catch (e) { log("Sync Fail."); }
+            if(!resp.ok) {
+                const err = await resp.json();
+                log(`❌ Upload Fail: ${err.error.message}`);
+                return false;
+            }
+            log(`✅ Uploaded: ${name}`);
+            return true;
+        } catch (e) {
+            log("❌ Network Error on Upload.");
+            return false;
+        }
     }
 
     function handleAuthClick() { tokenClient.requestAccessToken(); }
