@@ -1,9 +1,10 @@
-    <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RouteVault AI - Master Audit</title>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root { --primary: #4285F4; --success: #34A853; --error: #e53e3e; --bg: #f8f9fa; --text: #2d3748; }
@@ -29,45 +30,25 @@
 
 <div class="card">
     <div id="header-status">
-        <div>User: <span id="user-name" class="user-tag">Pending Auth...</span></div>
+        <div>User: <span id="user-name" class="user-tag">Pending...</span></div>
         <div>GPS: <span id="gps-indicator" class="status-off">OFF</span></div>
     </div>
-
     <div class="live-clock"><span id="display-date"></span> | <span id="display-time"></span></div>
-    
     <div id="camera-container"><video id="video-preview" autoplay playsinline></video></div>
     <canvas id="photo-canvas"></canvas>
 
     <div id="step1" class="step active">
         <p><b>1. Connection</b></p>
-        <button id="authBtn" class="action-btn" onclick="handleAuthClick()">Initializing Google...</button>
+        <button id="authBtn" class="action-btn" onclick="handleAuthClick()">Checking Google...</button>
     </div>
-    
-    <div id="step2" class="step">
-        <p><b>2. Evidence</b></p>
-        <button id="cameraBtn" class="action-btn" disabled onclick="toggleCamera()">Open Camera</button>
-        <button id="snapBtn" class="action-btn" style="display:none;" disabled onclick="takePhoto()">Take Image Proof</button>
-    </div>
-
-    <div id="step3" class="step">
-        <p><b>3. Handover Audit</b></p>
-        <div style="font-size:11px; margin-bottom:5px;">LOCATION PIN: <span id="pin-display" style="color:var(--primary); font-weight:bold;">----</span></div>
-        <input type="number" id="pinInput" placeholder="ENTER PIN" disabled>
-        <button id="pinBtn" class="action-btn" disabled onclick="finalizeUpload()">Finalize & Upload</button>
-    </div>
-
-    <div id="log">> System Booting...<br></div>
+    <div id="step2" class="step"><p><b>2. Evidence</b></p><button id="cameraBtn" class="action-btn" disabled onclick="toggleCamera()">Open Camera</button></div>
+    <div id="step3" class="step"><p><b>3. Handover Audit</b></p><input type="number" id="pinInput" placeholder="ENTER PIN" disabled><button id="pinBtn" class="action-btn" disabled onclick="finalizeUpload()">Upload</button></div>
+    <div id="log">> Booting...<br></div>
 </div>
-
-<script src="https://accounts.google.com/gsi/client" onload="googleScriptLoaded()"></script>
 
 <script>
     let accessToken = null;
     let tokenClient, videoStream, imageBlob;
-    let userLocation = "GPS Pending...";
-    let gpsActive = false;
-    let calculatedPin = "";
-
     const CLIENT_ID = '337753122620-5u4cn79jvit9k55a94h8u7vsqa74l49f.apps.googleusercontent.com';
 
     function log(msg) {
@@ -76,37 +57,38 @@
         l.scrollTop = l.scrollHeight;
     }
 
-    // UPDATE: Ensure script is ready before allowing click
-    function googleScriptLoaded() {
-        log("Google SDK Loaded.");
-        try {
+    // NEW: Auto-retry logic for Google SDK
+    function tryInit() {
+        if (typeof google !== 'undefined' && google.accounts) {
+            log("Google SDK Found.");
             tokenClient = google.accounts.oauth2.initTokenClient({
                 client_id: CLIENT_ID,
                 scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
                 prompt: 'consent', 
                 callback: (resp) => {
-                    if (resp.error) {
-                        log(`❌ Auth Error: ${resp.error}`);
-                        return;
+                    if (resp.access_token) {
+                        accessToken = resp.access_token;
+                        log("Access Granted.");
+                        validateUser();
                     }
-                    accessToken = resp.access_token;
-                    log("Access Token Granted.");
-                    validateUser();
                 },
             });
             document.getElementById('authBtn').innerText = "Link Google Account";
-            log("Client Initialized.");
-        } catch (e) {
-            log("❌ Init Failed: Check Client ID.");
+        } else {
+            log("Waiting for Google SDK...");
+            setTimeout(tryInit, 1000); // Try again in 1 second
         }
     }
 
+    window.onload = () => {
+        tryInit();
+        updateTime();
+        startGPS();
+    };
+
     function handleAuthClick() {
-        if (!tokenClient) {
-            log("Still waiting for Google... Please refresh.");
-            return;
-        }
-        tokenClient.requestAccessToken();
+        if (tokenClient) tokenClient.requestAccessToken();
+        else log("SDK not ready yet.");
     }
 
     async function validateUser() {
@@ -114,99 +96,26 @@
             headers: {'Authorization': `Bearer ${accessToken}`}
         });
         const data = await resp.json();
-        const email = data.email || "Unknown";
+        const email = data.email || "Unknown User";
         document.getElementById('user-name').innerText = email;
-        document.getElementById('user-name').setAttribute('data-email', email);
-        
-        document.getElementById('step1').classList.remove('active');
+        document.getElementById('step1').style.display = 'none';
         document.getElementById('step2').classList.add('active');
         document.getElementById('cameraBtn').disabled = false;
-        log(`Welcome: ${email}`);
-        startGPS();
+        log(`Linked to: ${email}`);
     }
 
     function startGPS() {
         navigator.geolocation.watchPosition((pos) => {
-            const lat = pos.coords.latitude;
-            const lng = pos.coords.longitude;
-            userLocation = `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`;
             document.getElementById('gps-indicator').className = "status-on";
             document.getElementById('gps-indicator').innerText = "ON";
-            gpsActive = true;
-            
-            const latP = Math.round((lat % 1) * 10000);
-            const lngP = Math.round((lng % 1) * 10000);
-            calculatedPin = (latP + lngP).toString();
-            document.getElementById('pin-display').innerText = calculatedPin;
-        }, (err) => { log("GPS Error: Enable Location."); });
+        }, () => { log("GPS Denied."); });
     }
 
     async function toggleCamera() {
         videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
         document.getElementById('video-preview').srcObject = videoStream;
         document.getElementById('camera-container').style.display = 'block';
-        document.getElementById('cameraBtn').style.display = 'none';
-        document.getElementById('snapBtn').style.display = 'block';
-        document.getElementById('snapBtn').disabled = false;
-    }
-
-    async function takePhoto() {
-        const video = document.getElementById('video-preview');
-        const canvas = document.getElementById('photo-canvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = video.videoWidth; 
-        canvas.height = video.videoHeight;
-        ctx.drawImage(video, 0, 0);
-
-        const day = new Date().getDate();
-        const isOdd = (day % 2 !== 0);
-        const qrX = isOdd ? 20 : (canvas.width - 160); 
-        const qrY = canvas.height - 180;
-
-        const qrDiv = document.createElement("div");
-        new QRCode(qrDiv, { text: `Loc: ${userLocation}`, width: 120, height: 120 });
-
-        setTimeout(() => {
-            ctx.fillStyle = "white";
-            ctx.fillRect(qrX - 5, qrY - 5, 130, 150);
-            ctx.drawImage(qrDiv.querySelector('img'), qrX, qrY, 120, 120);
-            ctx.fillStyle = "#4285F4"; ctx.font = "bold 12px Arial";
-            ctx.fillText(isOdd ? "ODD-DAY" : "EVEN-DAY", qrX + 25, qrY + 140);
-
-            canvas.toBlob((blob) => {
-                imageBlob = blob;
-                videoStream.getTracks().forEach(t => t.stop());
-                document.getElementById('camera-container').style.display = 'none';
-                document.getElementById('step2').classList.remove('active');
-                document.getElementById('step3').classList.add('active');
-                document.getElementById('pinInput').disabled = false;
-                document.getElementById('pinBtn').disabled = false;
-                log("Photo Stamped.");
-            }, 'image/jpeg', 0.9);
-        }, 500);
-    }
-
-    async function finalizeUpload() {
-        if (document.getElementById('pinInput').value !== calculatedPin) return alert("Wrong PIN.");
-        log("Uploading...");
-        const email = document.getElementById('user-name').getAttribute('data-email');
-        const ts = Date.now();
-        
-        await uploadToDrive(imageBlob, `Image_${ts}_${email}.jpg`);
-        alert("UPLOAD SUCCESSFUL!");
-        location.reload();
-    }
-
-    async function uploadToDrive(blob, name) {
-        const metadata = { name: name, mimeType: blob.type };
-        const form = new FormData();
-        form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-        form.append('file', blob);
-
-        const resp = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-            method: 'POST', headers: { 'Authorization': `Bearer ${accessToken}` }, body: form
-        });
-        return resp.ok;
+        log("Camera Active.");
     }
 
     function updateTime() {
