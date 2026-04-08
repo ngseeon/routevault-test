@@ -8,39 +8,25 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root { --primary: #4285F4; --success: #34A853; --error: #e53e3e; --bg: #f8f9fa; --text: #2d3748; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 20px; color: var(--text); margin: 0; }
-        .card { background: white; width: 100%; max-width: 440px; padding: 25px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
-        
-        /* Header & Status */
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 20px; color: var(--text); margin: 0; }
+        .card { background: white; width: 100%; max-width: 480px; padding: 25px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
         #header-status { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #edf2f7; }
         .user-tag { font-weight: bold; color: var(--primary); }
-        .status-on { color: var(--success); font-weight: bold; }
-        .status-off { color: var(--error); font-weight: bold; }
-
-        /* Navigation */
         .nav-tabs { display: flex; gap: 8px; margin-bottom: 20px; }
-        .nav-tabs button { flex: 1; padding: 10px; font-size: 12px; background: #edf2f7; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .nav-tabs button { flex: 1; padding: 10px; font-size: 12px; background: #edf2f7; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; }
         .nav-tabs button.active { background: var(--primary); color: white; }
-
-        /* Clock & Camera */
-        .live-clock { text-align: center; font-family: monospace; font-size: 16px; background: #1a202c; padding: 12px; border-radius: 8px; margin-bottom: 20px; color: #cbd5e0; letter-spacing: 1px; }
-        #camera-container { width: 100%; border-radius: 12px; overflow: hidden; background: #000; margin-bottom: 15px; display: none; aspect-ratio: 4/3; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
+        .live-clock { text-align: center; font-family: monospace; font-size: 16px; background: #1a202c; padding: 12px; border-radius: 8px; margin-bottom: 20px; color: #cbd5e0; }
+        #camera-container { width: 100%; border-radius: 12px; overflow: hidden; background: #000; margin-bottom: 15px; display: none; aspect-ratio: 4/3; }
         #video-preview { width: 100%; height: 100%; object-fit: cover; }
         #photo-canvas { display: none; }
-
-        /* Steps & UI Elements */
         .step { border-left: 3px solid #eee; padding-left: 20px; margin-bottom: 25px; opacity: 0.3; transition: 0.4s; }
         .step.active { border-left-color: var(--primary); opacity: 1; }
-        button.action-btn { width: 100%; padding: 14px; border: none; border-radius: 8px; background: var(--primary); color: white; font-weight: bold; cursor: pointer; font-size: 14px; }
-        button:disabled { background: #cbd5e0 !important; cursor: not-allowed; }
-        input { width: 92%; padding: 12px; margin: 10px 0; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 20px; text-align: center; font-weight: bold; color: var(--primary); }
-        
-        /* Vault & Logs */
+        button.action-btn { width: 100%; padding: 14px; border: none; border-radius: 8px; background: var(--primary); color: white; font-weight: bold; cursor: pointer; }
         #vault-view { display: none; min-height: 250px; }
-        table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 10px; }
-        th { background: #f7fafc; color: #718096; text-transform: uppercase; font-size: 10px; letter-spacing: 0.5px; }
-        td, th { padding: 10px 8px; border-bottom: 1px solid #edf2f7; text-align: left; }
-        #log { background: #1a202c; color: #68d391; padding: 12px; border-radius: 8px; font-size: 10px; height: 80px; overflow-y: auto; margin-top: 15px; font-family: 'Courier New', Courier, monospace; line-height: 1.4; }
+        table { width: 100%; border-collapse: collapse; font-size: 10px; margin-top: 10px; table-layout: fixed; }
+        th { background: #f7fafc; color: #718096; text-transform: uppercase; font-size: 9px; }
+        td, th { padding: 10px 5px; border-bottom: 1px solid #edf2f7; text-align: left; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+        #log { background: #1a202c; color: #68d391; padding: 12px; border-radius: 8px; font-size: 10px; height: 80px; overflow-y: auto; margin-top: 15px; font-family: monospace; }
     </style>
 </head>
 <body>
@@ -48,7 +34,7 @@
 <div class="card">
     <div id="header-status">
         <div>User: <span id="user-name" class="user-tag">Pending...</span></div>
-        <div>GPS: <span id="gps-indicator" class="status-off">OFF</span></div>
+        <div>GPS: <span id="gps-indicator" style="color:red">OFF</span></div>
     </div>
 
     <div class="nav-tabs">
@@ -58,42 +44,29 @@
 
     <div id="audit-view">
         <div class="live-clock"><span id="display-date"></span> | <span id="display-time"></span></div>
-        
-        <div id="camera-container">
-            <video id="video-preview" autoplay playsinline></video>
-        </div>
+        <div id="camera-container"><video id="video-preview" autoplay playsinline></video></div>
         <canvas id="photo-canvas"></canvas>
 
-        <div id="step1" class="step active">
-            <p><b>1. Connection</b></p>
-            <button id="authBtn" class="action-btn" onclick="handleAuthClick()">Link Google Account</button>
-        </div>
-
-        <div id="step2" class="step">
-            <p><b>2. Evidence</b></p>
-            <button id="cameraBtn" class="action-btn" disabled onclick="toggleCamera()">Open Camera</button>
-            <button id="snapBtn" class="action-btn" style="display:none; background:var(--success);" onclick="takePhoto()">Take Image Proof</button>
-        </div>
-
-        <div id="step3" class="step">
-            <p><b>3. Handover Audit</b></p>
-            <div style="font-size:11px; color:#718096;">LOCATION PIN: <span id="pin-display" style="color:var(--primary); font-weight:bold;">----</span></div>
-            <input type="number" id="pinInput" placeholder="ENTER PIN" disabled>
-            <button id="pinBtn" class="action-btn" disabled onclick="finalizeUpload()">Finalize & Upload</button>
-        </div>
+        <div id="step1" class="step active"><p><b>1. Connection</b></p><button class="action-btn" onclick="handleAuthClick()">Link Google Account</button></div>
+        <div id="step2" class="step"><p><b>2. Evidence</b></p><button id="cameraBtn" class="action-btn" disabled onclick="toggleCamera()">Open Camera</button><button id="snapBtn" class="action-btn" style="display:none; background:var(--success);" onclick="takePhoto()">Take Image Proof</button></div>
+        <div id="step3" class="step"><p><b>3. Handover Audit</b></p><div style="font-size:11px;">PIN: <span id="pin-display" style="color:var(--primary); font-weight:bold;">----</span></div><input type="number" id="pinInput" placeholder="PIN" disabled style="width:100px; padding:10px; font-size:18px; text-align:center; display:block; margin:10px auto;"><button id="pinBtn" class="action-btn" disabled onclick="finalizeUpload()">Finalize & Upload</button></div>
     </div>
 
     <div id="vault-view">
-        <p id="vault-status" style="font-size:12px; text-align:center; color:#718096; margin-top:40px;">Syncing with Google Drive...</p>
+        <p id="vault-status" style="font-size:11px; text-align:center; color:#718096; margin-top:40px;">Loading Files...</p>
         <table id="vault-table" style="display:none;">
             <thead>
-                <tr><th>File Name</th><th>Time</th></tr>
+                <tr>
+                    <th style="width: 45%;">File</th>
+                    <th style="width: 28%;">Date</th>
+                    <th style="width: 27%;">Time</th>
+                </tr>
             </thead>
             <tbody id="vault-list"></tbody>
         </table>
     </div>
 
-    <div id="log">> System Booting...<br></div>
+    <div id="log">> System Init...<br></div>
 </div>
 
 <script>
@@ -102,13 +75,8 @@
     let userLocation = "Unknown";
     const CLIENT_ID = '337753122620-5u4cn79jvit9k55a94h8u7vsqa74l49f.apps.googleusercontent.com';
 
-    function log(msg) { 
-        const l = document.getElementById('log'); 
-        l.innerHTML += `> ${msg}<br>`; 
-        l.scrollTop = l.scrollHeight; 
-    }
+    function log(msg) { const l = document.getElementById('log'); l.innerHTML += `> ${msg}<br>`; l.scrollTop = l.scrollHeight; }
 
-    // Toggle between Audit and Vault views
     function showView(view) {
         document.getElementById('audit-view').style.display = view === 'audit' ? 'block' : 'none';
         document.getElementById('vault-view').style.display = view === 'vault' ? 'block' : 'none';
@@ -117,7 +85,6 @@
         if(view === 'vault' && accessToken) fetchVault();
     }
 
-    // Initialize Google SDK
     function tryInit() {
         if (typeof google !== 'undefined' && google.accounts) {
             tokenClient = google.accounts.oauth2.initTokenClient({
@@ -130,44 +97,33 @@
     }
 
     window.onload = () => { tryInit(); updateTime(); startGPS(); };
-
     function handleAuthClick() { if (tokenClient) tokenClient.requestAccessToken(); }
 
     async function validateUser() {
-        try {
-            const resp = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {headers: {'Authorization': `Bearer ${accessToken}`}});
-            const data = await resp.json();
-            document.getElementById('user-name').innerText = data.email;
-            document.getElementById('step1').style.display = 'none';
-            document.getElementById('step2').classList.add('active');
-            document.getElementById('cameraBtn').disabled = false;
-            log("Linked: " + data.email);
-        } catch(e) { log("Auth Error."); }
+        const resp = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {headers: {'Authorization': `Bearer ${accessToken}`}});
+        const data = await resp.json();
+        document.getElementById('user-name').innerText = data.email;
+        document.getElementById('step1').style.display = 'none';
+        document.getElementById('step2').classList.add('active');
+        document.getElementById('cameraBtn').disabled = false;
+        log("Linked: " + data.email);
     }
 
     function startGPS() {
         navigator.geolocation.watchPosition((pos) => {
-            document.getElementById('gps-indicator').innerText = "ON"; 
-            document.getElementById('gps-indicator').className = "status-on";
+            document.getElementById('gps-indicator').innerText = "ON"; document.getElementById('gps-indicator').style.color = "green";
             userLocation = `Lat: ${pos.coords.latitude.toFixed(4)}, Lng: ${pos.coords.longitude.toFixed(4)}`;
-            
-            // Calculate security PIN from GPS decimals
-            const latP = Math.round((pos.coords.latitude % 1) * 10000);
-            const lngP = Math.round((pos.coords.longitude % 1) * 10000);
-            window.calculatedPin = (latP + lngP).toString();
-            document.getElementById('pin-display').innerText = window.calculatedPin;
-        }, () => log("GPS Access Denied."));
+            const pin = (Math.round((pos.coords.latitude % 1) * 10000) + Math.round((pos.coords.longitude % 1) * 10000)).toString();
+            window.calculatedPin = pin; document.getElementById('pin-display').innerText = pin;
+        });
     }
 
     async function toggleCamera() {
-        try {
-            videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-            document.getElementById('video-preview').srcObject = videoStream;
-            document.getElementById('camera-container').style.display = 'block';
-            document.getElementById('cameraBtn').style.display = 'none'; 
-            document.getElementById('snapBtn').style.display = 'block';
-            log("Camera Active.");
-        } catch(e) { log("Camera Blocked."); }
+        videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        document.getElementById('video-preview').srcObject = videoStream;
+        document.getElementById('camera-container').style.display = 'block';
+        document.getElementById('cameraBtn').style.display = 'none'; 
+        document.getElementById('snapBtn').style.display = 'block';
     }
 
     async function takePhoto() {
@@ -179,56 +135,47 @@
 
         const email = document.getElementById('user-name').innerText;
         const isOdd = (new Date().getDate() % 2 !== 0);
-        const qrSize = 80; // Resized smaller
+        const qrSize = 80;
         const qrX = isOdd ? 20 : (canvas.width - (qrSize + 20)); 
         const qrY = canvas.height - (qrSize + 20);
 
         const qrDiv = document.createElement("div");
-        // QR data now includes email + time + location
         new QRCode(qrDiv, { text: `Audit: ${Date.now()}\nBy: ${email}\n${userLocation}`, width: qrSize, height: qrSize });
 
         setTimeout(() => {
-            const qrImg = qrDiv.querySelector('img');
-            ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize); // Clean stamp: No text, no background
-
+            ctx.drawImage(qrDiv.querySelector('img'), qrX, qrY, qrSize, qrSize);
             canvas.toBlob((blob) => {
                 imageBlob = blob;
-                videoStream.getTracks().forEach(t => t.stop()); // Stop camera to save battery
+                videoStream.getTracks().forEach(t => t.stop());
                 document.getElementById('camera-container').style.display = 'none';
                 document.getElementById('snapBtn').style.display = 'none';
                 document.getElementById('step2').classList.remove('active');
                 document.getElementById('step3').classList.add('active');
                 document.getElementById('pinInput').disabled = false;
                 document.getElementById('pinBtn').disabled = false;
-                log("Evidence Stamped.");
+                log("Capture Ready.");
             }, 'image/jpeg', 0.9);
         }, 500);
     }
 
     async function finalizeUpload() {
-        if (document.getElementById('pinInput').value !== window.calculatedPin) return alert("Security PIN Mismatch.");
-        
+        if (document.getElementById('pinInput').value !== window.calculatedPin) return alert("Wrong PIN.");
         log("Uploading Dual Audit...");
         const email = document.getElementById('user-name').innerText;
         const now = new Date();
         const tsString = now.toISOString().replace(/[:.]/g, '-');
-        const humanTime = now.toLocaleString();
         
-        // Metadata Text Log with full timestamp
-        const textLog = `AUDIT REPORT\n------------\nTimestamp: ${humanTime}\nUnix: ${Date.now()}\nUser: ${email}\nLocation: ${userLocation}\nPIN: ${window.calculatedPin}\n------------`;
+        const textLog = `AUDIT REPORT\n------------\nTimestamp: ${now.toLocaleString()}\nUser: ${email}\nLocation: ${userLocation}\nPIN: ${window.calculatedPin}\n------------`;
         
         const tOk = await uploadToDrive(new Blob([textLog], {type:'text/plain'}), `Log_${tsString}_${email}.txt`);
         const iOk = await uploadToDrive(imageBlob, `Audit_${tsString}_${email}.jpg`);
 
         if(tOk && iOk) { 
-            log("✅ Dual Upload Success.");
-            alert("AUDIT SECURED & UPLOADED");
-            resetUI();
-            fetchVault(); 
-        } else { log("❌ Drive Upload Error."); }
+            log("✅ Success."); alert("SECURED & UPLOADED"); resetUI();
+            if(document.getElementById('vault-view').style.display === 'block') fetchVault(); 
+        }
     }
 
-    // Reset UI for next audit without page reload
     function resetUI() {
         document.getElementById('step3').classList.remove('active');
         document.getElementById('step2').classList.add('active');
@@ -243,12 +190,10 @@
         const form = new FormData();
         form.append('metadata', new Blob([JSON.stringify({ name: name, mimeType: blob.type })], { type: 'application/json' }));
         form.append('file', blob);
-        try {
-            const resp = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-                method: 'POST', headers: { 'Authorization': `Bearer ${accessToken}` }, body: form
-            });
-            return resp.ok;
-        } catch(e) { return false; }
+        const resp = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+            method: 'POST', headers: { 'Authorization': `Bearer ${accessToken}` }, body: form
+        });
+        return resp.ok;
     }
 
     async function fetchVault() {
@@ -261,14 +206,16 @@
             if(data.files) {
                 document.getElementById('vault-status').style.display = 'none';
                 document.getElementById('vault-table').style.display = 'table';
-                document.getElementById('vault-list').innerHTML = data.files.map(f => `
-                    <tr>
-                        <td>${f.name.slice(0,22)}...</td>
-                        <td style="color:#a0aec0">${new Date(f.createdTime).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td>
-                    </tr>
-                `).join('');
+                document.getElementById('vault-list').innerHTML = data.files.map(f => {
+                    const dt = new Date(f.createdTime);
+                    return `<tr>
+                        <td title="${f.name}">${f.name.slice(0,20)}...</td>
+                        <td>${dt.toLocaleDateString()}</td>
+                        <td style="color:#718096">${dt.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td>
+                    </tr>`;
+                }).join('');
             }
-        } catch(e) { log("Vault Sync Error."); }
+        } catch(e) { log("Vault Error."); }
     }
 
     function updateTime() {
