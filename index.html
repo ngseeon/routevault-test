@@ -3,36 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RouteVault AI - Field Ready</title>
+    <title>RouteVault AI - Expert</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root { --primary: #1a202c; --wa: #25d366; --gmail: #EA4335; --bg: #f7fafc; --blue: #4285F4; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 15px; margin: 0; color: #2d3748; }
-        .card { background: white; width: 100%; max-width: 460px; padding: 20px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
-        .header { display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid #edf2f7; padding-bottom: 8px; }
+        .card { background: white; width: 100%; max-width: 460px; padding: 20px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); position: relative; }
+        
+        /* Header & Settings */
+        .header { display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid #edf2f7; padding-bottom: 8px; align-items: center; }
+        #settings-ui { display: none; background: #fff; position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; padding: 20px; box-sizing: border-box; border-radius: 16px; border: 2px solid var(--blue); }
+        
         .live-clock { text-align: center; font-family: monospace; font-size: 18px; background: var(--primary); padding: 12px; border-radius: 8px; margin-bottom: 15px; color: #68d391; }
         #camera-container { width: 100%; border-radius: 12px; overflow: hidden; background: #000; margin-bottom: 15px; display: none; aspect-ratio: 4/3; }
         #video-preview { width: 100%; height: 100%; object-fit: cover; }
-        .action-btn { width: 100%; padding: 14px; border: none; border-radius: 8px; background: var(--blue); color: white; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 14px; }
         
-        /* Share Area */
-        #share-hub { display: none; margin-top: 15px; background: #f1f5f9; padding: 15px; border-radius: 12px; }
-        .share-input { width: 90%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; margin-bottom: 10px; font-size: 14px; }
-        .share-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .btn-link { padding: 12px; border-radius: 8px; text-decoration: none; text-align: center; color: white; font-weight: bold; font-size: 13px; border: none; cursor: pointer; }
+        .action-btn { width: 100%; padding: 14px; border: none; border-radius: 8px; background: var(--blue); color: white; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        input { width: 92%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; margin-bottom: 10px; }
         
+        #share-hub { display: none; margin-top: 15px; background: #f1f5f9; padding: 15px; border-radius: 12px; text-align: center; }
+        .share-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+        .btn-link { padding: 12px; border-radius: 8px; border: none; color: white; font-weight: bold; font-size: 13px; cursor: pointer; }
+        
+        .instruction-box { background: #fff; padding: 10px; border-radius: 8px; border: 1px dashed var(--blue); margin-top: 10px; font-size: 11px; color: var(--blue); }
         .vault-section { margin-top: 25px; border-top: 2px solid #edf2f7; padding-top: 15px; }
         table { width: 100%; border-collapse: collapse; font-size: 10px; margin-top: 10px; }
         td, th { padding: 8px; border-bottom: 1px solid #f1f5f9; text-align: left; }
-        input#pinInput { width: 120px; font-size: 24px; text-align: center; margin: 10px 0; border: 2px solid var(--blue); border-radius: 8px; }
     </style>
 </head>
 <body>
 
 <div class="card">
+    <div id="settings-ui">
+        <h3>User Settings</h3>
+        <label style="font-size:11px;">FULL NAME (Embedded in Audit)</label><br>
+        <input type="text" id="set-name" placeholder="E.g. John Doe"><br>
+        <label style="font-size:11px;">DEFAULT EMAIL</label><br>
+        <input type="email" id="set-email" placeholder="E.g. boss@company.com"><br>
+        <label style="font-size:11px;">DEFAULT WHATSAPP (With Country Code)</label><br>
+        <input type="text" id="set-phone" placeholder="E.g. 60123456789"><br>
+        <button class="action-btn" onclick="saveSettings()">Save & Close</button>
+    </div>
+
     <div class="header">
-        <div>📍 GELANG PATAH AUDIT</div>
-        <div id="gps-status" style="color:red">GPS: OFF</div>
+        <div id="location-name">📍 DETECTING LOCATION...</div>
+        <div style="display:flex; gap:10px; align-items:center;">
+            <span id="gps-status" style="color:red">GPS: OFF</span>
+            <span onclick="toggleSettings()" style="cursor:pointer; font-size:16px;">⚙️</span>
+        </div>
     </div>
 
     <div class="live-clock"><span id="display-date"></span> | <span id="display-time"></span></div>
@@ -44,54 +62,83 @@
         <button id="snapBtn" class="action-btn" style="display:none; background:#2d3748;" onclick="takePhoto()">Capture & Stamp</button>
         
         <div id="final-step" style="display:none; text-align:center;">
-            <p style="font-size:12px; font-weight:bold;">PIN: <span id="pin-display" style="color:var(--blue)">--</span></p>
-            <input type="number" id="pinInput" placeholder="PIN">
-            <button class="action-btn" onclick="processAudit()">Save & Continue</button>
+            <p style="font-size:11px; font-weight:bold;">GPS SECURITY PIN: <span id="pin-display" style="color:var(--blue);">--</span></p>
+            <input type="number" id="pinInput" placeholder="Enter PIN" style="font-size:24px; text-align:center; width:140px;">
+            <button class="action-btn" onclick="processAudit()">Save Audit Locally</button>
         </div>
 
         <div id="share-hub">
-            <p style="font-size:11px; font-weight:bold; margin-top:0;">CHOOSE SHARING METHOD:</p>
-            
-            <input type="text" id="share-contact" class="share-input" placeholder="Phone (6012...) or Email">
-            
+            <p style="font-size:12px; font-weight:bold; margin-top:0;">1. COPY IMAGE FOR PASTE</p>
+            <button class="action-btn" style="background:#2d3748; margin-top:0;" onclick="copyImageToClipboard()">📋 Click to Copy Image</button>
+            <div class="instruction-box">After clicking, you can "Paste" directly into WhatsApp or Email.</div>
+
+            <p style="font-size:12px; font-weight:bold; margin-top:15px;">2. CHOOSE SENDING METHOD</p>
             <div class="share-grid">
-                <button onclick="doWhatsApp()" class="btn-link" style="background:var(--wa);">WhatsApp</button>
-                <button onclick="doGmail()" class="btn-link" style="background:var(--gmail);">Gmail</button>
+                <button onclick="prepareShare('wa')" class="btn-link" style="background:var(--wa);">WhatsApp</button>
+                <button onclick="prepareShare('email')" class="btn-link" style="background:var(--gmail);">Gmail</button>
             </div>
             
-            <button class="action-btn" style="background:#718096; margin-top:15px;" onclick="resetApp()">+ Start New Audit</button>
+            <div id="contact-input-area" style="display:none; border-top:1px solid #cbd5e0; padding-top:10px;">
+                <input type="text" id="dynamic-contact" placeholder="">
+                <button id="send-btn" class="action-btn" style="background:var(--primary);">Open App & Send Log</button>
+            </div>
+
+            <button class="action-btn" style="background:#718096; margin-top:20px;" onclick="location.reload()">Start New Audit</button>
         </div>
     </div>
 
     <div class="vault-section">
         <b style="font-size: 11px;">SESSION HISTORY</b>
         <table id="vault-table">
-            <thead><tr><th>File</th><th>Date</th><th>Time</th></tr></thead>
+            <thead><tr><th>Audit File</th><th>Time</th></tr></thead>
             <tbody id="vault-list"></tbody>
         </table>
     </div>
 </div>
 
 <script>
-    let videoStream, imageBlob, userLocation = "N/A", lastReport = "";
+    let videoStream, imageBlob, userLocation = "Searching...", lastReport = "", currentArea = "DETECTING...";
 
-    function updateTime() {
-        const n = new Date();
-        document.getElementById('display-date').innerText = n.toLocaleDateString();
-        document.getElementById('display-time').innerText = n.toLocaleTimeString();
+    function toggleSettings() {
+        const ui = document.getElementById('settings-ui');
+        ui.style.display = (ui.style.display === 'block') ? 'none' : 'block';
     }
-    setInterval(updateTime, 1000);
+
+    function saveSettings() {
+        localStorage.setItem('rv_name', document.getElementById('set-name').value);
+        localStorage.setItem('rv_email', document.getElementById('set-email').value);
+        localStorage.setItem('rv_phone', document.getElementById('set-phone').value);
+        toggleSettings();
+    }
+
+    function loadSettings() {
+        document.getElementById('set-name').value = localStorage.getItem('rv_name') || "";
+        document.getElementById('set-email').value = localStorage.getItem('rv_email') || "";
+        document.getElementById('set-phone').value = localStorage.getItem('rv_phone') || "";
+    }
+
+    async function getAddress(lat, lng) {
+        try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+            const data = await res.json();
+            currentArea = data.address.suburb || data.address.town || data.address.city || "UNKNOWN";
+            document.getElementById('location-name').innerText = `📍 ${currentArea.toUpperCase()}`;
+        } catch(e) { document.getElementById('location-name').innerText = "📍 GPS ACTIVE"; }
+    }
 
     window.onload = () => {
+        loadSettings();
         updateTime();
         navigator.geolocation.watchPosition(pos => {
-            userLocation = `Lat: ${pos.coords.latitude.toFixed(4)}, Lng: ${pos.coords.longitude.toFixed(4)}`;
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            userLocation = `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`;
+            getAddress(lat, lng);
             document.getElementById('gps-status').innerText = "GPS: ON";
             document.getElementById('gps-status').style.color = "green";
-            const pin = (Math.round((pos.coords.latitude % 1) * 10000) + Math.round((pos.coords.longitude % 1) * 10000)).toString();
-            window.calculatedPin = pin;
-            document.getElementById('pin-display').innerText = pin;
-        }, null, {enableHighAccuracy:true});
+            window.calculatedPin = (Math.round((lat % 1) * 10000) + Math.round((lng % 1) * 10000)).toString();
+            document.getElementById('pin-display').innerText = window.calculatedPin;
+        });
     };
 
     async function startCamera() {
@@ -110,13 +157,12 @@
         ctx.drawImage(video, 0, 0);
 
         const now = new Date();
-        const timestamp = now.toLocaleString();
-        const isOdd = (now.getDate() % 2 !== 0);
+        const userName = localStorage.getItem('rv_name') || "User";
         const qrSize = 90;
-        const qrX = isOdd ? 20 : (canvas.width - 110);
+        const qrX = (now.getDate() % 2 !== 0) ? 20 : (canvas.width - 110);
 
         const qrDiv = document.createElement("div");
-        new QRCode(qrDiv, { text: `TIME: ${timestamp}\nLOC: ${userLocation}\nPIN: ${window.calculatedPin}`, width: qrSize, height: qrSize });
+        new QRCode(qrDiv, { text: `User: ${userName}\nTime: ${now.toLocaleString()}\nLoc: ${currentArea}\nCoords: ${userLocation}\nPIN: ${window.calculatedPin}`, width: qrSize, height: qrSize });
 
         setTimeout(() => {
             ctx.drawImage(qrDiv.querySelector('img'), qrX, canvas.height - 110, qrSize, qrSize);
@@ -130,40 +176,56 @@
         }, 500);
     }
 
+    async function copyImageToClipboard() {
+        try {
+            const item = new ClipboardItem({ "image/png": imageBlob });
+            await navigator.clipboard.write([item]);
+            alert("Image copied! Now go to WhatsApp/Gmail and select 'Paste'.");
+        } catch (err) {
+            alert("Copy failed. Please use the traditional attachment method.");
+        }
+    }
+
     function processAudit() {
         if (document.getElementById('pinInput').value !== window.calculatedPin) return alert("PIN Mismatch");
 
         const now = new Date();
-        const dateStr = now.toLocaleDateString().replace(/\//g, '-');
-        const timeStr = now.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}).replace(/[: ]/g, '');
-        const fileName = `Audit_${dateStr}_${timeStr}`;
+        const userName = localStorage.getItem('rv_name') || "User";
+        const fileTs = now.toLocaleDateString().replace(/\//g, '-') + "_" + now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}).replace(/[: ]/g,'');
+        const fileName = `${userName}_${currentArea}_${fileTs}`;
 
-        lastReport = `AUDIT LOG\nFile: ${fileName}\nTimestamp: ${now.toLocaleString()}\nLocation: ${userLocation}\nSecurity PIN: ${window.calculatedPin}`;
+        lastReport = `AUDIT REPORT\nName: ${userName}\nLocation: ${currentArea}\nFile: ${fileName}\nTimestamp: ${now.toLocaleString()}\nSecurity PIN: ${window.calculatedPin}`;
 
         downloadFile(new Blob([lastReport], {type:'text/plain'}), `${fileName}.txt`);
         downloadFile(imageBlob, `${fileName}.jpg`);
 
-        const list = document.getElementById('vault-list');
-        list.innerHTML = `<tr><td>${fileName.slice(0,15)}...</td><td>${now.toLocaleDateString()}</td><td>${now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td></tr>` + list.innerHTML;
-
+        document.getElementById('vault-list').innerHTML = `<tr><td>${fileName.slice(0,25)}...</td><td>${now.toLocaleTimeString()}</td></tr>` + document.getElementById('vault-list').innerHTML;
         document.getElementById('final-step').style.display = 'none';
         document.getElementById('share-hub').style.display = 'block';
     }
 
-    function doWhatsApp() {
-        const contact = document.getElementById('share-contact').value;
-        if(!contact) return alert("Enter Phone Number first");
-        const cleanNum = contact.replace(/\D/g,'');
-        const msg = encodeURIComponent(lastReport + "\n\n(Note: Attach image from your downloads)");
-        window.location.href = `whatsapp://send?phone=${cleanNum}&text=${msg}`;
-    }
+    function prepareShare(type) {
+        const inputArea = document.getElementById('contact-input-area');
+        const inputField = document.getElementById('dynamic-contact');
+        const sendBtn = document.getElementById('send-btn');
+        inputArea.style.display = 'block';
 
-    function doGmail() {
-        const contact = document.getElementById('share-contact').value;
-        if(!contact) return alert("Enter Email address first");
-        const subject = encodeURIComponent("Audit Report - " + userLocation);
-        const body = encodeURIComponent(lastReport + "\n\n(Note: Attach image from your downloads)");
-        window.location.href = `https://mail.google.com/mail/?view=cm&fs=1&to=${contact}&su=${subject}&body=${body}`;
+        if (type === 'wa') {
+            inputField.placeholder = "WhatsApp Number (601...)";
+            inputField.value = localStorage.getItem('rv_phone');
+            sendBtn.onclick = () => {
+                const msg = encodeURIComponent(lastReport + "\n\n(Long-press to PASTE the audit image here)");
+                window.location.href = `whatsapp://send?phone=${inputField.value.replace(/\D/g,'')}&text=${msg}`;
+            };
+        } else {
+            inputField.placeholder = "Email Address";
+            inputField.value = localStorage.getItem('rv_email');
+            sendBtn.onclick = () => {
+                const sub = encodeURIComponent(`Audit Report: ${currentArea} (${localStorage.getItem('rv_name')})`);
+                const body = encodeURIComponent(lastReport + "\n\n(Paste the audit image below)");
+                window.location.href = `https://mail.google.com/mail/?view=cm&fs=1&to=${inputField.value}&su=${sub}&body=${body}`;
+            };
+        }
     }
 
     function downloadFile(blob, name) {
@@ -173,12 +235,12 @@
         a.click();
     }
 
-    function resetApp() {
-        document.getElementById('share-hub').style.display = 'none';
-        document.getElementById('cameraBtn').style.display = 'block';
-        document.getElementById('pinInput').value = "";
-        document.getElementById('share-contact').value = "";
+    function updateTime() {
+        const n = new Date();
+        document.getElementById('display-date').innerText = n.toLocaleDateString();
+        document.getElementById('display-time').innerText = n.toLocaleTimeString();
     }
+    setInterval(updateTime, 1000);
 </script>
 </body>
 </html>
