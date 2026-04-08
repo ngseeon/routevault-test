@@ -3,35 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RouteVault AI - Mobile Final</title>
+    <title>RouteVault AI - Final Audit</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root { --primary: #1a202c; --wa: #25d366; --gmail: #EA4335; --bg: #f7fafc; --blue: #4285F4; }
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 15px; margin: 0; color: #2d3748; }
-        .card { background: white; width: 100%; max-width: 460px; padding: 20px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); position: relative; min-height: 85vh; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 10px; margin: 0; color: #2d3748; }
+        .card { background: white; width: 100%; max-width: 460px; padding: 20px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); position: relative; min-height: 90vh; }
         .header { display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid #edf2f7; padding-bottom: 8px; align-items: center; }
-        #settings-ui { display: none; background: #fff; position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; padding: 20px; box-sizing: border-box; border-radius: 16px; border: 2px solid var(--blue); }
+        #settings-ui { display: none; background: #fff; position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; padding: 20px; box-sizing: border-box; border-radius: 16px; border: 2px solid var(--blue); overflow-y: auto; }
         .live-clock { text-align: center; font-family: monospace; font-size: 18px; background: var(--primary); padding: 12px; border-radius: 8px; margin-bottom: 15px; color: #68d391; }
         #camera-container { width: 100%; border-radius: 12px; overflow: hidden; background: #000; margin-bottom: 15px; display: none; aspect-ratio: 4/3; }
         #video-preview { width: 100%; height: 100%; object-fit: cover; }
         .action-btn { width: 100%; padding: 14px; border: none; border-radius: 8px; background: var(--blue); color: white; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 14px; }
-        input { width: 92%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; margin-bottom: 10px; }
+        input { width: 94%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; margin-bottom: 10px; display: block; }
+        label { font-size: 11px; font-weight: bold; color: #718096; margin-left: 5px; }
         #share-hub { display: none; margin-top: 15px; background: #f1f5f9; padding: 15px; border-radius: 12px; text-align: center; }
         .share-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
         .btn-link { padding: 12px; border-radius: 8px; border: none; color: white; font-weight: bold; font-size: 13px; cursor: pointer; }
-        .vault-section { margin-top: 25px; border-top: 2px solid #edf2f7; padding-top: 15px; }
-        table { width: 100%; border-collapse: collapse; font-size: 10px; margin-top: 10px; }
-        td, th { padding: 8px; border-bottom: 1px solid #f1f5f9; text-align: left; }
+        #qr-buffer { position: absolute; left: -9999px; top: 0; background: white; padding: 10px; } /* Hidden but rendered */
     </style>
 </head>
 <body>
 
-<div class="card">
+<div id="qr-buffer"></div> <div class="card">
     <div id="settings-ui">
-        <h3>User Settings</h3>
-        <input type="text" id="set-name" placeholder="Full Name">
-        <input type="email" id="set-email" placeholder="Manager Email">
-        <input type="text" id="set-phone" placeholder="WhatsApp (601...)">
+        <h3>App Settings</h3>
+        <label>YOUR DETAILS</label>
+        <input type="text" id="set-name" placeholder="Your Name">
+        <input type="text" id="set-phone" placeholder="Your WhatsApp (60...)">
+        
+        <hr style="margin: 15px 0; border: 0; border-top: 1px solid #eee;">
+        
+        <label>RECIPIENT DETAILS</label>
+        <input type="text" id="set-rec-phone" placeholder="Recipient WhatsApp (60...)">
+        <input type="email" id="set-rec-email" placeholder="Recipient Email">
+        
         <button class="action-btn" onclick="saveSettings()">Save & Close</button>
     </div>
 
@@ -62,21 +68,8 @@
                 <button onclick="shareWhatsApp()" class="btn-link" style="background:var(--wa);">WhatsApp</button>
                 <button onclick="shareEmail()" class="btn-link" style="background:var(--gmail);">Gmail</button>
             </div>
-            <div id="email-prompt-box" style="display:none; margin-top:15px; border-top: 1px solid #cbd5e0; padding-top:10px;">
-                <p style="font-size:11px; font-weight:bold; margin-bottom:5px;">Recipient email</p>
-                <input type="email" id="custom-email" placeholder="Enter email address">
-                <button onclick="executeGmail()" class="action-btn" style="background:var(--primary);">Launch Email App</button>
-            </div>
             <button class="action-btn" style="background:#718096; margin-top:20px;" onclick="location.reload()">New Audit</button>
         </div>
-    </div>
-
-    <div class="vault-section">
-        <b style="font-size: 11px;">SESSION HISTORY</b>
-        <table id="vault-table">
-            <thead><tr><th>Audit File</th><th>Unix TS</th></tr></thead>
-            <tbody id="vault-list"></tbody>
-        </table>
     </div>
 </div>
 
@@ -90,8 +83,9 @@
 
     function saveSettings() {
         localStorage.setItem('rv_name', document.getElementById('set-name').value);
-        localStorage.setItem('rv_email', document.getElementById('set-email').value);
         localStorage.setItem('rv_phone', document.getElementById('set-phone').value);
+        localStorage.setItem('rv_rec_phone', document.getElementById('set-rec-phone').value);
+        localStorage.setItem('rv_rec_email', document.getElementById('set-rec-email').value);
         toggleSettings();
     }
 
@@ -106,13 +100,13 @@
 
     window.onload = () => {
         document.getElementById('set-name').value = localStorage.getItem('rv_name') || "";
-        document.getElementById('set-email').value = localStorage.getItem('rv_email') || "";
         document.getElementById('set-phone').value = localStorage.getItem('rv_phone') || "";
+        document.getElementById('set-rec-phone').value = localStorage.getItem('rv_rec_phone') || "";
+        document.getElementById('set-rec-email').value = localStorage.getItem('rv_rec_email') || "";
         updateTime();
         
         navigator.geolocation.watchPosition(pos => {
-            const lat = pos.coords.latitude; 
-            const lng = pos.coords.longitude;
+            const lat = pos.coords.latitude; const lng = pos.coords.longitude;
             userLocation = `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`;
             getAddress(lat, lng);
             document.getElementById('gps-status').innerText = "GPS: ON";
@@ -130,7 +124,7 @@
         document.getElementById('snapBtn').style.display = 'block';
     }
 
-    function takePhoto() {
+    async function takePhoto() {
         const video = document.getElementById('video-preview');
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
@@ -142,70 +136,60 @@
         unixTs = Math.floor(now.getTime() / 1000);
         const userName = localStorage.getItem('rv_name') || "User";
         
-        const dataPayload = `User: ${userName}\nUnixTS: ${unixTs}\nDate: ${now.toLocaleDateString()}\nTime: ${now.toLocaleTimeString()}\nLoc: ${currentArea}\nCoords: ${userLocation}\nPIN: ${window.calculatedPin}`;
+        const dataPayload = `${userName}\n${unixTs}\n${now.toLocaleDateString()}\n${now.toLocaleTimeString()}\n${currentArea}\n${userLocation}\nPIN: ${window.calculatedPin}`;
         
-        // Mobile-Safe QR Rendering
-        const qrDiv = document.createElement("div");
-        const qr = new QRCode(qrDiv, { text: dataPayload, width: 160, height: 160, correctLevel: QRCode.CorrectLevel.H });
+        // Render QR in a visible buffer (mobile workaround)
+        const buffer = document.getElementById('qr-buffer');
+        buffer.innerHTML = ""; 
+        const qr = new QRCode(buffer, { text: dataPayload, width: 200, height: 200, correctLevel: QRCode.CorrectLevel.H });
 
-        // MutationObserver: This ensures the QR is drawn to canvas ONLY after the <img> tag is fully ready
-        const observer = new MutationObserver(() => {
-            const qrImg = qrDiv.querySelector('img');
-            if (qrImg && qrImg.src) {
-                observer.disconnect();
+        // Wait specifically for the canvas/img to be created and filled
+        const checkQR = setInterval(() => {
+            const qrImg = buffer.querySelector('img');
+            if (qrImg && qrImg.complete && qrImg.naturalWidth > 0) {
+                clearInterval(checkQR);
                 
-                // Allow a small extra delay for the browser's hardware acceleration
-                setTimeout(() => {
-                    const qrSize = 160;
-                    const qrX = (now.getDate() % 2 !== 0) ? 40 : (canvas.width - (qrSize + 40));
-                    
-                    ctx.drawImage(qrImg, qrX, canvas.height - (qrSize + 40), qrSize, qrSize);
-                    
-                    canvas.toBlob(blob => {
-                        imageBlob = blob;
-                        if(videoStream) videoStream.getTracks().forEach(t => t.stop());
-                        document.getElementById('camera-container').style.display = 'none';
-                        document.getElementById('snapBtn').style.display = 'none';
-                        document.getElementById('final-step').style.display = 'block';
-                    }, 'image/jpeg', 0.9);
-                }, 200); 
+                const qrSize = 180;
+                const qrX = (now.getDate() % 2 !== 0) ? 40 : (canvas.width - (qrSize + 40));
+                
+                ctx.drawImage(qrImg, qrX, canvas.height - (qrSize + 40), qrSize, qrSize);
+                
+                canvas.toBlob(blob => {
+                    imageBlob = blob;
+                    if(videoStream) videoStream.getTracks().forEach(t => t.stop());
+                    document.getElementById('camera-container').style.display = 'none';
+                    document.getElementById('snapBtn').style.display = 'none';
+                    document.getElementById('final-step').style.display = 'block';
+                }, 'image/jpeg', 0.9);
             }
-        });
-
-        observer.observe(qrDiv, { childList: true, subtree: true });
+        }, 100);
     }
 
     function processAudit() {
         if (document.getElementById('pinInput').value !== window.calculatedPin) return alert("PIN Mismatch");
-        
         const now = new Date();
         const userName = localStorage.getItem('rv_name') || "User";
         const fileTs = now.toLocaleDateString().replace(/\//g, '-') + "_" + now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}).replace(/[: ]/g,'');
-        const fileName = `${userName}_${unixTs}_${fileTs}`;
-
+        
         emailBody = `${userName}\n${unixTs}\n${now.toLocaleDateString()}\n${now.toLocaleTimeString()}\n${currentArea}\n${userLocation}`;
 
         const a = document.createElement('a');
-        a.href = URL.createObjectURL(imageBlob); a.download = `${fileName}.jpg`; a.click();
+        a.href = URL.createObjectURL(imageBlob); 
+        a.download = `Audit_${unixTs}.jpg`; 
+        a.click();
         
-        document.getElementById('vault-list').innerHTML = `<tr><td>${fileName.slice(0,25)}...</td><td>${unixTs}</td></tr>` + document.getElementById('vault-list').innerHTML;
         document.getElementById('final-step').style.display = 'none';
         document.getElementById('share-hub').style.display = 'block';
     }
 
     function shareWhatsApp() {
-        const phone = localStorage.getItem('rv_phone');
+        const phone = localStorage.getItem('rv_rec_phone') || localStorage.getItem('rv_phone');
         const msg = encodeURIComponent(emailBody + "\n\n(Attach image from downloads)");
-        window.location.href = `whatsapp://send?phone=${phone}&text=${msg}`;
+        window.location.href = `whatsapp://send?phone=${phone.replace(/\D/g,'')}&text=${msg}`;
     }
 
     function shareEmail() {
-        document.getElementById('email-prompt-box').style.display = 'block';
-        document.getElementById('custom-email').value = localStorage.getItem('rv_email');
-    }
-
-    function executeGmail() {
-        const email = document.getElementById('custom-email').value;
+        const email = localStorage.getItem('rv_rec_email');
         const sub = `Audit: ${unixTs} (${localStorage.getItem('rv_name')})`;
         const body = `${emailBody}\n\n[Please attach the audit image]`;
         window.location.href = `mailto:${email}?subject=${encodeURIComponent(sub)}&body=${encodeURIComponent(body)}`;
