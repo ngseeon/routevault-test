@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RouteVault AI - Route Stamp</title>
+    <title>RouteVault AI - Signal Audit</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root { --primary: #4285F4; --success: #34A853; --error: #e53e3e; --bg: #f8f9fa; --text: #2d3748; }
@@ -80,16 +80,18 @@
         <h4 style="margin:0 0 15px 0; color:var(--primary);">Recent Activity</h4>
         <table><thead><tr><th>File Name</th><th>Date</th><th>Time</th></tr></thead><tbody id="files-list"><tr><td colspan="3">Loading...</td></tr></tbody></table>
     </div>
-    <div id="log">> Initializing Security Protocols...</div>
+    <div id="log">> Initializing Network Audit...</div>
 </div>
 
 <script>
     let accessToken = localStorage.getItem('rv_access_token');
     let tokenClient, imageBlob, videoStream;
     let userLocation = "Waiting for GPS...";
+    let cellTowerData = "Searching Cell ID...";
     let gpsActive = false;
     let calculatedPin = "";
 
+    // INTEGRATED CLIENT ID
     const CLIENT_ID = '337753122620-5u4cn79jvit9k55a94h8u7vsqa74l49f.apps.googleusercontent.com';
 
     function updateClock() {
@@ -110,6 +112,14 @@
         const lngPart = Math.round((lng % 1) * 10000);
         calculatedPin = (latPart + lngPart).toString();
         document.getElementById('pin-display').innerText = calculatedPin;
+    }
+
+    async function getCellTower() {
+        if ('connection' in navigator) {
+            const conn = navigator.connection;
+            cellTowerData = `Type: ${conn.effectiveType || 'N/A'}, RTT: ${conn.rtt}ms`;
+            log("Signal Metadata Found.");
+        }
     }
 
     function updateDualLockStatus() {
@@ -146,7 +156,7 @@
             document.getElementById('step2').classList.add('active');
             document.getElementById('cameraBtn').disabled = false;
             log(`Linked: ${userEmail}`);
-        } catch(e) { log("Please Re-Link Account."); }
+        } catch(e) { log("Session Expired. Please Re-Link."); }
     }
 
     function initClient() {
@@ -156,6 +166,7 @@
             callback: (resp) => { accessToken = resp.access_token; localStorage.setItem('rv_access_token', accessToken); validateUserSession(); },
         });
         startGPS();
+        getCellTower();
         validateUserSession();
     }
 
@@ -185,7 +196,7 @@
             document.getElementById('cameraBtn').style.display = 'none';
             document.getElementById('snapBtn').style.display = 'block';
             updateDualLockStatus();
-        } catch (err) { log("Camera Access Denied."); }
+        } catch (err) { log("Camera Denied."); }
     }
 
     async function takePhoto() {
@@ -196,14 +207,16 @@
         canvas.height = video.videoHeight;
         ctx.drawImage(video, 0, 0);
 
-        const qrData = `RV ID: GP_${Date.now()}\nLoc: ${userLocation}\nTime: ${new Date().toLocaleString()}\nPIN: ${calculatedPin}`;
+        const qrData = `RV ID: GP_${Date.now()}\nLoc: ${userLocation}\nSignal: ${cellTowerData}\nTime: ${new Date().toLocaleString()}`;
         const todayDay = new Date().getDate();
         const isOdd = (todayDay % 2 !== 0);
+        
+        // Logic: Odd = Left, Even = Right
         const qrX = isOdd ? 20 : (canvas.width - 160); 
         const qrY = canvas.height - 180;
 
         const qrDiv = document.createElement("div");
-        const qr = new QRCode(qrDiv, { text: qrData, width: 120, height: 120 });
+        const qr = new QRCode(qrDiv, { text: qrData, width: 120, height: 120, correctLevel: QRCode.CorrectLevel.H });
 
         setTimeout(() => {
             const qrImg = qrDiv.querySelector('img');
@@ -212,7 +225,7 @@
             ctx.drawImage(qrImg, qrX, qrY, 120, 120);
             ctx.fillStyle = "#4285F4";
             ctx.font = "bold 12px Arial";
-            ctx.fillText(isOdd ? "ODD-AUTH" : "EVEN-AUTH", qrX + 30, qrY + 140);
+            ctx.fillText(isOdd ? "ODD-AUTH (L)" : "EVEN-AUTH (R)", qrX + 15, qrY + 140);
 
             canvas.toBlob((blob) => {
                 imageBlob = blob;
@@ -223,7 +236,7 @@
                 document.getElementById('step3').classList.add('active');
                 document.getElementById('pinInput').disabled = false; 
                 document.getElementById('pinBtn').disabled = false;
-                log(`Stamped: ${isOdd ? "Left" : "Right"}`);
+                log(`QR Placed ${isOdd ? "Left" : "Right"}`);
             }, 'image/jpeg', 0.9);
         }, 400);
     }
@@ -233,13 +246,16 @@
         const isVerified = (inputPin === calculatedPin);
         if(!isVerified) return alert("PIN Mismatch.");
 
-        log("Securing Final Audit...");
-        const sharedId = `${Date.now()}`;
+        log("Final Audit Sync...");
+        const timestamp = Date.now();
         const userEmail = document.getElementById('user-name').getAttribute('data-email');
-        const textContent = `Account: ${userEmail}\nRoute Stamp Proof\n--------------------------\nID: GP_${sharedId}\nDate: ${new Date().toLocaleDateString()}\nTime: ${new Date().toLocaleTimeString()}\nLocation: ${userLocation}\nVERIFICATION: PASS ✅`;
         
-        await uploadFile(new Blob([textContent], {type:'text/plain'}), `Proof_GP_${sharedId}.txt`);
-        await uploadFile(imageBlob, `Image_GP_${sharedId}.jpg`);
+        const textContent = `Account: ${userEmail}\nAudit Proof\n--------------------------\nID: GP_${timestamp}\nDate: ${new Date().toLocaleDateString()}\nTime: ${new Date().toLocaleTimeString()}\nLocation: ${userLocation}\nSignal: ${cellTowerData}\nPIN: ${inputPin}\nVERIFICATION: PASS ✅`;
+        
+        // Naming: Type_ID_Email
+        await uploadFile(new Blob([textContent], {type:'text/plain'}), `Proof_GP_${timestamp}_${userEmail}.txt`);
+        await uploadFile(imageBlob, `Image_GP_${timestamp}_${userEmail}.jpg`);
+        
         document.getElementById('success-overlay').style.display = 'flex';
         setTimeout(() => { location.reload(); }, 2500);
     }
@@ -264,7 +280,7 @@
                 const d = new Date(f.createdTime);
                 return `<tr><td>${f.name}</td><td>${d.toLocaleDateString()}</td><td>${d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td></tr>`;
             }).join('');
-        } catch (e) { log("Error syncing vault."); }
+        } catch (e) { log("Vault Sync Error."); }
     }
 
     function handleAuthClick() { tokenClient.requestAccessToken(); }
