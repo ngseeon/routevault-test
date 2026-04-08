@@ -3,78 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RouteVault AI - Hybrid</title>
+    <title>RouteVault AI - Master Hybrid</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        :root { --primary: #075e54; --secondary: #25d366; --bg: #f0f2f5; --text: #111b21; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 20px; color: var(--text); margin: 0; }
-        .card { background: white; width: 100%; max-width: 440px; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .header { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 15px; font-weight: bold; color: var(--primary); }
-        .live-clock { text-align: center; font-family: monospace; font-size: 18px; background: #111b21; padding: 10px; border-radius: 8px; margin-bottom: 15px; color: #00ff00; }
-        #camera-container { width: 100%; border-radius: 8px; overflow: hidden; background: #000; margin-bottom: 15px; display: none; aspect-ratio: 4/3; }
+        :root { --primary: #1a202c; --wa: #25d366; --email: #4285F4; --bg: #f7fafc; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 15px; margin: 0; color: #2d3748; }
+        .card { background: white; width: 100%; max-width: 460px; padding: 20px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+        .header { display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid #edf2f7; padding-bottom: 8px; }
+        .live-clock { text-align: center; font-family: monospace; font-size: 18px; background: var(--primary); padding: 12px; border-radius: 8px; margin-bottom: 15px; color: #68d391; }
+        
+        /* Input & Camera */
+        #camera-container { width: 100%; border-radius: 12px; overflow: hidden; background: #000; margin-bottom: 15px; display: none; aspect-ratio: 4/3; }
         #video-preview { width: 100%; height: 100%; object-fit: cover; }
-        canvas { display: none; }
         .input-group { margin-bottom: 15px; }
-        label { font-size: 11px; color: #667781; display: block; margin-bottom: 4px; }
-        input { width: 94%; padding: 12px; border: 1px solid #d1d7db; border-radius: 8px; font-size: 14px; }
-        .action-btn { width: 100%; padding: 14px; border: none; border-radius: 8px; background: var(--primary); color: white; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        .share-btn { background: var(--secondary); display: none; margin-top: 10px; text-decoration: none; text-align: center; color: white; line-height: 3; font-weight: bold; border-radius: 8px; }
-        #log { background: #e9edef; padding: 10px; border-radius: 8px; font-size: 11px; height: 60px; overflow-y: auto; margin-top: 15px; font-family: monospace; white-space: pre-wrap; }
+        input { width: 94%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; margin-top: 5px; }
+        
+        /* Action Buttons */
+        .action-btn { width: 100%; padding: 14px; border: none; border-radius: 8px; background: var(--email); color: white; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 14px; }
+        .share-group { display: none; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        .share-btn { padding: 12px; border-radius: 8px; text-decoration: none; text-align: center; color: white; font-weight: bold; font-size: 13px; display: flex; align-items: center; justify-content: center; }
+        
+        /* Vault Listing */
+        .vault-section { margin-top: 25px; border-top: 2px solid #edf2f7; padding-top: 15px; }
+        table { width: 100%; border-collapse: collapse; font-size: 10px; margin-top: 10px; }
+        th { text-align: left; color: #718096; padding: 8px; background: #f7fafc; }
+        td { padding: 8px; border-bottom: 1px solid #f1f5f9; }
+        #log { font-size: 10px; color: #a0aec0; margin-top: 10px; font-family: monospace; }
     </style>
 </head>
 <body>
 
 <div class="card">
     <div class="header">
-        <div>📍 Gelang Patah Audit</div>
-        <div id="gps-status" style="color:red">GPS: OFF</div>
+        <div>📍 AUDIT: GELANG PATAH</div>
+        <div id="gps-status" style="color:red">GPS: SEARCHING...</div>
     </div>
 
     <div class="live-clock"><span id="display-date"></span> | <span id="display-time"></span></div>
 
     <div class="input-group">
-        <label>RECIPIENT WHATSAPP (e.g. 60123456789)</label>
-        <input type="text" id="wa-num" placeholder="Enter Mobile Number">
+        <input type="text" id="recipient-contact" placeholder="Recipient (Email or Phone Number)">
     </div>
 
-    <div id="camera-container">
-        <video id="video-preview" autoplay playsinline></video>
-    </div>
+    <div id="camera-container"><video id="video-preview" autoplay playsinline></video></div>
 
-    <div id="ui-controls">
-        <button id="cameraBtn" class="action-btn" onclick="startCamera()">Open Camera</button>
-        <button id="snapBtn" class="action-btn" style="display:none; background:var(--secondary);" onclick="takePhoto()">Stamp Evidence</button>
+    <div id="ui-main">
+        <button id="cameraBtn" class="action-btn" onclick="startCamera()">Open Audit Camera</button>
+        <button id="snapBtn" class="action-btn" style="display:none; background:#2d3748;" onclick="takePhoto()">Capture & Stamp</button>
         
-        <div id="final-step" style="display:none;">
-            <label id="pin-label" style="font-weight:bold; color:var(--primary);"></label>
-            <input type="number" id="pinInput" placeholder="Enter GPS PIN">
-            <button class="action-btn" onclick="processLocalSave()">Save & Generate Share</button>
+        <div id="final-step" style="display:none; text-align:center;">
+            <p style="font-size:12px; font-weight:bold; margin: 10px 0;">PIN: <span id="pin-display" style="color:var(--email)">--</span></p>
+            <input type="number" id="pinInput" placeholder="Enter PIN to Save" style="text-align:center; font-size:18px;">
+            <button class="action-btn" onclick="processAudit()">Save Locally</button>
         </div>
 
-        <a id="waShare" class="share-btn" target="_blank">Open WhatsApp & Send Log</a>
+        <div id="share-hub" class="share-group">
+            <a id="waBtn" class="share-btn" style="background:var(--wa);" target="_blank">WhatsApp</a>
+            <a id="emailBtn" class="share-btn" style="background:var(--email);" target="_blank">Email</a>
+        </div>
     </div>
 
-    <div id="log">System Ready. No Login Required.</div>
+    <div class="vault-section">
+        <b style="font-size: 11px;">SESSION VAULT (Today)</b>
+        <table id="vault-table">
+            <thead><tr><th>File Name</th><th>Date</th><th>Time</th></tr></thead>
+            <tbody id="vault-list"></tbody>
+        </table>
+        <div id="log">Ready for field audit.</div>
+    </div>
 </div>
 
 <script>
-    let videoStream, imageBlob, userLocation = "Searching...", rawCoords = "";
-    
-    function log(msg) { document.getElementById('log').innerText += `\n> ${msg}`; }
+    let videoStream, imageBlob, userLocation = "N/A";
+    let auditHistory = [];
+
+    function updateTime() {
+        const n = new Date();
+        document.getElementById('display-date').innerText = n.toLocaleDateString();
+        document.getElementById('display-time').innerText = n.toLocaleTimeString();
+    }
+    setInterval(updateTime, 1000);
 
     window.onload = () => {
         updateTime();
         navigator.geolocation.watchPosition(pos => {
-            const lat = pos.coords.latitude.toFixed(4);
-            const lng = pos.coords.longitude.toFixed(4);
-            userLocation = `Lat: ${lat}, Lng: ${lng}`;
+            userLocation = `Lat: ${pos.coords.latitude.toFixed(4)}, Lng: ${pos.coords.longitude.toFixed(4)}`;
             document.getElementById('gps-status').innerText = "GPS: ON";
             document.getElementById('gps-status').style.color = "green";
-            
-            // Security PIN calculation
             const pin = (Math.round((pos.coords.latitude % 1) * 10000) + Math.round((pos.coords.longitude % 1) * 10000)).toString();
             window.calculatedPin = pin;
-            document.getElementById('pin-label').innerText = `SECURITY PIN: ${pin}`;
+            document.getElementById('pin-display').innerText = pin;
         });
     };
 
@@ -93,48 +111,59 @@
         canvas.width = video.videoWidth; canvas.height = video.videoHeight;
         ctx.drawImage(video, 0, 0);
 
-        const qrSize = 80;
-        const isOdd = (new Date().getDate() % 2 !== 0);
-        const qrX = isOdd ? 20 : (canvas.width - 100);
-        const qrY = canvas.height - 100;
+        const now = new Date();
+        const timestamp = now.toLocaleString();
+        const isOdd = (now.getDate() % 2 !== 0);
+        const qrSize = 90;
+        const qrPos = isOdd ? 20 : (canvas.width - 110);
 
         const qrDiv = document.createElement("div");
-        new QRCode(qrDiv, { text: `Audit: ${Date.now()}\nLoc: ${userLocation}`, width: qrSize, height: qrSize });
+        new QRCode(qrDiv, { text: `TIME: ${timestamp}\nLOC: ${userLocation}\nAUDIT_ID: ${Date.now()}`, width: qrSize, height: qrSize });
 
         setTimeout(() => {
-            ctx.drawImage(qrDiv.querySelector('img'), qrX, qrY, qrSize, qrSize);
+            ctx.drawImage(qrDiv.querySelector('img'), qrPos, canvas.height - 110, qrSize, qrSize);
             canvas.toBlob(blob => {
                 imageBlob = blob;
                 videoStream.getTracks().forEach(t => t.stop());
                 document.getElementById('camera-container').style.display = 'none';
                 document.getElementById('snapBtn').style.display = 'none';
                 document.getElementById('final-step').style.display = 'block';
-                log("Image Stamped.");
             }, 'image/jpeg', 0.9);
         }, 500);
     }
 
-    function processLocalSave() {
-        if (document.getElementById('pinInput').value !== window.calculatedPin) return alert("Wrong PIN.");
+    function processAudit() {
+        if (document.getElementById('pinInput').value !== window.calculatedPin) return alert("Incorrect PIN");
 
         const now = new Date();
-        const ts = now.toISOString().replace(/[:.]/g, '-');
-        const report = `AUDIT LOG\nTime: ${now.toLocaleString()}\nLoc: ${userLocation}\nPIN: ${window.calculatedPin}`;
+        const dateStr = now.toLocaleDateString().replace(/\//g, '-');
+        const timeStr = now.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}).replace(/[: ]/g, '');
+        const fullTs = `${dateStr}_${timeStr}`;
+        const fileName = `Audit_${fullTs}`;
 
-        // 1. Download Text Log
-        downloadFile(new Blob([report], {type:'text/plain'}), `Log_${ts}.txt`);
-        // 2. Download Stamped Image
-        downloadFile(imageBlob, `Audit_${ts}.jpg`);
+        const reportBody = `AUDIT LOG\nFile: ${fileName}\nTimestamp: ${now.toLocaleString()}\nLocation: ${userLocation}\nSecurity PIN: ${window.calculatedPin}`;
 
-        // 3. Prepare WhatsApp Share
-        const waNum = document.getElementById('wa-num').value;
-        const encodedMsg = encodeURIComponent(report + "\n(Note: Please attach the Audit Image from your downloads)");
-        const waUrl = `https://wa.me/${waNum}?text=${encodedMsg}`;
+        // Download Files
+        downloadFile(new Blob([reportBody], {type:'text/plain'}), `${fileName}.txt`);
+        downloadFile(imageBlob, `${fileName}.jpg`);
+
+        // Update Vault Listing
+        const list = document.getElementById('vault-list');
+        const row = `<tr><td>${fileName}</td><td>${now.toLocaleDateString()}</td><td>${now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td></tr>`;
+        list.innerHTML = row + list.innerHTML;
+
+        // Prepare Sharing
+        const contact = document.getElementById('recipient-contact').value;
+        const encodedMsg = encodeURIComponent(reportBody + "\n\n(Note: Attach Audit JPG from downloads)");
         
-        const shareBtn = document.getElementById('waShare');
-        shareBtn.href = waUrl;
-        shareBtn.style.display = 'block';
-        log("Files saved to device. Ready to share.");
+        // WhatsApp Link
+        document.getElementById('waBtn').href = `https://wa.me/${contact.replace(/\+/g, '')}?text=${encodedMsg}`;
+        // Email Link
+        document.getElementById('emailBtn').href = `mailto:${contact}?subject=Audit Report: ${fileName}&body=${encodedMsg}`;
+
+        document.getElementById('final-step').style.display = 'none';
+        document.getElementById('share-hub').style.display = 'grid';
+        document.getElementById('log').innerText = "Files saved. Tap below to send.";
     }
 
     function downloadFile(blob, name) {
@@ -143,13 +172,6 @@
         a.download = name;
         a.click();
     }
-
-    function updateTime() {
-        const n = new Date();
-        document.getElementById('display-date').innerText = n.toLocaleDateString();
-        document.getElementById('display-time').innerText = n.toLocaleTimeString();
-    }
-    setInterval(updateTime, 1000);
 </script>
 </body>
 </html>
