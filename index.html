@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Route Stamp - v16.2</title>
+    <title>Route Stamp - v16.3</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root { --primary: #1a202c; --wa: #25d366; --gmail: #EA4335; --bg: #f7fafc; --blue: #4285F4; --red: #e53e3e; }
@@ -22,7 +22,7 @@
         .action-btn { width: 100%; padding: 14px; border: none; border-radius: 8px; background: var(--blue); color: white; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .share-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 10px; display: none; }
         .btn-link { padding: 14px; border-radius: 8px; border: none; color: white; font-weight: bold; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; text-transform: uppercase; }
-        #qr-container { position: absolute; left: -9999px; top: 0; }
+        #qr-box { position: absolute; left: -5000px; }
         #history-section { display: none; flex-grow: 1; overflow: hidden; flex-direction: column; }
         .history-table-wrapper { overflow-y: auto; flex-grow: 1; border: 1px solid #e2e8f0; border-radius: 8px; background: white; }
         table { width: 100%; border-collapse: collapse; font-size: 12px; }
@@ -32,7 +32,7 @@
 </head>
 <body>
 
-<div id="qr-container"></div>
+<div id="qr-box"></div>
 
 <div class="card">
     <div id="settings-ui">
@@ -96,6 +96,7 @@
 <script>
     let db, videoStream, imageBlob, currentAuditData = null, userLocation = "N/A", currentArea = "DETECTING...", unixTs = 0;
 
+    // Database Initialization
     const dbReq = indexedDB.open("RouteStampDB", 3);
     dbReq.onupgradeneeded = e => { e.target.result.createObjectStore("audits", { keyPath: "id" }); };
     dbReq.onsuccess = e => { db = e.target.result; };
@@ -133,52 +134,73 @@
 
     async function startCamera() {
         try {
+            if(videoStream) videoStream.getTracks().forEach(t => t.stop());
             videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-            document.getElementById('video-preview').srcObject = videoStream;
-            document.getElementById('camera-container').style.display = 'block';
-            document.getElementById('cameraBtn').style.display = 'none';
-            document.getElementById('snapBtn').style.display = 'block';
+            const video = document.getElementById('video-preview');
+            video.srcObject = videoStream;
+            video.onloadedmetadata = () => {
+                document.getElementById('camera-container').style.display = 'block';
+                document.getElementById('cameraBtn').style.display = 'none';
+                document.getElementById('snapBtn').style.display = 'block';
+            };
         } catch (e) { alert("Camera Access Required."); }
     }
 
     function takePhoto() {
         const video = document.getElementById('video-preview');
+        if (!video || video.readyState < 2) return;
+
+        const snapBtn = document.getElementById('snapBtn');
+        snapBtn.disabled = true;
+        snapBtn.innerText = "CAPTURING...";
+
         const now = new Date();
         unixTs = Math.floor(now.getTime() / 1000);
         const name = localStorage.getItem('rv_name') || "User";
         const body = `📌 Route Stamp\n${name}\n${window.calculatedPin}\n${unixTs}\n${now.toLocaleDateString()}\n${now.toLocaleTimeString()}\n${currentArea}\n${userLocation}`;
 
-        // Generate QR
-        const qrBox = document.getElementById('qr-container');
-        qrBox.innerHTML = "";
-        new QRCode(qrBox, { text: body, width: 256, height: 256 });
+        // Step 1: Immediate Camera Capture to hidden Canvas
+        const mainCanvas = document.createElement('canvas');
+        mainCanvas.width = video.videoWidth;
+        mainCanvas.height = video.videoHeight;
+        const ctx = mainCanvas.getContext('2d');
+        ctx.drawImage(video, 0, 0);
 
-        setTimeout(() => {
-            const qrCanvas = qrBox.querySelector('canvas');
-            const mainCanvas = document.createElement('canvas');
-            const ctx = mainCanvas.getContext('2d');
-            mainCanvas.width = video.videoWidth;
-            mainCanvas.height = video.videoHeight;
-            ctx.drawImage(video, 0, 0);
+        // Step 2: Safe QR Stamp
+        try {
+            const qrBox = document.getElementById('qr-box');
+            qrBox.innerHTML = "";
+            new QRCode(qrBox, { text: body, width: 256, height: 256 });
 
-            if (qrCanvas) {
-                const qrSize = Math.floor(mainCanvas.width * 0.28);
-                const margin = 40;
-                const qrX = (now.getDate() % 2 !== 0) ? margin : (mainCanvas.width - qrSize - margin);
-                ctx.drawImage(qrCanvas, qrX, mainCanvas.height - qrSize - margin, qrSize, qrSize);
-            }
+            setTimeout(() => {
+                const qrCanvas = qrBox.querySelector('canvas');
+                if (qrCanvas) {
+                    const qrSize = Math.floor(mainCanvas.width * 0.28);
+                    const margin = 40;
+                    const qrX = (now.getDate() % 2 !== 0) ? margin : (mainCanvas.width - qrSize - margin);
+                    ctx.drawImage(qrCanvas, qrX, mainCanvas.height - qrSize - margin, qrSize, qrSize);
+                }
+                finalize(mainCanvas, body, now);
+            }, 200);
+        } catch (e) {
+            console.warn("QR Stamp failed, proceeding with raw image.");
+            finalize(mainCanvas, body, now);
+        }
+    }
 
-            mainCanvas.toBlob(blob => {
-                imageBlob = blob;
-                currentAuditData = { id: unixTs, name: `Audit_${unixTs}`, date: now.toLocaleDateString(), time: now.toLocaleTimeString(), body: body, img: blob };
-                document.getElementById('review-img').src = URL.createObjectURL(blob);
-                document.getElementById('review-img').style.display = 'block';
-                document.getElementById('camera-container').style.display = 'none';
-                document.getElementById('snapBtn').style.display = 'none';
-                document.getElementById('final-step').style.display = 'block';
-                if(videoStream) videoStream.getTracks().forEach(t => t.stop());
-            }, 'image/jpeg', 0.85);
-        }, 300);
+    function finalize(canvas, body, now) {
+        canvas.toBlob(blob => {
+            imageBlob = blob;
+            currentAuditData = { id: unixTs, name: `Audit_${unixTs}`, date: now.toLocaleDateString(), time: now.toLocaleTimeString(), body: body, img: blob };
+            
+            document.getElementById('review-img').src = URL.createObjectURL(blob);
+            document.getElementById('review-img').style.display = 'block';
+            document.getElementById('camera-container').style.display = 'none';
+            document.getElementById('snapBtn').style.display = 'none';
+            document.getElementById('final-step').style.display = 'block';
+            
+            if(videoStream) videoStream.getTracks().forEach(t => t.stop());
+        }, 'image/jpeg', 0.85);
     }
 
     function processAudit() {
@@ -240,11 +262,13 @@
         document.getElementById('set-email').value = localStorage.getItem('rv_email') || "";
         document.getElementById('set-rec-phone').value = localStorage.getItem('rv_rec_phone') || "";
         document.getElementById('set-rec-email').value = localStorage.getItem('rv_rec_email') || "";
+        
         setInterval(() => {
             const n = new Date();
             document.getElementById('display-date').innerText = n.toLocaleDateString();
             document.getElementById('display-time').innerText = n.toLocaleTimeString();
         }, 1000);
+        
         navigator.geolocation.watchPosition(pos => {
             const lat = pos.coords.latitude; const lng = pos.coords.longitude;
             userLocation = `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`;
