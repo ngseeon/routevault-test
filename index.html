@@ -3,40 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RouteVault AI - Route Stamp V15.1</title>
+    <title>RouteVault AI - V15.1 Stable</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root { --primary: #1a202c; --wa: #25d366; --gmail: #EA4335; --bg: #f7fafc; --blue: #4285F4; --red: #e53e3e; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 10px; margin: 0; color: #2d3748; }
         .card { background: white; width: 100%; max-width: 460px; padding: 20px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); position: relative; min-height: 90vh; }
-        
-        /* Navigation */
         .nav-menu { display: flex; gap: 10px; margin-bottom: 20px; }
         .nav-btn { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; background: white; cursor: pointer; font-weight: bold; font-size: 13px; }
         .nav-btn.active { background: var(--blue); color: white; border-color: var(--blue); }
-
         .section { display: none; }
         .section.active { display: block; }
-
         .header { display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid #edf2f7; padding-bottom: 8px; align-items: center; }
-        #settings-ui { display: none; background: #fff; position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; padding: 20px; box-sizing: border-box; border-radius: 16px; border: 2px solid var(--blue); overflow-y: auto; }
-        
         #camera-container { width: 100%; border-radius: 12px; overflow: hidden; background: #000; margin-bottom: 10px; display: none; aspect-ratio: 4/3; }
         #video-preview { width: 100%; height: 100%; object-fit: cover; }
-        
         .live-clock { text-align: center; font-family: monospace; font-size: 18px; background: var(--primary); padding: 12px; border-radius: 8px; margin-bottom: 15px; color: #68d391; }
         .action-btn { width: 100%; padding: 14px; border: none; border-radius: 8px; background: var(--blue); color: white; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 14px; }
-        
-        /* Resend Listing */
         .log-container { max-height: 60vh; overflow-y: auto; border: 1px solid #edf2f7; border-radius: 12px; background: #fff; }
         .log-item { padding: 15px; border-bottom: 1px solid #edf2f7; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
-        .log-item:active { background: #f0f4f8; }
-        .log-info b { display: block; font-size: 14px; color: var(--primary); }
-        .log-date { font-size: 11px; color: #718096; }
-
         #review-img { width: 100%; border-radius: 12px; margin-bottom: 15px; border: 2px solid #e2e8f0; display: none; }
         input { width: 94%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; margin-bottom: 10px; display: block; }
         #qr-hidden { position: absolute; left: -9999px; }
+        #settings-ui { display: none; background: #fff; position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; padding: 20px; box-sizing: border-box; border-radius: 16px; border: 2px solid var(--blue); }
     </style>
 </head>
 <body>
@@ -69,86 +57,78 @@
     <div id="sec-new" class="section active">
         <div class="live-clock"><span id="display-date"></span> | <span id="display-time"></span></div>
         <div id="camera-container"><video id="video-preview" autoplay playsinline></video></div>
-        
         <button id="cameraBtn" class="action-btn" onclick="startCamera()">Open Audit Camera</button>
         <button id="snapBtn" class="action-btn" style="display:none; background:#2d3748;" onclick="takePhoto()">Capture & Stamp</button>
         
         <div id="final-step" style="display:none; text-align:center;">
             <p style="font-size:11px; font-weight:bold;">Security PIN: <span id="pin-display" style="color:var(--blue);">--</span></p>
             <input type="number" id="pinInput" placeholder="Enter PIN" style="font-size:24px; text-align:center; width:160px; margin: 10px auto;">
-            <button class="action-btn" onclick="processAudit()">Verify & Save</button>
+            <button type="button" class="action-btn" onclick="processAudit()">Verify & Save</button>
         </div>
     </div>
 
     <div id="sec-resend" class="section">
-        <div class="log-container" id="log-list">
-            </div>
+        <div class="log-container" id="log-list"></div>
     </div>
 
     <div id="review-screen" style="display:none;">
-        <img id="review-img" src="" alt="Proof Review">
+        <img id="review-img" src="" alt="Audit Proof">
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
             <button onclick="shareWhatsApp()" class="action-btn" style="background:var(--wa); margin-top:0;">WhatsApp</button>
             <button onclick="shareGmail()" class="action-btn" style="background:var(--gmail); margin-top:0;">Gmail</button>
         </div>
         <button class="action-btn" style="background:var(--red);" onclick="deleteCurrentRecord()">Delete</button>
-        <button class="action-btn" style="background:#718096;" onclick="closeReview()">Back to List</button>
+        <button class="action-btn" style="background:#718096;" onclick="closeReview()">Back</button>
     </div>
 </div>
 
 <script>
     let db, videoStream, imageBlob, userLocation = "N/A", currentArea = "DETECTING...", unixTs = 0;
-    let currentRecordId = null;
-    let formattedBodyText = "";
+    let currentRecordId = null, formattedBodyText = "";
 
-    // 1. Database Initialization
+    // Force Open Database
     const dbReq = indexedDB.open("RouteVaultDB", 1);
-    dbReq.onupgradeneeded = e => {
-        e.target.result.createObjectStore("captures", { keyPath: "id" });
-    };
+    dbReq.onupgradeneeded = e => e.target.result.createObjectStore("captures", { keyPath: "id" });
     dbReq.onsuccess = e => { db = e.target.result; };
 
-    // 2. Navigation
     function switchSection(sect) {
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         document.getElementById('review-screen').style.display = 'none';
         document.getElementById('main-nav').style.display = 'flex';
         
         if(sect === 'new') {
             document.getElementById('sec-new').classList.add('active');
-            document.getElementById('sec-resend').classList.remove('active');
             document.getElementById('btn-nav-new').classList.add('active');
-            document.getElementById('btn-nav-resend').classList.remove('active');
         } else {
-            document.getElementById('sec-new').classList.remove('active');
             document.getElementById('sec-resend').classList.add('active');
-            document.getElementById('btn-nav-new').classList.remove('active');
             document.getElementById('btn-nav-resend').classList.add('active');
             loadLogList();
         }
     }
 
-    // 3. Camera & Capture (Locked V15 Logic)
     async function startCamera() {
-        videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-        document.getElementById('video-preview').srcObject = videoStream;
-        document.getElementById('camera-container').style.display = 'block';
-        document.getElementById('cameraBtn').style.display = 'none';
-        document.getElementById('snapBtn').style.display = 'block';
+        try {
+            videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+            document.getElementById('video-preview').srcObject = videoStream;
+            document.getElementById('camera-container').style.display = 'block';
+            document.getElementById('cameraBtn').style.display = 'none';
+            document.getElementById('snapBtn').style.display = 'block';
+        } catch (e) { alert("Camera failed. Ensure HTTPS is used."); }
     }
 
     function takePhoto() {
         const video = document.getElementById('video-preview');
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
-        canvas.width = video.videoWidth; 
-        canvas.height = video.videoHeight;
+        canvas.width = video.videoWidth; canvas.height = video.videoHeight;
         ctx.drawImage(video, 0, 0);
 
         const now = new Date();
         unixTs = Math.floor(now.getTime() / 1000);
         const name = localStorage.getItem('rv_name') || "User";
         
-        // Locked 8-Line V15 Data
+        // Locked V15 Format
         formattedBodyText = `Route Stamp\n${name}\n${window.calculatedPin}\n${unixTs}\n${now.toLocaleDateString()}\n${now.toLocaleTimeString()}\n${currentArea}\n${userLocation}`;
 
         const qrHidden = document.getElementById('qr-hidden');
@@ -158,28 +138,24 @@
         setTimeout(() => {
             const qrCanvas = qrHidden.querySelector('canvas');
             const qrSize = Math.floor(canvas.width * 0.28);
-            const margin = 40;
-            const qrX = (now.getDate() % 2 !== 0) ? margin : (canvas.width - qrSize - margin);
-            ctx.drawImage(qrCanvas, qrX, canvas.height - qrSize - margin, qrSize, qrSize);
+            const qrX = (now.getDate() % 2 !== 0) ? 40 : (canvas.width - qrSize - 40);
+            ctx.drawImage(qrCanvas, qrX, canvas.height - qrSize - 40, qrSize, qrSize);
             
             canvas.toBlob(blob => {
                 imageBlob = blob;
                 if(videoStream) videoStream.getTracks().forEach(t => t.stop());
-                document.getElementById('review-img').src = URL.createObjectURL(imageBlob);
                 document.getElementById('camera-container').style.display = 'none';
                 document.getElementById('snapBtn').style.display = 'none';
                 document.getElementById('final-step').style.display = 'block';
-            }, 'image/jpeg', 0.9);
-        }, 1000);
+            }, 'image/jpeg', 0.8);
+        }, 800);
     }
 
-    // 4. Verification & Storage
     function processAudit() {
-        if (document.getElementById('pinInput').value !== window.calculatedPin) {
-            alert("PIN Mismatch");
-            return;
-        }
+        const val = document.getElementById('pinInput').value;
+        if (val !== window.calculatedPin) return alert("PIN Mismatch");
 
+        // Prepare data
         const record = {
             id: `Audit_${unixTs}`,
             date: new Date().toLocaleDateString(),
@@ -188,13 +164,17 @@
             body: formattedBodyText
         };
 
+        // Force Save and Jump
         const tx = db.transaction("captures", "readwrite");
-        tx.objectStore("captures").add(record).onsuccess = () => {
+        const store = tx.objectStore("captures");
+        const request = store.put(record); // Using put to overwrite/ensure save
+
+        request.onsuccess = () => {
             showReview(record);
         };
+        request.onerror = () => alert("Storage full or error.");
     }
 
-    // 5. Listing & Review
     function loadLogList() {
         const listDiv = document.getElementById('log-list');
         listDiv.innerHTML = "";
@@ -203,7 +183,7 @@
                 const row = document.createElement('div');
                 row.className = 'log-item';
                 row.onclick = () => showReview(item);
-                row.innerHTML = `<div class="log-info"><b>${item.id}</b><span class="log-date">${item.date} at ${item.time}</span></div><span>View ➔</span>`;
+                row.innerHTML = `<div><b>${item.id}</b><br><small>${item.date} ${item.time}</small></div><span>View ➔</span>`;
                 listDiv.appendChild(row);
             });
         };
@@ -212,8 +192,9 @@
     function showReview(item) {
         currentRecordId = item.id;
         formattedBodyText = item.body;
-        document.getElementById('review-img').src = URL.createObjectURL(item.blob);
-        document.getElementById('review-img').style.display = 'block';
+        const img = document.getElementById('review-img');
+        img.src = URL.createObjectURL(item.blob);
+        img.style.display = 'block';
         
         document.getElementById('sec-new').classList.remove('active');
         document.getElementById('sec-resend').classList.remove('active');
@@ -222,36 +203,28 @@
         document.getElementById('review-screen').style.display = 'block';
     }
 
-    function closeReview() {
-        document.getElementById('pinInput').value = "";
-        switchSection('resend');
-    }
-
     function deleteCurrentRecord() {
-        if(!confirm("Delete this capture permanently?")) return;
-        db.transaction("captures", "readwrite").objectStore("captures").delete(currentRecordId).onsuccess = () => {
-            closeReview();
-        };
+        if(!confirm("Delete?")) return;
+        db.transaction("captures", "readwrite").objectStore("captures").delete(currentRecordId).onsuccess = () => closeReview();
     }
 
-    // 6. Sharing
+    function closeReview() { switchSection('resend'); }
+
     function shareWhatsApp() {
         const p = (localStorage.getItem('rv_rec_phone') || "").replace(/\D/g,'');
-        window.open(`https://wa.me/${p}?text=${encodeURIComponent(formattedBodyText + "\n\n(Attach Image)")}`);
+        window.open(`https://wa.me/${p}?text=${encodeURIComponent(formattedBodyText)}`);
     }
 
     function shareGmail() {
         const e = localStorage.getItem('rv_rec_email') || "";
-        window.location.href = `mailto:${e}?subject=Route Audit&body=${encodeURIComponent(formattedBodyText)}`;
+        window.location.href = `mailto:${e}?subject=Audit&body=${encodeURIComponent(formattedBodyText)}`;
     }
 
-    // 7. Utils
     function toggleSettings() { document.getElementById('settings-ui').style.display = 'block'; }
     function saveSettings() {
-        localStorage.setItem('rv_name', document.getElementById('set-name').value);
-        localStorage.setItem('rv_phone', document.getElementById('set-phone').value);
-        localStorage.setItem('rv_rec_phone', document.getElementById('set-rec-phone').value);
-        localStorage.setItem('rv_rec_email', document.getElementById('set-rec-email').value);
+        ['name','phone','rec-phone','rec-email'].forEach(k => {
+            localStorage.setItem('rv_'+k.replace('-','_'), document.getElementById('set-'+k).value);
+        });
         document.getElementById('settings-ui').style.display = 'none';
     }
 
@@ -259,7 +232,12 @@
         ['name','phone','rec-phone','rec-email'].forEach(k => {
             document.getElementById('set-'+k).value = localStorage.getItem('rv_'+k.replace('-','_')) || "";
         });
-        updateTime();
+        setInterval(() => {
+            const n = new Date();
+            document.getElementById('display-date').innerText = n.toLocaleDateString();
+            document.getElementById('display-time').innerText = n.toLocaleTimeString();
+        }, 1000);
+
         navigator.geolocation.watchPosition(pos => {
             const lat = pos.coords.latitude, lng = pos.coords.longitude;
             userLocation = `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`;
@@ -274,13 +252,7 @@
                 });
         }, null, { enableHighAccuracy: true });
     };
-
-    function updateTime() {
-        const n = new Date();
-        document.getElementById('display-date').innerText = n.toLocaleDateString();
-        document.getElementById('display-time').innerText = n.toLocaleTimeString();
-    }
-    setInterval(updateTime, 1000);
 </script>
 </body>
-</html>
+        </html>
+        
