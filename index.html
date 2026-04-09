@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RouteVault AI - Unified Format</title>
+    <title>RouteVault AI - Security Build</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root { --primary: #1a202c; --wa: #25d366; --gmail: #EA4335; --bg: #f7fafc; --blue: #4285F4; }
@@ -21,7 +21,7 @@
         label { font-size: 11px; font-weight: bold; color: #718096; margin-left: 5px; }
         #share-hub { display: none; text-align: center; }
         .share-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-        .btn-link { padding: 14px; border-radius: 8px; border: none; color: white; font-weight: bold; font-size: 13px; cursor: pointer; text-decoration: none; }
+        .btn-link { padding: 14px; border-radius: 8px; border: none; color: white; font-weight: bold; font-size: 13px; cursor: pointer; text-decoration: none; display: flex; align-items: center; justify-content: center; height: 50px; }
         #qr-hidden { position: absolute; left: -9999px; }
     </style>
 </head>
@@ -54,7 +54,7 @@
     
     <div id="camera-container"><video id="video-preview" autoplay playsinline></video></div>
     <div id="status-bar">🛡️ STAMPING PROOF: Securing GPS & QR...</div>
-    <img id="review-img" src="" alt="Proof Review">
+    <img id="review-img" src="" alt="Proof Preview">
 
     <div id="ui-main">
         <button id="cameraBtn" class="action-btn" onclick="startCamera()">Open Audit Camera</button>
@@ -77,7 +77,7 @@
 </div>
 
 <script>
-    let videoStream, imageBlob, userLocation = "N/A", dataArray = [], currentArea = "DETECTING...", unixTs = 0;
+    let videoStream, imageBlob, userLocation = "N/A", currentArea = "DETECTING...", unixTs = 0;
 
     function toggleSettings() {
         const ui = document.getElementById('settings-ui');
@@ -92,137 +92,4 @@
         toggleSettings();
     }
 
-    async function getAddress(lat, lng) {
-        try {
-            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
-            const data = await res.json();
-            currentArea = data.address.suburb || data.address.town || data.address.city || "Audit Site";
-            document.getElementById('location-name').innerText = `📍 ${currentArea.toUpperCase()}`;
-        } catch(e) { document.getElementById('location-name').innerText = "📍 GPS ACTIVE"; }
-    }
-
-    window.onload = () => {
-        document.getElementById('set-name').value = localStorage.getItem('rv_name') || "";
-        document.getElementById('set-phone').value = localStorage.getItem('rv_phone') || "";
-        document.getElementById('set-rec-phone').value = localStorage.getItem('rv_rec_phone') || "";
-        document.getElementById('set-rec-email').value = localStorage.getItem('rv_rec_email') || "";
-        updateTime();
-        
-        navigator.geolocation.watchPosition(pos => {
-            const lat = pos.coords.latitude; const lng = pos.coords.longitude;
-            userLocation = `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`;
-            getAddress(lat, lng);
-            document.getElementById('gps-status').innerText = "GPS: ON";
-            document.getElementById('gps-status').style.color = "green";
-            window.calculatedPin = (Math.round((lat % 1) * 10000) + Math.round((lng % 1) * 10000)).toString();
-            document.getElementById('pin-display').innerText = window.calculatedPin;
-        }, null, { enableHighAccuracy: true });
-    };
-
-    async function startCamera() {
-        videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-        document.getElementById('video-preview').srcObject = videoStream;
-        document.getElementById('camera-container').style.display = 'block';
-        document.getElementById('cameraBtn').style.display = 'none';
-        document.getElementById('snapBtn').style.display = 'block';
-    }
-
-    function takePhoto() {
-        const video = document.getElementById('video-preview');
-        const statusBar = document.getElementById('status-bar');
-        statusBar.style.display = 'block';
-        
-        const mainCanvas = document.createElement('canvas');
-        const ctx = mainCanvas.getContext('2d');
-        mainCanvas.width = video.videoWidth; 
-        mainCanvas.height = video.videoHeight;
-        ctx.drawImage(video, 0, 0);
-
-        const now = new Date();
-        unixTs = Math.floor(now.getTime() / 1000);
-        const userName = localStorage.getItem('rv_name') || "User";
-        
-        dataArray = [
-            "See On NG",
-            userName,
-            unixTs,
-            now.toLocaleDateString(),
-            now.toLocaleTimeString(),
-            currentArea,
-            userLocation
-        ];
-
-        const dataPayload = dataArray.join("\n");
-        const qrContainer = document.getElementById('qr-hidden');
-        qrContainer.innerHTML = "";
-        new QRCode(qrContainer, { text: dataPayload, width: 256, height: 256, correctLevel: QRCode.CorrectLevel.M });
-
-        setTimeout(() => {
-            const qrCanvas = qrContainer.querySelector('canvas');
-            if (qrCanvas) {
-                const qrSize = Math.floor(mainCanvas.width * 0.28);
-                const margin = 40;
-                const qrX = (now.getDate() % 2 !== 0) ? margin : (mainCanvas.width - qrSize - margin);
-                const qrY = mainCanvas.height - qrSize - margin;
-                ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
-                
-                mainCanvas.toBlob(blob => {
-                    imageBlob = blob;
-                    if(videoStream) videoStream.getTracks().forEach(t => t.stop());
-                    
-                    const reviewImg = document.getElementById('review-img');
-                    reviewImg.src = URL.createObjectURL(imageBlob);
-                    reviewImg.style.display = 'block';
-
-                    document.getElementById('camera-container').style.display = 'none';
-                    document.getElementById('snapBtn').style.display = 'none';
-                    statusBar.style.display = 'none'; 
-                    document.getElementById('final-step').style.display = 'block';
-                }, 'image/jpeg', 0.9);
-            } else {
-                alert("Process Error. Retrying...");
-                location.reload();
-            }
-        }, 1500); 
-    }
-
-    function processAudit() {
-        if (document.getElementById('pinInput').value !== window.calculatedPin) return alert("PIN Mismatch");
-        const imgUrl = document.getElementById('review-img').src;
-        const a = document.createElement('a');
-        a.href = imgUrl; a.download = `Audit_${unixTs}.jpg`; a.click();
-        document.getElementById('final-step').style.display = 'none';
-        document.getElementById('share-hub').style.display = 'block';
-    }
-
-    function shareWhatsApp() {
-        const phone = (localStorage.getItem('rv_rec_phone') || "").replace(/\D/g,'');
-        const waText = encodeURIComponent(dataArray.join("\n") + "\n\nAttach proof image here.");
-        window.open(`https://wa.me/${phone}?text=${waText}`, '_blank');
-    }
-
-    function shareGmail() {
-        const email = localStorage.getItem('rv_rec_email') || "";
-        const sub = `Audit: ${unixTs} (${localStorage.getItem('rv_name')})`;
-        // Restoration of line breaks for both platforms
-        const emailBody = dataArray.join("\n") + "\n\nAttach proof image here.";
-        
-        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-
-        if (isMobile) {
-            window.location.href = `mailto:${email}?subject=${encodeURIComponent(sub)}&body=${encodeURIComponent(emailBody)}`;
-        } else {
-            const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${email}&su=${encodeURIComponent(sub)}&body=${encodeURIComponent(emailBody)}`;
-            window.open(gmailUrl, '_blank');
-        }
-    }
-
-    function updateTime() {
-        const n = new Date();
-        document.getElementById('display-date').innerText = n.toLocaleDateString();
-        document.getElementById('display-time').innerText = n.toLocaleTimeString();
-    }
-    setInterval(updateTime, 1000);
-</script>
-</body>
-</html>
+    async function getAddress(lat
