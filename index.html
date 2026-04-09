@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Route Stamp - v16.4</title>
+    <title>Route Stamp - v16.6</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root { --primary: #1a202c; --wa: #25d366; --gmail: #EA4335; --bg: #f7fafc; --blue: #4285F4; --red: #e53e3e; }
@@ -22,12 +22,12 @@
         .action-btn { width: 100%; padding: 14px; border: none; border-radius: 8px; background: var(--blue); color: white; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .share-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 10px; display: none; }
         .btn-link { padding: 14px; border-radius: 8px; border: none; color: white; font-weight: bold; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; text-transform: uppercase; }
-        #qr-hidden-vault { position: fixed; left: -9999px; top: 0; visibility: hidden; }
+        #qr-hidden { position: fixed; left: -9999px; top: 0; }
     </style>
 </head>
 <body>
 
-<div id="qr-hidden-vault"></div>
+<div id="qr-hidden"></div>
 
 <div class="card">
     <div id="settings-ui">
@@ -139,64 +139,60 @@
 
     function takePhoto() {
         const video = document.getElementById('video-preview');
-        if (!video || video.readyState < 2) return;
-
         const snapBtn = document.getElementById('snapBtn');
-        snapBtn.disabled = true;
+        
         snapBtn.innerText = "STAMPING...";
+        snapBtn.disabled = true;
 
         const now = new Date();
         unixTs = Math.floor(now.getTime() / 1000);
         const name = localStorage.getItem('rv_name') || "User";
         const body = `📌 Route Stamp\n${name}\n${window.calculatedPin}\n${unixTs}\n${now.toLocaleDateString()}\n${now.toLocaleTimeString()}\n${currentArea}\n${userLocation}`;
 
-        // 1. Generate QR code in hidden vault
-        const vault = document.getElementById('qr-hidden-vault');
-        vault.innerHTML = "";
-        new QRCode(vault, { text: body, width: 256, height: 256, correctLevel: QRCode.CorrectLevel.M });
-
-        // 2. Poll for QR Canvas readiness
-        let attempts = 0;
-        const checkQR = setInterval(() => {
-            attempts++;
-            const qrCanvas = vault.querySelector('canvas');
-            
-            if (qrCanvas || attempts > 20) {
-                clearInterval(checkQR);
-                renderFinalImage(video, qrCanvas, body, now);
-            }
-        }, 50);
-    }
-
-    function renderFinalImage(video, qrCanvas, body, now) {
+        // 1. Capture camera frame immediately to a canvas
         const mainCanvas = document.createElement('canvas');
         mainCanvas.width = video.videoWidth;
         mainCanvas.height = video.videoHeight;
         const ctx = mainCanvas.getContext('2d');
-        
-        // Draw the camera frame
         ctx.drawImage(video, 0, 0);
 
-        // Draw the QR if found
-        if (qrCanvas) {
-            const qrSize = Math.floor(mainCanvas.width * 0.28);
-            const margin = 40;
-            const qrX = (now.getDate() % 2 !== 0) ? margin : (mainCanvas.width - qrSize - margin);
-            ctx.drawImage(qrCanvas, qrX, mainCanvas.height - qrSize - margin, qrSize, qrSize);
-        }
+        // 2. Clear and generate new QR
+        const qrHidden = document.getElementById('qr-hidden');
+        qrHidden.innerHTML = "";
+        const qrcode = new QRCode(qrHidden, { text: body, width: 256, height: 256 });
 
-        mainCanvas.toBlob(blob => {
-            imageBlob = blob;
-            currentAuditData = { id: unixTs, name: `Audit_${unixTs}`, date: now.toLocaleDateString(), time: now.toLocaleTimeString(), body: body, img: blob };
-            
-            document.getElementById('review-img').src = URL.createObjectURL(blob);
-            document.getElementById('review-img').style.display = 'block';
-            document.getElementById('camera-container').style.display = 'none';
-            document.getElementById('snapBtn').style.display = 'none';
-            document.getElementById('final-step').style.display = 'block';
-            
-            if(videoStream) videoStream.getTracks().forEach(t => t.stop());
-        }, 'image/jpeg', 0.85);
+        // 3. Sequential check: Wait for QR then merge
+        let checkCount = 0;
+        const mergeSequence = setInterval(() => {
+            const qrCanvas = qrHidden.querySelector('canvas');
+            checkCount++;
+
+            if (qrCanvas || checkCount > 20) {
+                clearInterval(mergeSequence);
+                
+                // 4. If QR exists, draw it onto the main canvas
+                if (qrCanvas) {
+                    const qrSize = Math.floor(mainCanvas.width * 0.28);
+                    const margin = 40;
+                    const qrX = (now.getDate() % 2 !== 0) ? margin : (mainCanvas.width - qrSize - margin);
+                    ctx.drawImage(qrCanvas, qrX, mainCanvas.height - qrSize - margin, qrSize, qrSize);
+                }
+
+                // 5. Finalize the image and "Move On"
+                mainCanvas.toBlob(blob => {
+                    imageBlob = blob;
+                    currentAuditData = { id: unixTs, name: `Audit_${unixTs}`, date: now.toLocaleDateString(), time: now.toLocaleTimeString(), body: body, img: blob };
+                    
+                    document.getElementById('review-img').src = URL.createObjectURL(blob);
+                    document.getElementById('review-img').style.display = 'block';
+                    document.getElementById('camera-container').style.display = 'none';
+                    document.getElementById('snapBtn').style.display = 'none';
+                    document.getElementById('final-step').style.display = 'block';
+                    
+                    if(videoStream) videoStream.getTracks().forEach(t => t.stop());
+                }, 'image/jpeg', 0.85);
+            }
+        }, 100);
     }
 
     function processAudit() {
