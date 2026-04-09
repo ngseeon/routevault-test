@@ -3,208 +3,169 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Route Stamp - v17.5</title>
+    <title>Route Stamp v17.6</title>
     <style>
-        :root { --primary: #1a202c; --wa: #25d366; --gmail: #EA4335; --bg: #f7fafc; --blue: #4285F4; --red: #e53e3e; }
-        body { font-family: sans-serif; background: var(--bg); margin: 0; display: flex; justify-content: center; padding: 10px; }
-        .card { background: white; width: 100%; max-width: 460px; padding: 20px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); min-height: 80vh; display: flex; flex-direction: column; box-sizing: border-box; }
-        .tabs { display: flex; gap: 8px; margin-bottom: 15px; }
-        .tab-btn { flex: 1; padding: 12px; border: none; border-radius: 8px; background: #edf2f7; font-weight: bold; cursor: pointer; }
-        .tab-btn.active { background: var(--blue); color: white; }
-        .header { display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 8px; }
-        #camera-container { width: 100%; border-radius: 12px; overflow: hidden; background: #000; margin-bottom: 10px; display: none; aspect-ratio: 4/3; }
-        #video-preview { width: 100%; height: 100%; object-fit: cover; }
-        #review-img { width: 100%; border-radius: 12px; display: none; margin-bottom: 10px; border: 1px solid #ccc; }
-        .action-btn { width: 100%; padding: 15px; border: none; border-radius: 8px; background: var(--blue); color: white; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        #qr-buffer { position: absolute; left: -9999px; visibility: hidden; }
-        .share-grid { display: none; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-        #settings-ui { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: white; z-index: 1000; padding: 20px; }
-        input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        :root { --blue: #4285F4; --dark: #1a202c; --bg: #f7fafc; }
+        body { font-family: sans-serif; background: var(--bg); margin: 0; padding: 15px; display: flex; justify-content: center; }
+        .container { background: white; width: 100%; max-width: 450px; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); min-height: 80vh; box-sizing: border-box; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; font-size: 12px; font-weight: bold; }
+        #camera-box { width: 100%; background: #000; border-radius: 10px; overflow: hidden; display: none; aspect-ratio: 4/3; margin-bottom: 10px; }
+        video { width: 100%; height: 100%; object-fit: cover; }
+        #preview-img { width: 100%; border-radius: 10px; display: none; border: 1px solid #ddd; margin-bottom: 10px; }
+        .btn { width: 100%; padding: 15px; border: none; border-radius: 8px; background: var(--blue); color: white; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 16px; }
+        #settings-panel { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 100; padding: 25px; box-sizing: border-box; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+        .share-row { display: none; grid-template-columns: 1fr 1fr; gap: 10px; }
     </style>
 </head>
 <body>
 
-<div id="qr-buffer"></div>
-
-<div class="card">
-    <div id="settings-ui">
-        <h3>Settings</h3>
-        <input type="text" id="set-name" placeholder="Your Name">
-        <input type="text" id="set-rec-phone" placeholder="Recipient WhatsApp (e.g. 60123456789)">
-        <input type="email" id="set-rec-email" placeholder="Recipient Email">
-        <button class="action-btn" onclick="toggleSettings()">Save & Close</button>
-    </div>
-
-    <div class="tabs">
-        <button class="tab-btn active" id="tab-cap" onclick="showTab('capture')">CAPTURE</button>
-        <button class="tab-btn" id="tab-log" onclick="showTab('history')">LOG</button>
+<div class="container">
+    <div id="settings-panel">
+        <h3>User Settings</h3>
+        <input type="text" id="in-name" placeholder="Your Name">
+        <input type="text" id="in-wa" placeholder="Recipient WhatsApp (e.g. 60123456789)">
+        <input type="email" id="in-mail" placeholder="Recipient Email">
+        <button class="btn" onclick="saveSettings()">Save & Close</button>
     </div>
 
     <div class="header">
-        <div id="loc-display">📍 LOCATION: PENDING</div>
-        <div onclick="toggleSettings()" style="cursor:pointer">⚙️</div>
+        <div id="status">📍 GPS: PENDING</div>
+        <div onclick="document.getElementById('settings-panel').style.display='block'" style="cursor:pointer; font-size:20px;">⚙️</div>
     </div>
 
-    <div id="capture-area">
-        <div id="camera-container"><video id="video-preview" autoplay playsinline muted></video></div>
-        <img id="review-img">
-        
-        <button id="startBtn" class="action-btn" onclick="startApp()">Open Camera</button>
-        <button id="snapBtn" class="action-btn" style="display:none; background:var(--primary)" onclick="takePhoto()">Capture & Stamp</button>
-        
-        <div id="verify-area" style="display:none; text-align:center;">
-            <p>PIN: <span id="pin-show" style="color:var(--blue); font-weight:bold;">----</span></p>
-            <input type="number" id="pin-in" placeholder="Enter PIN">
-            <button class="action-btn" onclick="saveAudit()">Verify & Save</button>
-        </div>
+    <div id="camera-box"><video id="v" autoplay playsinline muted></video></div>
+    <img id="preview-img">
 
-        <div id="share-area" class="share-grid">
-            <button class="action-btn" style="background:var(--wa)" onclick="shareWA()">WhatsApp</button>
-            <button class="action-btn" style="background:var(--gmail)" onclick="shareEmail()">Email</button>
-            <button class="action-btn" style="background:#718096; grid-column: span 2;" onclick="location.reload()">Reset</button>
-        </div>
+    <button id="btn-start" class="btn" onclick="openCamera()">Open Audit Camera</button>
+    <button id="btn-snap" class="btn" style="display:none; background:var(--dark);" onclick="takeStamp()">Capture & Stamp</button>
+
+    <div id="pin-section" style="display:none; text-align:center; padding: 10px;">
+        <p>SECURITY PIN: <span id="pin-code" style="color:var(--blue); font-weight:bold;">----</span></p>
+        <input type="number" id="pin-entry" placeholder="Enter PIN to Verify" style="text-align:center; font-size:20px;">
+        <button class="btn" onclick="verifyAndSave()">Verify Audit</button>
     </div>
 
-    <div id="log-area" style="display:none">
-        <div id="history-list" style="font-size:12px;"></div>
+    <div id="share-section" class="share-row">
+        <button class="btn" style="background:#25d366" onclick="doShare('wa')">WhatsApp</button>
+        <button class="btn" style="background:#EA4335" onclick="doShare('mail')">Email</button>
+        <button class="btn" style="background:#718096; grid-column: span 2;" onclick="location.reload()">Start New</button>
     </div>
 </div>
+
+<div id="qr-hidden" style="display:none;"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
 <script>
-    let db, stream, blob, auditData, latLon = "N/A", area = "Audit Site", pin = "0000";
+    let db, videoStream, currentBlob, auditText, currentPin = "0000", gpsText = "N/A";
 
-    // Initialize DB
-    const req = indexedDB.open("RouteVaultDB", 7);
+    // Setup Database
+    const req = indexedDB.open("RouteVaultDB", 8);
     req.onsuccess = e => db = e.target.result;
     req.onupgradeneeded = e => e.target.result.createObjectStore("audits", { keyPath: "id" });
 
-    function toggleSettings() {
-        const s = document.getElementById('settings-ui');
-        s.style.display = s.style.display === 'block' ? 'none' : 'block';
-        if(s.style.display === 'none') {
-            localStorage.setItem('name', document.getElementById('set-name').value);
-            localStorage.setItem('r_tel', document.getElementById('set-rec-phone').value);
-            localStorage.setItem('r_em', document.getElementById('set-rec-email').value);
-        }
+    function saveSettings() {
+        localStorage.setItem('rs_name', document.getElementById('in-name').value);
+        localStorage.setItem('rs_wa', document.getElementById('in-wa').value);
+        localStorage.setItem('rs_mail', document.getElementById('in-mail').value);
+        document.getElementById('settings-panel').style.display = 'none';
     }
 
-    function showTab(t) {
-        document.getElementById('capture-area').style.display = t === 'capture' ? 'block' : 'none';
-        document.getElementById('log-area').style.display = t === 'history' ? 'block' : 'none';
-        document.getElementById('tab-cap').className = t === 'capture' ? 'tab-btn active' : 'tab-btn';
-        document.getElementById('tab-log').className = t === 'history' ? 'tab-btn active' : 'tab-btn';
-        if(t === 'history') renderLog();
-    }
-
-    function startApp() {
+    function openCamera() {
+        // Start GPS
         navigator.geolocation.getCurrentPosition(p => {
             const lat = p.coords.latitude, lon = p.coords.longitude;
-            latLon = `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
-            pin = (Math.round((lat % 1) * 10000) + Math.round((lon % 1) * 10000)).toString();
-            document.getElementById('pin-show').innerText = pin;
-            document.getElementById('loc-display').innerText = `📍 GPS: ${latLon}`;
-        });
+            gpsText = `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+            currentPin = (Math.round((lat % 1) * 10000) + Math.round((lon % 1) * 10000)).toString();
+            document.getElementById('pin-code').innerText = currentPin;
+            document.getElementById('status').innerText = "📍 GPS: ACTIVE";
+        }, () => alert("Please enable GPS"));
 
+        // Start Video
         navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
             .then(s => {
-                stream = s;
-                document.getElementById('video-preview').srcObject = s;
-                document.getElementById('camera-container').style.display = 'block';
-                document.getElementById('startBtn').style.display = 'none';
-                document.getElementById('snapBtn').style.display = 'block';
+                videoStream = s;
+                document.getElementById('v').srcObject = s;
+                document.getElementById('camera-box').style.display = 'block';
+                document.getElementById('btn-start').style.display = 'none';
+                document.getElementById('btn-snap').style.display = 'block';
             }).catch(e => alert("Camera error: " + e));
     }
 
-    async function takePhoto() {
-        const v = document.getElementById('video-preview');
-        const buf = document.getElementById('qr-buffer');
+    function takeStamp() {
+        const video = document.getElementById('v');
+        const qrBox = document.getElementById('qr-hidden');
         const ts = Math.floor(Date.now()/1000);
-        const name = localStorage.getItem('name') || "User";
+        const name = localStorage.getItem('rs_name') || "User";
         
         const lines = [
             "📌 ROUTE STAMP",
             `USER: ${name.toUpperCase()}`,
-            `PIN: ${pin}`,
+            `PIN: ${currentPin}`,
             `ID: ${ts}`,
             `TIME: ${new Date().toLocaleString()}`,
-            `GPS: ${latLon}`
+            `GPS: ${gpsText}`
         ];
-        const text = lines.join('\n');
+        auditText = lines.join('\n');
 
-        buf.innerHTML = "";
-        if(typeof QRCode !== 'undefined') {
-            new QRCode(buf, { text: text, width: 200, height: 200 });
-        }
+        qrBox.innerHTML = "";
+        if(window.QRCode) { new QRCode(qrBox, { text: auditText, width: 200, height: 200 }); }
 
         setTimeout(() => {
-            const c = document.createElement('canvas');
-            c.width = v.videoWidth; c.height = v.videoHeight;
-            const ctx = c.getContext('2d');
-            ctx.drawImage(v, 0, 0);
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0);
 
+            // Stamp Text
             ctx.fillStyle = "white"; ctx.strokeStyle = "black"; ctx.lineWidth = 3;
-            ctx.font = "bold 20px Arial";
-            lines.forEach((l, i) => {
-                ctx.strokeText(l, 20, 40 + (i*25));
-                ctx.fillText(l, 20, 40 + (i*25));
+            ctx.font = "bold 22px Arial";
+            lines.forEach((txt, i) => {
+                ctx.strokeText(txt, 25, 45 + (i*28));
+                ctx.fillText(txt, 25, 45 + (i*28));
             });
 
-            const qr = buf.querySelector('canvas');
-            if(qr) ctx.drawImage(qr, c.width-180, c.height-180, 160, 160);
+            // Stamp QR
+            const qrCanvas = qrBox.querySelector('canvas');
+            if(qrCanvas) ctx.drawImage(qrCanvas, canvas.width-190, canvas.height-190, 160, 160);
 
-            c.toBlob(b => {
-                blob = b;
-                auditData = { id: ts, text: text, img: b, date: new Date().toLocaleDateString() };
-                document.getElementById('review-img').src = URL.createObjectURL(b);
-                document.getElementById('review-img').style.display = 'block';
-                document.getElementById('camera-container').style.display = 'none';
-                document.getElementById('snapBtn').style.display = 'none';
-                document.getElementById('verify-area').style.display = 'block';
-                stream.getTracks().forEach(t => t.stop());
+            canvas.toBlob(b => {
+                currentBlob = b;
+                document.getElementById('preview-img').src = URL.createObjectURL(b);
+                document.getElementById('preview-img').style.display = 'block';
+                document.getElementById('camera-box').style.display = 'none';
+                document.getElementById('btn-snap').style.display = 'none';
+                document.getElementById('pin-section').style.display = 'block';
+                videoStream.getTracks().forEach(t => t.stop());
             }, 'image/jpeg', 0.8);
-        }, 500);
+        }, 600);
     }
 
-    function saveAudit() {
-        if(document.getElementById('pin-in').value !== pin) return alert("PIN Error");
+    function verifyAndSave() {
+        if(document.getElementById('pin-entry').value !== currentPin) return alert("PIN Incorrect");
         const tx = db.transaction("audits", "readwrite");
-        tx.objectStore("audits").add(auditData);
-        document.getElementById('verify-area').style.display = 'none';
-        document.getElementById('share-area').style.display = 'grid';
+        tx.objectStore("audits").add({ id: Math.floor(Date.now()/1000), text: auditText, img: currentBlob });
+        document.getElementById('pin-section').style.display = 'none';
+        document.getElementById('share-section').style.display = 'grid';
     }
 
-    function renderLog() {
-        const l = document.getElementById('history-list');
-        l.innerHTML = "Loading...";
-        db.transaction("audits").objectStore("audits").getAll().onsuccess = e => {
-            l.innerHTML = "";
-            e.target.result.reverse().forEach(a => {
-                const d = document.createElement('div');
-                d.style = "padding:10px; border-bottom:1px solid #eee";
-                d.innerText = `Audit ${a.id} - ${a.date}`;
-                l.appendChild(d);
-            });
-        };
-    }
-
-    function shareWA() {
-        const p = (localStorage.getItem('r_tel') || "").replace(/\D/g,'');
-        window.open(`https://wa.me/${p}?text=${encodeURIComponent(auditData.text)}`);
-    }
-
-    function shareEmail() {
-        const e = localStorage.getItem('r_em') || "";
-        window.open(`mailto:${e}?subject=Audit&body=${encodeURIComponent(auditData.text)}`);
+    function doShare(mode) {
+        const text = encodeURIComponent(auditText);
+        if(mode === 'wa') {
+            const num = (localStorage.getItem('rs_wa') || "").replace(/\D/g,'');
+            window.open(`https://wa.me/${num}?text=${text}`);
+        } else {
+            const mail = localStorage.getItem('rs_mail') || "";
+            window.open(`mailto:${mail}?subject=RouteAudit&body=${text}`);
+        }
     }
 
     window.onload = () => {
-        document.getElementById('set-name').value = localStorage.getItem('name') || "";
-        document.getElementById('set-rec-phone').value = localStorage.getItem('r_tel') || "";
-        document.getElementById('set-rec-email').value = localStorage.getItem('r_em') || "";
+        document.getElementById('in-name').value = localStorage.getItem('rs_name') || "";
+        document.getElementById('in-wa').value = localStorage.getItem('rs_wa') || "";
+        document.getElementById('in-mail').value = localStorage.getItem('rs_mail') || "";
     };
 </script>
 </body>
-                </html>
-        
+</html>
