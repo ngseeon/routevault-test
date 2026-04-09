@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RouteVault AI - Hybrid Sync</title>
+    <title>RouteVault AI - Unified Format</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root { --primary: #1a202c; --wa: #25d366; --gmail: #EA4335; --bg: #f7fafc; --blue: #4285F4; }
@@ -77,7 +77,7 @@
 </div>
 
 <script>
-    let videoStream, imageBlob, userLocation = "N/A", emailBody = "", currentArea = "DETECTING...", unixTs = 0;
+    let videoStream, imageBlob, userLocation = "N/A", dataArray = [], currentArea = "DETECTING...", unixTs = 0;
 
     function toggleSettings() {
         const ui = document.getElementById('settings-ui');
@@ -141,8 +141,18 @@
         const now = new Date();
         unixTs = Math.floor(now.getTime() / 1000);
         const userName = localStorage.getItem('rv_name') || "User";
-        const dataPayload = `See On NG\n${userName}\n${unixTs}\n${now.toLocaleDateString()}\n${now.toLocaleTimeString()}\n${currentArea}\n${userLocation}`;
         
+        dataArray = [
+            "See On NG",
+            userName,
+            unixTs,
+            now.toLocaleDateString(),
+            now.toLocaleTimeString(),
+            currentArea,
+            userLocation
+        ];
+
+        const dataPayload = dataArray.join("\n");
         const qrContainer = document.getElementById('qr-hidden');
         qrContainer.innerHTML = "";
         new QRCode(qrContainer, { text: dataPayload, width: 256, height: 256, correctLevel: QRCode.CorrectLevel.M });
@@ -178,37 +188,31 @@
 
     function processAudit() {
         if (document.getElementById('pinInput').value !== window.calculatedPin) return alert("PIN Mismatch");
-        const now = new Date();
-        emailBody = `See On NG\n${unixTs}\n${now.toLocaleDateString()}\n${now.toLocaleTimeString()}\n${currentArea}\n${userLocation}`;
-
+        const imgUrl = document.getElementById('review-img').src;
         const a = document.createElement('a');
-        a.href = document.getElementById('review-img').src; 
-        a.download = `Audit_${unixTs}.jpg`; a.click();
-        
+        a.href = imgUrl; a.download = `Audit_${unixTs}.jpg`; a.click();
         document.getElementById('final-step').style.display = 'none';
         document.getElementById('share-hub').style.display = 'block';
     }
 
     function shareWhatsApp() {
         const phone = (localStorage.getItem('rv_rec_phone') || "").replace(/\D/g,'');
-        const text = encodeURIComponent(emailBody + "\n\nAttach proof image here.");
-        window.open(`https://wa.me/${phone}?text=${text}`, '_blank');
+        const waText = encodeURIComponent(dataArray.join("\n") + "\n\nAttach proof image here.");
+        window.open(`https://wa.me/${phone}?text=${waText}`, '_blank');
     }
 
     function shareGmail() {
         const email = localStorage.getItem('rv_rec_email') || "";
-        const sub = encodeURIComponent(`Audit: ${unixTs} (${localStorage.getItem('rv_name')})`);
-        const body = encodeURIComponent(`${emailBody}\n\nAttach proof image here.`);
+        const sub = `Audit: ${unixTs} (${localStorage.getItem('rv_name')})`;
+        // Restoration of line breaks for both platforms
+        const emailBody = dataArray.join("\n") + "\n\nAttach proof image here.";
         
-        // DETECTION LOGIC:
         const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
         if (isMobile) {
-            // MOBILE: Use mailto to trigger the App
-            window.location.href = `mailto:${email}?subject=${decodeURIComponent(sub)}&body=${decodeURIComponent(body)}`;
+            window.location.href = `mailto:${email}?subject=${encodeURIComponent(sub)}&body=${encodeURIComponent(emailBody)}`;
         } else {
-            // COMPUTER: Use direct Gmail Web Link
-            const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${email}&su=${decodeURIComponent(sub)}&body=${decodeURIComponent(body)}`;
+            const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${email}&su=${encodeURIComponent(sub)}&body=${encodeURIComponent(emailBody)}`;
             window.open(gmailUrl, '_blank');
         }
     }
