@@ -225,5 +225,29 @@
 
     window.onload = () => {
         ['name','phone','rec-phone','rec-email'].forEach(k => {
-            document.getElementById('set-'+k).value =
-                                       
+            document.getElementById('set-'+k).value = localStorage.getItem('rv_'+k.replace('-','_')) || "";
+        });
+        setInterval(() => {
+            const n = new Date();
+            document.getElementById('display-date').innerText = n.toLocaleDateString();
+            document.getElementById('display-time').innerText = n.toLocaleTimeString();
+        }, 1000);
+
+        navigator.geolocation.watchPosition(pos => {
+            const lat = pos.coords.latitude, lng = pos.coords.longitude;
+            userLocation = `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`;
+            document.getElementById('gps-status').innerText = "GPS: ON";
+            document.getElementById('gps-status').style.color = "green";
+            window.calculatedPin = (Math.round((lat % 1) * 10000) + Math.round((lng % 1) * 10000)).toString();
+            document.getElementById('pin-display').innerText = window.calculatedPin;
+            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
+                .then(r => r.json()).then(d => {
+                    currentArea = d.address.suburb || d.address.town || d.address.city || "Site";
+                    document.getElementById('location-name').innerText = `📍 ${currentArea.toUpperCase()}`;
+                });
+        }, null, { enableHighAccuracy: true });
+    };
+</script>
+</body>
+            </html>
+    
