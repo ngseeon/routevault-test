@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Route Stamp - v15.8</title>
+    <title>Route Stamp - v16.0</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root { --primary: #1a202c; --wa: #25d366; --gmail: #EA4335; --bg: #f7fafc; --blue: #4285F4; --red: #e53e3e; }
@@ -18,18 +18,16 @@
         #camera-container { width: 100%; border-radius: 12px; overflow: hidden; background: #000; margin-bottom: 10px; display: none; aspect-ratio: 4/3; }
         #video-preview { width: 100%; height: 100%; object-fit: cover; }
         #review-img { width: 100%; border-radius: 12px; margin-bottom: 15px; border: 2px solid #e2e8f0; display: none; }
+        .live-clock { text-align: center; font-family: monospace; font-size: 18px; background: var(--primary); padding: 12px; border-radius: 8px; margin-bottom: 15px; color: #68d391; }
+        .action-btn { width: 100%; padding: 14px; border: none; border-radius: 8px; background: var(--blue); color: white; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .share-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 10px; display: none; }
+        .btn-link { padding: 14px; border-radius: 8px; border: none; color: white; font-weight: bold; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; text-transform: uppercase; }
         #history-section { display: none; flex-grow: 1; overflow: hidden; flex-direction: column; }
         .history-table-wrapper { overflow-y: auto; flex-grow: 1; border: 1px solid #e2e8f0; border-radius: 8px; background: white; }
         table { width: 100%; border-collapse: collapse; font-size: 12px; }
         th { background: #f7fafc; position: sticky; top: 0; padding: 12px 10px; text-align: left; border-bottom: 2px solid #e2e8f0; }
         td { padding: 12px 10px; border-bottom: 1px solid #edf2f7; cursor: pointer; }
-        .live-clock { text-align: center; font-family: monospace; font-size: 18px; background: var(--primary); padding: 12px; border-radius: 8px; margin-bottom: 15px; color: #68d391; }
-        .action-btn { width: 100%; padding: 14px; border: none; border-radius: 8px; background: var(--blue); color: white; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        .share-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 10px; display: none; }
-        .btn-link { padding: 14px; border-radius: 8px; border: none; color: white; font-weight: bold; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; text-transform: uppercase; }
-        /* Hidden Div for QR rendering - keep it in DOM but off-screen */
-        #qr-offscreen { position: absolute; top: -5000px; left: -5000px; }
-        #loading-msg { display: none; text-align: center; color: var(--blue); font-weight: bold; margin-bottom: 10px; }
+        #qr-offscreen { position: absolute; left: -9999px; }
     </style>
 </head>
 <body>
@@ -62,7 +60,6 @@
     </div>
 
     <div id="capture-section">
-        <div id="loading-msg">⚙️ GENERATING STAMP...</div>
         <div class="live-clock"><span id="display-date"></span> | <span id="display-time"></span></div>
         <div id="camera-container"><video id="video-preview" autoplay playsinline muted></video></div>
         <img id="review-img" src="" alt="Audit Preview">
@@ -99,7 +96,6 @@
 <script>
     let db, videoStream, imageBlob, currentAuditData = null, userLocation = "N/A", currentArea = "DETECTING...", unixTs = 0;
 
-    // Direct Database Access
     const dbReq = indexedDB.open("RouteStampDB", 3);
     dbReq.onsuccess = e => { db = e.target.result; };
 
@@ -109,11 +105,11 @@
     }
 
     function saveSettings() {
-        localStorage.setItem('rv_name', document.getElementById('set-name').value);
-        localStorage.setItem('rv_phone', document.getElementById('set-phone').value);
-        localStorage.setItem('rv_email', document.getElementById('set-email').value);
-        localStorage.setItem('rv_rec_phone', document.getElementById('set-rec-phone').value);
-        localStorage.setItem('rv_rec_email', document.getElementById('set-rec-email').value);
+        localStorage.setItem('rv_name', document.getElementById('set-name').value || "");
+        localStorage.setItem('rv_phone', document.getElementById('set-phone').value || "");
+        localStorage.setItem('rv_email', document.getElementById('set-email').value || "");
+        localStorage.setItem('rv_rec_phone', document.getElementById('set-rec-phone').value || "");
+        localStorage.setItem('rv_rec_email', document.getElementById('set-rec-email').value || "");
         toggleSettings();
     }
 
@@ -142,68 +138,49 @@
             document.getElementById('camera-container').style.display = 'block';
             document.getElementById('cameraBtn').style.display = 'none';
             document.getElementById('snapBtn').style.display = 'block';
-            document.getElementById('review-img').style.display = 'none';
         } catch (e) { alert("Camera Access Required."); }
     }
 
     function takePhoto() {
         const video = document.getElementById('video-preview');
-        if (!video || video.readyState < 2) return alert("Camera not ready");
-
-        document.getElementById('loading-msg').style.display = 'block';
-        document.getElementById('snapBtn').style.display = 'none';
+        if (!video || video.readyState < 2) return;
 
         const now = new Date();
         unixTs = Math.floor(now.getTime() / 1000);
         const name = localStorage.getItem('rv_name') || "User";
         const body = `📌 Route Stamp\n${name}\n${window.calculatedPin}\n${unixTs}\n${now.toLocaleDateString()}\n${now.toLocaleTimeString()}\n${currentArea}\n${userLocation}`;
 
-        // QR Prep
-        const qrDiv = document.getElementById('qr-offscreen');
-        qrDiv.innerHTML = "";
-        
-        try {
-            // Force rendering to a canvas inside the offscreen div
-            new QRCode(qrDiv, {
-                text: body,
-                width: 256,
-                height: 256,
-                correctLevel: QRCode.CorrectLevel.M
-            });
+        // RESTORED: Old reliable QR logic
+        const qrOff = document.getElementById('qr-offscreen');
+        qrOff.innerHTML = "";
+        new QRCode(qrOff, { text: body, width: 256, height: 256 });
 
-            // Delay to ensure the QR library finished drawing
-            setTimeout(() => {
-                const qrCanvas = qrDiv.querySelector('canvas');
-                const mainCanvas = document.createElement('canvas');
-                const ctx = mainCanvas.getContext('2d');
-                
-                mainCanvas.width = video.videoWidth;
-                mainCanvas.height = video.videoHeight;
-                ctx.drawImage(video, 0, 0);
+        setTimeout(() => {
+            const qrCanvas = qrOff.querySelector('canvas');
+            const mainCanvas = document.createElement('canvas');
+            const ctx = mainCanvas.getContext('2d');
+            mainCanvas.width = video.videoWidth;
+            mainCanvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0);
 
-                if (qrCanvas) {
-                    const qrSize = Math.floor(mainCanvas.width * 0.28);
-                    const margin = 40;
-                    const qrX = (now.getDate() % 2 !== 0) ? margin : (mainCanvas.width - qrSize - margin);
-                    ctx.drawImage(qrCanvas, qrX, mainCanvas.height - qrSize - margin, qrSize, qrSize);
-                }
+            if (qrCanvas) {
+                const qrSize = Math.floor(mainCanvas.width * 0.28);
+                const margin = 40;
+                const qrX = (now.getDate() % 2 !== 0) ? margin : (mainCanvas.width - qrSize - margin);
+                ctx.drawImage(qrCanvas, qrX, mainCanvas.height - qrSize - margin, qrSize, qrSize);
+            }
 
-                mainCanvas.toBlob(blob => {
-                    imageBlob = blob;
-                    currentAuditData = { id: unixTs, name: `Audit_${unixTs}`, date: now.toLocaleDateString(), time: now.toLocaleTimeString(), body: body, img: blob };
-                    document.getElementById('review-img').src = URL.createObjectURL(blob);
-                    document.getElementById('review-img').style.display = 'block';
-                    document.getElementById('camera-container').style.display = 'none';
-                    document.getElementById('loading-msg').style.display = 'none';
-                    document.getElementById('final-step').style.display = 'block';
-                    if(videoStream) videoStream.getTracks().forEach(t => t.stop());
-                }, 'image/jpeg', 0.85);
-            }, 500);
-        } catch (err) {
-            alert("Stamp Error. Please try again.");
-            document.getElementById('loading-msg').style.display = 'none';
-            document.getElementById('snapBtn').style.display = 'block';
-        }
+            mainCanvas.toBlob(blob => {
+                imageBlob = blob;
+                currentAuditData = { id: unixTs, name: `Audit_${unixTs}`, date: now.toLocaleDateString(), time: now.toLocaleTimeString(), body: body, img: blob };
+                document.getElementById('review-img').src = URL.createObjectURL(blob);
+                document.getElementById('review-img').style.display = 'block';
+                document.getElementById('camera-container').style.display = 'none';
+                document.getElementById('snapBtn').style.display = 'none';
+                document.getElementById('final-step').style.display = 'block';
+                if(videoStream) videoStream.getTracks().forEach(t => t.stop());
+            }, 'image/jpeg', 0.85);
+        }, 500);
     }
 
     function processAudit() {
