@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RouteVault AI - Persistent Review</title>
+    <title>RouteVault AI - Web Optimized</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root { --primary: #1a202c; --wa: #25d366; --gmail: #EA4335; --bg: #f7fafc; --blue: #4285F4; }
@@ -14,10 +14,7 @@
         #camera-container { width: 100%; border-radius: 12px; overflow: hidden; background: #000; margin-bottom: 10px; display: none; aspect-ratio: 4/3; }
         #video-preview { width: 100%; height: 100%; object-fit: cover; }
         #status-bar { display: none; text-align: center; background: #ebf8ff; color: #2b6cb0; padding: 10px; border-radius: 8px; margin-bottom: 10px; font-size: 12px; font-weight: bold; border: 1px solid #bee3f8; }
-        
-        /* Persistent Review Image */
         #review-img { width: 100%; border-radius: 12px; margin-bottom: 15px; border: 2px solid #e2e8f0; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        
         .live-clock { text-align: center; font-family: monospace; font-size: 18px; background: var(--primary); padding: 12px; border-radius: 8px; margin-bottom: 15px; color: #68d391; }
         .action-btn { width: 100%; padding: 14px; border: none; border-radius: 8px; background: var(--blue); color: white; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 14px; }
         input { width: 94%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; margin-bottom: 10px; display: block; }
@@ -56,9 +53,7 @@
     <div class="live-clock"><span id="display-date"></span> | <span id="display-time"></span></div>
     
     <div id="camera-container"><video id="video-preview" autoplay playsinline></video></div>
-    
     <div id="status-bar">🛡️ STAMPING PROOF: Securing GPS & QR...</div>
-
     <img id="review-img" src="" alt="Proof Preview">
 
     <div id="ui-main">
@@ -74,7 +69,7 @@
         <div id="share-hub">
             <div class="share-grid">
                 <button onclick="shareWhatsApp()" class="btn-link" style="background:var(--wa);">WhatsApp</button>
-                <button onclick="shareEmail()" class="btn-link" style="background:var(--gmail);">Email</button>
+                <button onclick="shareGmail()" class="btn-link" style="background:var(--gmail);">Gmail</button>
             </div>
             <button class="action-btn" style="background:#718096; margin-top:20px;" onclick="location.reload()">New Audit</button>
         </div>
@@ -165,12 +160,10 @@
                     imageBlob = blob;
                     if(videoStream) videoStream.getTracks().forEach(t => t.stop());
                     
-                    // Display the image immediately
                     const reviewImg = document.getElementById('review-img');
                     reviewImg.src = URL.createObjectURL(imageBlob);
                     reviewImg.style.display = 'block';
 
-                    // Hide camera, show PIN
                     document.getElementById('camera-container').style.display = 'none';
                     document.getElementById('snapBtn').style.display = 'none';
                     statusBar.style.display = 'none'; 
@@ -188,7 +181,6 @@
         const now = new Date();
         emailBody = `See On NG\n${unixTs}\n${now.toLocaleDateString()}\n${now.toLocaleTimeString()}\n${currentArea}\n${userLocation}`;
 
-        // Auto Download the image
         const a = document.createElement('a');
         a.href = document.getElementById('review-img').src; 
         a.download = `Audit_${unixTs}.jpg`; 
@@ -204,11 +196,14 @@
         window.open(`https://wa.me/${phone}?text=${text}`, '_blank');
     }
 
-    function shareEmail() {
+    function shareGmail() {
         const email = localStorage.getItem('rv_rec_email') || "";
-        const sub = `Audit: ${unixTs} (${localStorage.getItem('rv_name')})`;
-        const body = `${emailBody}\n\nAttach proof image here.`;
-        window.location.href = `mailto:${email}?subject=${encodeURIComponent(sub)}&body=${encodeURIComponent(body)}`;
+        const sub = encodeURIComponent(`Audit: ${unixTs} (${localStorage.getItem('rv_name')})`);
+        const body = encodeURIComponent(`${emailBody}\n\nAttach proof image here.`);
+        
+        // This direct link forces Chrome to open Gmail Compose in a new tab
+        const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${email}&su=${sub}&body=${body}`;
+        window.open(gmailUrl, '_blank');
     }
 
     function updateTime() {
