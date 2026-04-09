@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Route Stamp - v17.1</title>
+    <title>Route Stamp - v17.2</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root { --primary: #1a202c; --wa: #25d366; --gmail: #EA4335; --bg: #f7fafc; --blue: #4285F4; --red: #e53e3e; }
@@ -22,12 +22,12 @@
         .action-btn { width: 100%; padding: 14px; border: none; border-radius: 8px; background: var(--blue); color: white; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .share-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 10px; display: none; }
         .btn-link { padding: 14px; border-radius: 8px; border: none; color: white; font-weight: bold; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; text-transform: uppercase; }
-        #qr-preload { position: absolute; left: -9999px; }
+        #qr-buffer { position: absolute; left: -9999px; }
     </style>
 </head>
 <body>
 
-<div id="qr-preload"></div>
+<div id="qr-buffer"></div>
 
 <div class="card">
     <div id="settings-ui">
@@ -66,13 +66,13 @@
             <div id="final-step" style="display:none; text-align:center;">
                 <p style="font-size:11px; font-weight:bold;">SECURITY PIN: <span id="pin-display" style="color:var(--blue);">--</span></p>
                 <input type="number" id="pinInput" placeholder="Enter PIN" style="font-size:20px; text-align:center; width:140px; margin: 0 auto 10px; display: block;">
-                <button id="verifyBtn" class="action-btn" onclick="processAudit()">Verify & Store Audit</button>
+                <button class="action-btn" onclick="processAudit()">Verify & Store Audit</button>
             </div>
         </div>
     </div>
 
     <div id="history-section" style="display:none; flex-grow:1; flex-direction:column;">
-        <div id="history-list-container" style="overflow-y:auto; flex-grow:1; border:1px solid #e2e8f0; border-radius:8px; background:white;">
+        <div style="overflow-y:auto; flex-grow:1; border:1px solid #e2e8f0; border-radius:8px; background:white;">
             <table style="width:100%; border-collapse:collapse; font-size:12px;">
                 <thead><tr style="background:#f7fafc;"><th style="padding:12px; text-align:left;">File Name</th><th style="padding:12px;">Date</th></tr></thead>
                 <tbody id="history-list"></tbody>
@@ -134,71 +134,89 @@
             document.getElementById('camera-container').style.display = 'block';
             document.getElementById('cameraBtn').style.display = 'none';
             document.getElementById('snapBtn').style.display = 'block';
-            prepareQR();
-        } catch (e) { alert("Camera Error: Please check permissions."); }
-    }
-
-    function prepareQR() {
-        const now = new Date();
-        const nTs = Math.floor(now.getTime() / 1000);
-        const name = localStorage.getItem('rv_name') || "User";
-        const body = `📌 Route Stamp\n${name}\n${window.calculatedPin}\n${nTs}\n${now.toLocaleDateString()}\n${now.toLocaleTimeString()}\n${currentArea}\n${userLocation}`;
-        const qrDiv = document.getElementById('qr-preload');
-        qrDiv.innerHTML = "";
-        new QRCode(qrDiv, { text: body, width: 256, height: 256 });
-        window.currentQRBody = body;
-        window.currentTimestamp = nTs;
+        } catch (e) { alert("Access Camera Permission."); }
     }
 
     function takePhoto() {
         const video = document.getElementById('video-preview');
-        const qrDiv = document.getElementById('qr-preload');
-        const canvas = document.createElement('canvas');
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(video, 0, 0);
+        const buffer = document.getElementById('qr-buffer');
+        const now = new Date();
+        unixTs = Math.floor(now.getTime() / 1000);
+        const name = localStorage.getItem('rv_name') || "User";
+        const pin = window.calculatedPin || "0000";
+        
+        // The 8-Line Body
+        const bodyLines = [
+            "📌 ROUTE STAMP",
+            `USER: ${name.toUpperCase()}`,
+            `PIN: ${pin}`,
+            `ID: ${unixTs}`,
+            `DATE: ${now.toLocaleDateString()}`,
+            `TIME: ${now.toLocaleTimeString()}`,
+            `AREA: ${currentArea.toUpperCase()}`,
+            `GPS: ${userLocation}`
+        ];
+        const bodyText = bodyLines.join('\n');
 
-        const qrCanvas = qrDiv.querySelector('canvas');
-        if (qrCanvas) {
-            const size = Math.floor(canvas.width * 0.28);
-            const margin = 40;
-            const x = (new Date().getDate() % 2 !== 0) ? margin : (canvas.width - size - margin);
-            ctx.drawImage(qrCanvas, x, canvas.height - size - margin, size, size);
-        }
+        // Generate QR in buffer
+        buffer.innerHTML = "";
+        new QRCode(buffer, { text: bodyText, width: 256, height: 256 });
 
-        canvas.toBlob(blob => {
-            imageBlob = blob;
-            currentAuditData = { id: window.currentTimestamp, name: `Audit_${window.currentTimestamp}`, date: new Date().toLocaleDateString(), time: new Date().toLocaleTimeString(), body: window.currentQRBody, img: blob };
-            document.getElementById('review-img').src = URL.createObjectURL(blob);
-            document.getElementById('review-img').style.display = 'block';
-            document.getElementById('camera-container').style.display = 'none';
-            document.getElementById('snapBtn').style.display = 'none';
-            document.getElementById('final-step').style.display = 'block';
-            if(videoStream) videoStream.getTracks().forEach(t => t.stop());
-        }, 'image/jpeg', 0.85);
+        setTimeout(() => {
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            
+            // 1. Photo
+            ctx.drawImage(video, 0, 0);
+
+            // 2. Draw Text (Restore v15.0 Text Logic)
+            ctx.fillStyle = "white";
+            ctx.strokeStyle = "black";
+            ctx.lineWidth = 4;
+            ctx.font = "bold 22px Arial";
+            
+            let yPos = 40;
+            bodyLines.forEach(line => {
+                ctx.strokeText(line, 30, yPos);
+                ctx.fillText(line, 30, yPos);
+                yPos += 30;
+            });
+
+            // 3. Draw QR
+            const qrCanvas = buffer.querySelector('canvas');
+            if (qrCanvas) {
+                const qrSize = Math.floor(canvas.width * 0.28);
+                const qrX = canvas.width - qrSize - 30;
+                const qrY = canvas.height - qrSize - 30;
+                ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
+            }
+
+            canvas.toBlob(blob => {
+                imageBlob = blob;
+                currentAuditData = { id: unixTs, name: `Audit_${unixTs}`, date: now.toLocaleDateString(), time: now.toLocaleTimeString(), body: bodyText, img: blob };
+                document.getElementById('review-img').src = URL.createObjectURL(blob);
+                document.getElementById('review-img').style.display = 'block';
+                document.getElementById('camera-container').style.display = 'none';
+                document.getElementById('snapBtn').style.display = 'none';
+                document.getElementById('final-step').style.display = 'block';
+                if(videoStream) videoStream.getTracks().forEach(t => t.stop());
+            }, 'image/jpeg', 0.9);
+        }, 200);
     }
 
     function processAudit() {
-        const input = document.getElementById('pinInput').value;
-        if (input !== window.calculatedPin) return alert("Incorrect PIN");
-
-        document.getElementById('verifyBtn').innerText = "SAVING...";
-        document.getElementById('verifyBtn').disabled = true;
-
-        // Force UI transition IMMEDIATELY
-        document.getElementById('final-step').style.display = 'none';
-        document.getElementById('share-hub').style.display = 'grid';
-
-        // Background save
-        try {
-            const tx = db.transaction("audits", "readwrite");
-            tx.objectStore("audits").add(currentAuditData);
+        if (document.getElementById('pinInput').value !== window.calculatedPin) return alert("PIN Error");
+        const tx = db.transaction("audits", "readwrite");
+        tx.objectStore("audits").add(currentAuditData);
+        tx.oncomplete = () => {
+            document.getElementById('final-step').style.display = 'none';
+            document.getElementById('share-hub').style.display = 'grid';
             const a = document.createElement('a');
             a.href = document.getElementById('review-img').src;
-            a.download = `${currentAuditData.name}.jpg`;
-            a.click();
-        } catch(e) { console.error("Auto-save failed, manual share still available."); }
+            a.download = `${currentAuditData.name}.jpg`; a.click();
+        };
     }
 
     function loadHistory() {
@@ -223,7 +241,7 @@
     }
 
     function deleteCurrentAudit() {
-        if(!confirm("Delete record?")) return;
+        if(!confirm("Delete?")) return;
         db.transaction("audits", "readwrite").objectStore("audits").delete(currentAuditData.id).oncomplete = () => resetCapture();
     }
 
@@ -237,7 +255,7 @@
     function shareGmail() {
         const email = localStorage.getItem('rv_rec_email') || "";
         const body = encodeURIComponent(currentAuditData.body);
-        window.open(`mailto:${email}?subject=Audit&body=${body}`, '_blank');
+        window.open(`mailto:${email}?subject=RouteAudit&body=${body}`, '_blank');
     }
 
     window.onload = () => {
