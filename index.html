@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Route Stamp - v16.8</title>
+    <title>Route Stamp - v16.9</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root { --primary: #1a202c; --wa: #25d366; --gmail: #EA4335; --bg: #f7fafc; --blue: #4285F4; --red: #e53e3e; }
@@ -22,12 +22,12 @@
         .action-btn { width: 100%; padding: 14px; border: none; border-radius: 8px; background: var(--blue); color: white; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .share-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 10px; display: none; }
         .btn-link { padding: 14px; border-radius: 8px; border: none; color: white; font-weight: bold; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; text-transform: uppercase; }
-        
-        /* New: Visible QR Buffer for Debugging */
-        #qr-buffer { width: 128px; height: 128px; margin: 10px auto; border: 1px dashed #ccc; display: none; background: #fff; }
+        #qr-hidden { position: absolute; left: -9999px; }
     </style>
 </head>
 <body>
+
+<div id="qr-hidden"></div>
 
 <div class="card">
     <div id="settings-ui">
@@ -57,9 +57,6 @@
     <div id="capture-section">
         <div class="live-clock"><span id="display-date"></span> | <span id="display-time"></span></div>
         <div id="camera-container"><video id="video-preview" autoplay playsinline muted></video></div>
-        
-        <div id="qr-buffer"></div>
-        
         <img id="review-img" src="" alt="Audit Preview">
         
         <div id="ui-main">
@@ -142,13 +139,7 @@
 
     function takePhoto() {
         const video = document.getElementById('video-preview');
-        const snapBtn = document.getElementById('snapBtn');
-        const buffer = document.getElementById('qr-buffer');
-        
-        snapBtn.innerText = "STAMPING...";
-        snapBtn.disabled = true;
-        buffer.style.display = 'block';
-        buffer.innerHTML = "";
+        if (!video || video.readyState < 2) return;
 
         const now = new Date();
         unixTs = Math.floor(now.getTime() / 1000);
@@ -156,39 +147,27 @@
         const body = `📌 Route Stamp\n${name}\n${window.calculatedPin}\n${unixTs}\n${now.toLocaleDateString()}\n${now.toLocaleTimeString()}\n${currentArea}\n${userLocation}`;
 
         // Create QR
-        new QRCode(buffer, {
-            text: body,
-            width: 256,
-            height: 256,
-            correctLevel: QRCode.CorrectLevel.H
-        });
+        const qrDiv = document.getElementById('qr-hidden');
+        qrDiv.innerHTML = "";
+        new QRCode(qrDiv, { text: body, width: 256, height: 256 });
 
-        // Sequence: Wait 800ms for browser to paint the buffer QR, then merge
+        // Wait a tiny moment for QR to exist, then draw
         setTimeout(() => {
+            const qrCanvas = qrDiv.querySelector('canvas');
             const mainCanvas = document.createElement('canvas');
             mainCanvas.width = video.videoWidth;
             mainCanvas.height = video.videoHeight;
             const ctx = mainCanvas.getContext('2d');
             
-            // 1. Draw Photo
             ctx.drawImage(video, 0, 0);
 
-            // 2. Draw QR from Buffer (Canvas or Img)
-            const qrSource = buffer.querySelector('canvas') || buffer.querySelector('img');
-            if (qrSource) {
-                const qrSize = Math.floor(mainCanvas.width * 0.30);
-                const margin = 30;
+            if (qrCanvas) {
+                const qrSize = Math.floor(mainCanvas.width * 0.28);
+                const margin = 40;
                 const qrX = (now.getDate() % 2 !== 0) ? margin : (mainCanvas.width - qrSize - margin);
-                ctx.drawImage(qrSource, qrX, mainCanvas.height - qrSize - margin, qrSize, qrSize);
-            } else {
-                // Last Resort Text Stamp
-                ctx.fillStyle = "black";
-                ctx.fillRect(10, 10, 200, 40);
-                ctx.fillStyle = "white";
-                ctx.fillText(`ID: ${unixTs}`, 20, 35);
+                ctx.drawImage(qrCanvas, qrX, mainCanvas.height - qrSize - margin, qrSize, qrSize);
             }
 
-            // 3. Convert to Blob
             mainCanvas.toBlob(blob => {
                 imageBlob = blob;
                 currentAuditData = { id: unixTs, name: `Audit_${unixTs}`, date: now.toLocaleDateString(), time: now.toLocaleTimeString(), body: body, img: blob };
@@ -196,13 +175,12 @@
                 document.getElementById('review-img').src = URL.createObjectURL(blob);
                 document.getElementById('review-img').style.display = 'block';
                 document.getElementById('camera-container').style.display = 'none';
-                buffer.style.display = 'none';
                 document.getElementById('snapBtn').style.display = 'none';
                 document.getElementById('final-step').style.display = 'block';
                 
                 if(videoStream) videoStream.getTracks().forEach(t => t.stop());
-            }, 'image/jpeg', 0.9);
-        }, 800);
+            }, 'image/jpeg', 0.85);
+        }, 150); // Small 150ms gap is all v15.0 needed
     }
 
     function processAudit() {
