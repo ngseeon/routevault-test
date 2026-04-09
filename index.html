@@ -3,36 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Route Stamp - Audit Manager</title>
+    <title>Route Stamp - Final Suite</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root { --primary: #1a202c; --wa: #25d366; --gmail: #EA4335; --bg: #f7fafc; --blue: #4285F4; --red: #e53e3e; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 10px; margin: 0; color: #2d3748; }
         .card { background: white; width: 100%; max-width: 460px; padding: 20px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); position: relative; min-height: 90vh; display: flex; flex-direction: column; }
         
-        /* Tabs */
         .tabs { display: flex; gap: 10px; margin-bottom: 15px; }
-        .tab-btn { flex: 1; padding: 10px; border: none; border-radius: 8px; background: #edf2f7; cursor: pointer; font-weight: bold; font-size: 13px; }
+        .tab-btn { flex: 1; padding: 12px; border: none; border-radius: 8px; background: #edf2f7; cursor: pointer; font-weight: bold; font-size: 13px; transition: 0.2s; }
         .tab-btn.active { background: var(--blue); color: white; }
 
         .header { display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid #edf2f7; padding-bottom: 8px; align-items: center; }
-        #settings-ui { display: none; background: #fff; position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; padding: 20px; box-sizing: border-box; border-radius: 16px; border: 2px solid var(--blue); overflow-y: auto; }
         
+        #settings-ui { display: none; background: #fff; position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; padding: 20px; box-sizing: border-box; border-radius: 16px; border: 2px solid var(--blue); overflow-y: auto; }
+        #settings-ui input { width: 94%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; margin-bottom: 10px; display: block; }
+        #settings-ui label { font-size: 11px; font-weight: bold; color: #718096; margin-left: 5px; }
+
         #camera-container { width: 100%; border-radius: 12px; overflow: hidden; background: #000; margin-bottom: 10px; display: none; aspect-ratio: 4/3; }
         #video-preview { width: 100%; height: 100%; object-fit: cover; }
-        #review-img { width: 100%; border-radius: 12px; margin-bottom: 15px; border: 2px solid #e2e8f0; display: none; }
+        #review-img { width: 100%; border-radius: 12px; margin-bottom: 15px; border: 2px solid #e2e8f0; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
 
-        /* History List */
         #history-section { display: none; flex-grow: 1; overflow: hidden; flex-direction: column; }
-        .history-table-wrapper { overflow-y: auto; flex-grow: 1; border: 1px solid #e2e8f0; border-radius: 8px; }
+        .history-table-wrapper { overflow-y: auto; flex-grow: 1; border: 1px solid #e2e8f0; border-radius: 8px; background: white; }
         table { width: 100%; border-collapse: collapse; font-size: 12px; }
-        th { background: #f7fafc; position: sticky; top: 0; padding: 10px; text-align: left; border-bottom: 1px solid #e2e8f0; }
-        td { padding: 10px; border-bottom: 1px solid #edf2f7; cursor: pointer; }
-        tr:hover { background: #f0f7ff; }
+        th { background: #f7fafc; position: sticky; top: 0; padding: 12px 10px; text-align: left; border-bottom: 2px solid #e2e8f0; z-index: 5; }
+        td { padding: 12px 10px; border-bottom: 1px solid #edf2f7; cursor: pointer; }
 
         .live-clock { text-align: center; font-family: monospace; font-size: 18px; background: var(--primary); padding: 12px; border-radius: 8px; margin-bottom: 15px; color: #68d391; }
         .action-btn { width: 100%; padding: 14px; border: none; border-radius: 8px; background: var(--blue); color: white; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        .btn-link { padding: 14px; border-radius: 8px; border: none; color: white; font-weight: bold; font-size: 13px; cursor: pointer; text-decoration: none; display: flex; align-items: center; justify-content: center; }
+        .btn-link { padding: 14px; border-radius: 8px; border: none; color: white; font-weight: bold; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; text-transform: uppercase; }
         
         #share-hub { display: none; text-align: center; }
         .share-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 10px; }
@@ -45,11 +45,19 @@
 
 <div class="card">
     <div id="settings-ui">
-        <h3>App Settings</h3>
-        <label>YOUR DETAILS</label>
-        <input type="text" id="set-name" style="width:94%; padding:10px; margin-bottom:10px;" placeholder="Your Name">
-        <hr>
-        <button class="action-btn" onclick="toggleSettings()">Save & Close</button>
+        <h3 style="margin-top:0;">Profile & Contacts</h3>
+        <label>YOUR NAME</label>
+        <input type="text" id="set-name" placeholder="Name">
+        <label>YOUR WHATSAPP</label>
+        <input type="text" id="set-phone" placeholder="60...">
+        <label>YOUR EMAIL</label>
+        <input type="email" id="set-email" placeholder="Your Email">
+        <hr style="margin: 15px 0; border: 0; border-top: 1px solid #eee;">
+        <label>RECIPIENT WHATSAPP</label>
+        <input type="text" id="set-rec-phone" placeholder="60...">
+        <label>RECIPIENT EMAIL</label>
+        <input type="email" id="set-rec-email" placeholder="Recipient Email">
+        <button class="action-btn" onclick="saveSettings()">Save & Close</button>
     </div>
 
     <div class="tabs">
@@ -59,7 +67,10 @@
 
     <div class="header">
         <div id="location-name">📍 DETECTING...</div>
-        <div onclick="toggleSettings()" style="cursor:pointer;">⚙️</div>
+        <div style="display:flex; gap:10px; align-items:center;">
+            <span id="gps-status" style="color:red">GPS: OFF</span>
+            <span onclick="toggleSettings()" style="cursor:pointer; font-size:18px;">⚙️</span>
+        </div>
     </div>
 
     <div id="capture-section">
@@ -72,9 +83,9 @@
             <button id="snapBtn" class="action-btn" style="display:none; background:var(--primary);" onclick="takePhoto()">Capture & Stamp</button>
             
             <div id="final-step" style="display:none; text-align:center;">
-                <p>PIN: <span id="pin-display" style="color:var(--blue); font-weight:bold;">--</span></p>
-                <input type="number" id="pinInput" placeholder="Enter PIN" style="font-size:20px; text-align:center; width:120px; padding:10px;">
-                <button class="action-btn" onclick="processAudit()">Verify & Save</button>
+                <p style="font-size:11px; font-weight:bold;">SECURITY PIN: <span id="pin-display" style="color:var(--blue);">--</span></p>
+                <input type="number" id="pinInput" placeholder="Enter PIN" style="font-size:20px; text-align:center; width:140px; margin: 0 auto; display: block;">
+                <button class="action-btn" onclick="processAudit()">Verify & Store Audit</button>
             </div>
         </div>
     </div>
@@ -93,23 +104,32 @@
     <div id="share-hub">
         <div class="share-grid">
             <button onclick="shareWhatsApp()" class="btn-link" style="background:var(--wa);">WhatsApp</button>
-            <button onclick="shareGmail()" class="btn-link" style="background:var(--gmail);">Gmail</button>
-            <button onclick="deleteCurrentAudit()" class="btn-link" style="background:var(--red);">DELETE</button>
+            <button onclick="shareGmail()" class="btn-link" style="background:var(--gmail);">Email</button>
+            <button onclick="deleteCurrentAudit()" class="btn-link" style="background:var(--red);">Delete</button>
         </div>
-        <button class="action-btn" style="background:#718096;" onclick="resetCapture()">Back to Start</button>
+        <button class="action-btn" style="background:#718096; margin-top:15px;" onclick="resetCapture()">Back to Start</button>
     </div>
 </div>
 
 <script>
     let db, videoStream, imageBlob, currentAuditData = null, userLocation = "N/A", currentArea = "DETECTING...", unixTs = 0;
 
-    // --- DB SETUP ---
-    const request = indexedDB.open("RouteStampDB", 1);
-    request.onupgradeneeded = e => {
-        db = e.target.result;
-        db.createObjectStore("audits", { keyPath: "id" });
-    };
+    const request = indexedDB.open("RouteStampDB", 2);
     request.onsuccess = e => db = e.target.result;
+
+    function toggleSettings() {
+        const ui = document.getElementById('settings-ui');
+        ui.style.display = (ui.style.display === 'block') ? 'none' : 'block';
+    }
+
+    function saveSettings() {
+        localStorage.setItem('rv_name', document.getElementById('set-name').value);
+        localStorage.setItem('rv_phone', document.getElementById('set-phone').value);
+        localStorage.setItem('rv_email', document.getElementById('set-email').value);
+        localStorage.setItem('rv_rec_phone', document.getElementById('set-rec-phone').value);
+        localStorage.setItem('rv_rec_email', document.getElementById('set-rec-email').value);
+        toggleSettings();
+    }
 
     function showTab(type) {
         document.getElementById('capture-section').style.display = type === 'capture' ? 'block' : 'none';
@@ -119,7 +139,15 @@
         if(type === 'history') loadHistory();
     }
 
-    // --- CAPTURE LOGIC ---
+    async function getAddress(lat, lng) {
+        try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+            const data = await res.json();
+            currentArea = data.address.suburb || data.address.town || data.address.city || "Audit Site";
+            document.getElementById('location-name').innerText = `📍 ${currentArea.toUpperCase()}`;
+        } catch(e) { document.getElementById('location-name').innerText = "📍 GPS ACTIVE"; }
+    }
+
     async function startCamera() {
         videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
         document.getElementById('video-preview').srcObject = videoStream;
@@ -152,14 +180,7 @@
             
             mainCanvas.toBlob(blob => {
                 imageBlob = blob;
-                currentAuditData = { 
-                    id: unixTs, 
-                    name: `Audit_${unixTs}`, 
-                    date: now.toLocaleDateString(), 
-                    time: now.toLocaleTimeString(), 
-                    body: body, 
-                    img: blob 
-                };
+                currentAuditData = { id: unixTs, name: `Audit_${unixTs}`, date: now.toLocaleDateString(), time: now.toLocaleTimeString(), body: body, img: blob };
                 document.getElementById('review-img').src = URL.createObjectURL(blob);
                 document.getElementById('review-img').style.display = 'block';
                 document.getElementById('camera-container').style.display = 'none';
@@ -171,16 +192,18 @@
     }
 
     function processAudit() {
-        if (document.getElementById('pinInput').value !== window.calculatedPin) return alert("Invalid PIN");
+        if (document.getElementById('pinInput').value !== window.calculatedPin) return alert("PIN Mismatch");
         const tx = db.transaction("audits", "readwrite");
         tx.objectStore("audits").add(currentAuditData);
         tx.oncomplete = () => {
             document.getElementById('final-step').style.display = 'none';
             document.getElementById('share-hub').style.display = 'block';
+            const a = document.createElement('a');
+            a.href = document.getElementById('review-img').src;
+            a.download = `${currentAuditData.name}.jpg`; a.click();
         };
     }
 
-    // --- HISTORY LOGIC ---
     function loadHistory() {
         const list = document.getElementById('history-list');
         list.innerHTML = "";
@@ -195,27 +218,20 @@
 
     function selectAudit(item) {
         currentAuditData = item;
-        imageBlob = item.img;
         document.getElementById('review-img').src = URL.createObjectURL(item.img);
         document.getElementById('review-img').style.display = 'block';
         document.getElementById('share-hub').style.display = 'block';
-        showTab('capture'); // Go back to main screen to show details
         document.getElementById('ui-main').style.display = 'none';
+        showTab('capture');
     }
 
     function deleteCurrentAudit() {
-        if(!confirm("Delete this audit?")) return;
-        db.transaction("audits", "readwrite").objectStore("audits").delete(currentAuditData.id).oncomplete = () => {
-            resetCapture();
-            alert("Deleted.");
-        };
+        if(!confirm("Delete record?")) return;
+        db.transaction("audits", "readwrite").objectStore("audits").delete(currentAuditData.id).oncomplete = () => resetCapture();
     }
 
-    function resetCapture() {
-        location.reload();
-    }
+    function resetCapture() { location.reload(); }
 
-    // --- SHARING ---
     function shareWhatsApp() {
         const phone = (localStorage.getItem('rv_rec_phone') || "").replace(/\D/g,'');
         window.open(`https://wa.me/${phone}?text=${encodeURIComponent(currentAuditData.body)}`, '_blank');
@@ -223,22 +239,18 @@
 
     function shareGmail() {
         const email = localStorage.getItem('rv_rec_email') || "";
-        const sub = `Audit: ${currentAuditData.id}`;
         const body = encodeURIComponent(currentAuditData.body);
-        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-        const url = isMobile ? `mailto:${email}?subject=${sub}&body=${body}` : `https://mail.google.com/mail/?view=cm&fs=1&to=${email}&su=${sub}&body=${body}`;
+        const url = /Android|iPhone/i.test(navigator.userAgent) ? `mailto:${email}?subject=Audit_${currentAuditData.id}&body=${body}` : `https://mail.google.com/mail/?view=cm&fs=1&to=${email}&su=Audit_${currentAuditData.id}&body=${body}`;
         window.open(url, '_blank');
-    }
-
-    // --- SETUP & GPS ---
-    function toggleSettings() {
-        const ui = document.getElementById('settings-ui');
-        ui.style.display = ui.style.display === 'block' ? 'none' : 'block';
-        localStorage.setItem('rv_name', document.getElementById('set-name').value);
     }
 
     window.onload = () => {
         document.getElementById('set-name').value = localStorage.getItem('rv_name') || "";
+        document.getElementById('set-phone').value = localStorage.getItem('rv_phone') || "";
+        document.getElementById('set-email').value = localStorage.getItem('rv_email') || "";
+        document.getElementById('set-rec-phone').value = localStorage.getItem('rv_rec_phone') || "";
+        document.getElementById('set-rec-email').value = localStorage.getItem('rv_rec_email') || "";
+        
         setInterval(() => {
             const n = new Date();
             document.getElementById('display-date').innerText = n.toLocaleDateString();
@@ -248,6 +260,7 @@
         navigator.geolocation.watchPosition(pos => {
             const lat = pos.coords.latitude; const lng = pos.coords.longitude;
             userLocation = `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`;
+            getAddress(lat, lng);
             window.calculatedPin = (Math.round((lat % 1) * 10000) + Math.round((lng % 1) * 10000)).toString();
             document.getElementById('pin-display').innerText = window.calculatedPin;
             document.getElementById('gps-status').innerText = "GPS: ON";
