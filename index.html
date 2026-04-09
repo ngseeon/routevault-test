@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Route Stamp - v15.7</title>
+    <title>Route Stamp - v15.8</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root { --primary: #1a202c; --wa: #25d366; --gmail: #EA4335; --bg: #f7fafc; --blue: #4285F4; --red: #e53e3e; }
@@ -27,13 +27,14 @@
         .action-btn { width: 100%; padding: 14px; border: none; border-radius: 8px; background: var(--blue); color: white; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .share-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 10px; display: none; }
         .btn-link { padding: 14px; border-radius: 8px; border: none; color: white; font-weight: bold; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; text-transform: uppercase; }
-        #qr-hidden { position: absolute; left: -9999px; visibility: hidden; }
+        /* Hidden Div for QR rendering - keep it in DOM but off-screen */
+        #qr-offscreen { position: absolute; top: -5000px; left: -5000px; }
         #loading-msg { display: none; text-align: center; color: var(--blue); font-weight: bold; margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
-<div id="qr-hidden"></div>
+<div id="qr-offscreen"></div>
 
 <div class="card">
     <div id="settings-ui">
@@ -98,6 +99,7 @@
 <script>
     let db, videoStream, imageBlob, currentAuditData = null, userLocation = "N/A", currentArea = "DETECTING...", unixTs = 0;
 
+    // Direct Database Access
     const dbReq = indexedDB.open("RouteStampDB", 3);
     dbReq.onsuccess = e => { db = e.target.result; };
 
@@ -146,8 +148,8 @@
 
     function takePhoto() {
         const video = document.getElementById('video-preview');
-        if (video.readyState < 2) return;
-        
+        if (!video || video.readyState < 2) return alert("Camera not ready");
+
         document.getElementById('loading-msg').style.display = 'block';
         document.getElementById('snapBtn').style.display = 'none';
 
@@ -155,46 +157,53 @@
         unixTs = Math.floor(now.getTime() / 1000);
         const name = localStorage.getItem('rv_name') || "User";
         const body = `📌 Route Stamp\n${name}\n${window.calculatedPin}\n${unixTs}\n${now.toLocaleDateString()}\n${now.toLocaleTimeString()}\n${currentArea}\n${userLocation}`;
-        
-        // 1. Generate QR first
-        const qrDiv = document.getElementById('qr-hidden');
+
+        // QR Prep
+        const qrDiv = document.getElementById('qr-offscreen');
         qrDiv.innerHTML = "";
-        const qrGenerator = new QRCode(qrDiv, {
-            text: body,
-            width: 256,
-            height: 256,
-            correctLevel: QRCode.CorrectLevel.H
-        });
+        
+        try {
+            // Force rendering to a canvas inside the offscreen div
+            new QRCode(qrDiv, {
+                text: body,
+                width: 256,
+                height: 256,
+                correctLevel: QRCode.CorrectLevel.M
+            });
 
-        // 2. Wait for QR to be rendered to its internal canvas, then draw the photo
-        setTimeout(() => {
-            const qrCanvas = qrDiv.querySelector('canvas');
-            const mainCanvas = document.createElement('canvas');
-            const ctx = mainCanvas.getContext('2d');
-            
-            mainCanvas.width = video.videoWidth;
-            mainCanvas.height = video.videoHeight;
-            ctx.drawImage(video, 0, 0);
+            // Delay to ensure the QR library finished drawing
+            setTimeout(() => {
+                const qrCanvas = qrDiv.querySelector('canvas');
+                const mainCanvas = document.createElement('canvas');
+                const ctx = mainCanvas.getContext('2d');
+                
+                mainCanvas.width = video.videoWidth;
+                mainCanvas.height = video.videoHeight;
+                ctx.drawImage(video, 0, 0);
 
-            if (qrCanvas) {
-                const qrSize = Math.floor(mainCanvas.width * 0.28);
-                const margin = 40;
-                // Alternate position based on odd/even day
-                const qrX = (now.getDate() % 2 !== 0) ? margin : (mainCanvas.width - qrSize - margin);
-                ctx.drawImage(qrCanvas, qrX, mainCanvas.height - qrSize - margin, qrSize, qrSize);
-            }
+                if (qrCanvas) {
+                    const qrSize = Math.floor(mainCanvas.width * 0.28);
+                    const margin = 40;
+                    const qrX = (now.getDate() % 2 !== 0) ? margin : (mainCanvas.width - qrSize - margin);
+                    ctx.drawImage(qrCanvas, qrX, mainCanvas.height - qrSize - margin, qrSize, qrSize);
+                }
 
-            mainCanvas.toBlob(blob => {
-                imageBlob = blob;
-                currentAuditData = { id: unixTs, name: `Audit_${unixTs}`, date: now.toLocaleDateString(), time: now.toLocaleTimeString(), body: body, img: blob };
-                document.getElementById('review-img').src = URL.createObjectURL(blob);
-                document.getElementById('review-img').style.display = 'block';
-                document.getElementById('camera-container').style.display = 'none';
-                document.getElementById('loading-msg').style.display = 'none';
-                document.getElementById('final-step').style.display = 'block';
-                if(videoStream) videoStream.getTracks().forEach(t => t.stop());
-            }, 'image/jpeg', 0.85);
-        }, 800); 
+                mainCanvas.toBlob(blob => {
+                    imageBlob = blob;
+                    currentAuditData = { id: unixTs, name: `Audit_${unixTs}`, date: now.toLocaleDateString(), time: now.toLocaleTimeString(), body: body, img: blob };
+                    document.getElementById('review-img').src = URL.createObjectURL(blob);
+                    document.getElementById('review-img').style.display = 'block';
+                    document.getElementById('camera-container').style.display = 'none';
+                    document.getElementById('loading-msg').style.display = 'none';
+                    document.getElementById('final-step').style.display = 'block';
+                    if(videoStream) videoStream.getTracks().forEach(t => t.stop());
+                }, 'image/jpeg', 0.85);
+            }, 500);
+        } catch (err) {
+            alert("Stamp Error. Please try again.");
+            document.getElementById('loading-msg').style.display = 'none';
+            document.getElementById('snapBtn').style.display = 'block';
+        }
     }
 
     function processAudit() {
