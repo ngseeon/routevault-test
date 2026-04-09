@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Route Stamp - v16.9</title>
+    <title>Route Stamp - v17.0</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root { --primary: #1a202c; --wa: #25d366; --gmail: #EA4335; --bg: #f7fafc; --blue: #4285F4; --red: #e53e3e; }
@@ -22,12 +22,12 @@
         .action-btn { width: 100%; padding: 14px; border: none; border-radius: 8px; background: var(--blue); color: white; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .share-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 10px; display: none; }
         .btn-link { padding: 14px; border-radius: 8px; border: none; color: white; font-weight: bold; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; text-transform: uppercase; }
-        #qr-hidden { position: absolute; left: -9999px; }
+        #qr-preload { position: absolute; left: -9999px; }
     </style>
 </head>
 <body>
 
-<div id="qr-hidden"></div>
+<div id="qr-preload"></div>
 
 <div class="card">
     <div id="settings-ui">
@@ -101,11 +101,11 @@
     }
 
     function saveSettings() {
-        localStorage.setItem('rv_name', document.getElementById('set-name').value);
-        localStorage.setItem('rv_phone', document.getElementById('set-phone').value);
-        localStorage.setItem('rv_email', document.getElementById('set-email').value);
-        localStorage.setItem('rv_rec_phone', document.getElementById('set-rec-phone').value);
-        localStorage.setItem('rv_rec_email', document.getElementById('set-rec-email').value);
+        localStorage.setItem('rv_name', document.getElementById('set-name').value || "User");
+        localStorage.setItem('rv_phone', document.getElementById('set-phone').value || "");
+        localStorage.setItem('rv_email', document.getElementById('set-email').value || "");
+        localStorage.setItem('rv_rec_phone', document.getElementById('set-rec-phone').value || "");
+        localStorage.setItem('rv_rec_email', document.getElementById('set-rec-email').value || "");
         toggleSettings();
     }
 
@@ -134,53 +134,72 @@
             document.getElementById('camera-container').style.display = 'block';
             document.getElementById('cameraBtn').style.display = 'none';
             document.getElementById('snapBtn').style.display = 'block';
+            
+            // PRE-LOAD QR HERE so it's ready when you snap
+            prepareQR();
         } catch (e) { alert("Camera Access Required."); }
+    }
+
+    function prepareQR() {
+        const now = new Date();
+        const nTs = Math.floor(now.getTime() / 1000);
+        const name = localStorage.getItem('rv_name') || "User";
+        const body = `📌 Route Stamp\n${name}\n${window.calculatedPin}\n${nTs}\n${now.toLocaleDateString()}\n${now.toLocaleTimeString()}\n${currentArea}\n${userLocation}`;
+        
+        const qrDiv = document.getElementById('qr-preload');
+        qrDiv.innerHTML = "";
+        // Force Canvas rendering
+        new QRCode(qrDiv, { text: body, width: 256, height: 256, useSVG: false });
+        window.currentQRBody = body;
+        window.currentTimestamp = nTs;
     }
 
     function takePhoto() {
         const video = document.getElementById('video-preview');
-        if (!video || video.readyState < 2) return;
+        const snapBtn = document.getElementById('snapBtn');
+        const qrDiv = document.getElementById('qr-preload');
+        
+        snapBtn.innerText = "STAMPING...";
+        snapBtn.disabled = true;
 
-        const now = new Date();
-        unixTs = Math.floor(now.getTime() / 1000);
-        const name = localStorage.getItem('rv_name') || "User";
-        const body = `📌 Route Stamp\n${name}\n${window.calculatedPin}\n${unixTs}\n${now.toLocaleDateString()}\n${now.toLocaleTimeString()}\n${currentArea}\n${userLocation}`;
+        const mainCanvas = document.createElement('canvas');
+        mainCanvas.width = video.videoWidth;
+        mainCanvas.height = video.videoHeight;
+        const ctx = mainCanvas.getContext('2d');
+        
+        // 1. Draw Video Frame
+        ctx.drawImage(video, 0, 0);
 
-        // Create QR
-        const qrDiv = document.getElementById('qr-hidden');
-        qrDiv.innerHTML = "";
-        new QRCode(qrDiv, { text: body, width: 256, height: 256 });
+        // 2. Immediate Draw QR (No waiting)
+        const qrCanvas = qrDiv.querySelector('canvas');
+        if (qrCanvas) {
+            const qrSize = Math.floor(mainCanvas.width * 0.28);
+            const margin = 40;
+            const qrX = (new Date().getDate() % 2 !== 0) ? margin : (mainCanvas.width - qrSize - margin);
+            ctx.drawImage(qrCanvas, qrX, mainCanvas.height - qrSize - margin, qrSize, qrSize);
+        }
 
-        // Wait a tiny moment for QR to exist, then draw
-        setTimeout(() => {
-            const qrCanvas = qrDiv.querySelector('canvas');
-            const mainCanvas = document.createElement('canvas');
-            mainCanvas.width = video.videoWidth;
-            mainCanvas.height = video.videoHeight;
-            const ctx = mainCanvas.getContext('2d');
+        // 3. Finalize
+        mainCanvas.toBlob(blob => {
+            const now = new Date();
+            imageBlob = blob;
+            currentAuditData = { 
+                id: window.currentTimestamp, 
+                name: `Audit_${window.currentTimestamp}`, 
+                date: now.toLocaleDateString(), 
+                time: now.toLocaleTimeString(), 
+                body: window.currentQRBody, 
+                img: blob 
+            };
             
-            ctx.drawImage(video, 0, 0);
-
-            if (qrCanvas) {
-                const qrSize = Math.floor(mainCanvas.width * 0.28);
-                const margin = 40;
-                const qrX = (now.getDate() % 2 !== 0) ? margin : (mainCanvas.width - qrSize - margin);
-                ctx.drawImage(qrCanvas, qrX, mainCanvas.height - qrSize - margin, qrSize, qrSize);
-            }
-
-            mainCanvas.toBlob(blob => {
-                imageBlob = blob;
-                currentAuditData = { id: unixTs, name: `Audit_${unixTs}`, date: now.toLocaleDateString(), time: now.toLocaleTimeString(), body: body, img: blob };
-                
-                document.getElementById('review-img').src = URL.createObjectURL(blob);
-                document.getElementById('review-img').style.display = 'block';
-                document.getElementById('camera-container').style.display = 'none';
-                document.getElementById('snapBtn').style.display = 'none';
-                document.getElementById('final-step').style.display = 'block';
-                
-                if(videoStream) videoStream.getTracks().forEach(t => t.stop());
-            }, 'image/jpeg', 0.85);
-        }, 150); // Small 150ms gap is all v15.0 needed
+            document.getElementById('review-img').src = URL.createObjectURL(blob);
+            document.getElementById('review-img').style.display = 'block';
+            document.getElementById('camera-container').style.display = 'none';
+            document.getElementById('snapBtn').style.display = 'none';
+            document.getElementById('final-step').style.display = 'block';
+            
+            if(videoStream) videoStream.getTracks().forEach(t => t.stop());
+        }, 'image/jpeg', 0.85);
     }
 
     function processAudit() {
