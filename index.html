@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Route Stamp - v16.0</title>
+    <title>Route Stamp - v16.2</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root { --primary: #1a202c; --wa: #25d366; --gmail: #EA4335; --bg: #f7fafc; --blue: #4285F4; --red: #e53e3e; }
@@ -22,17 +22,17 @@
         .action-btn { width: 100%; padding: 14px; border: none; border-radius: 8px; background: var(--blue); color: white; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .share-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 10px; display: none; }
         .btn-link { padding: 14px; border-radius: 8px; border: none; color: white; font-weight: bold; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; text-transform: uppercase; }
+        #qr-container { position: absolute; left: -9999px; top: 0; }
         #history-section { display: none; flex-grow: 1; overflow: hidden; flex-direction: column; }
         .history-table-wrapper { overflow-y: auto; flex-grow: 1; border: 1px solid #e2e8f0; border-radius: 8px; background: white; }
         table { width: 100%; border-collapse: collapse; font-size: 12px; }
         th { background: #f7fafc; position: sticky; top: 0; padding: 12px 10px; text-align: left; border-bottom: 2px solid #e2e8f0; }
         td { padding: 12px 10px; border-bottom: 1px solid #edf2f7; cursor: pointer; }
-        #qr-offscreen { position: absolute; left: -9999px; }
     </style>
 </head>
 <body>
 
-<div id="qr-offscreen"></div>
+<div id="qr-container"></div>
 
 <div class="card">
     <div id="settings-ui">
@@ -97,6 +97,7 @@
     let db, videoStream, imageBlob, currentAuditData = null, userLocation = "N/A", currentArea = "DETECTING...", unixTs = 0;
 
     const dbReq = indexedDB.open("RouteStampDB", 3);
+    dbReq.onupgradeneeded = e => { e.target.result.createObjectStore("audits", { keyPath: "id" }); };
     dbReq.onsuccess = e => { db = e.target.result; };
 
     function toggleSettings() {
@@ -105,11 +106,11 @@
     }
 
     function saveSettings() {
-        localStorage.setItem('rv_name', document.getElementById('set-name').value || "");
-        localStorage.setItem('rv_phone', document.getElementById('set-phone').value || "");
-        localStorage.setItem('rv_email', document.getElementById('set-email').value || "");
-        localStorage.setItem('rv_rec_phone', document.getElementById('set-rec-phone').value || "");
-        localStorage.setItem('rv_rec_email', document.getElementById('set-rec-email').value || "");
+        localStorage.setItem('rv_name', document.getElementById('set-name').value);
+        localStorage.setItem('rv_phone', document.getElementById('set-phone').value);
+        localStorage.setItem('rv_email', document.getElementById('set-email').value);
+        localStorage.setItem('rv_rec_phone', document.getElementById('set-rec-phone').value);
+        localStorage.setItem('rv_rec_email', document.getElementById('set-rec-email').value);
         toggleSettings();
     }
 
@@ -132,7 +133,6 @@
 
     async function startCamera() {
         try {
-            if(videoStream) videoStream.getTracks().forEach(t => t.stop());
             videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
             document.getElementById('video-preview').srcObject = videoStream;
             document.getElementById('camera-container').style.display = 'block';
@@ -143,20 +143,18 @@
 
     function takePhoto() {
         const video = document.getElementById('video-preview');
-        if (!video || video.readyState < 2) return;
-
         const now = new Date();
         unixTs = Math.floor(now.getTime() / 1000);
         const name = localStorage.getItem('rv_name') || "User";
         const body = `📌 Route Stamp\n${name}\n${window.calculatedPin}\n${unixTs}\n${now.toLocaleDateString()}\n${now.toLocaleTimeString()}\n${currentArea}\n${userLocation}`;
 
-        // RESTORED: Old reliable QR logic
-        const qrOff = document.getElementById('qr-offscreen');
-        qrOff.innerHTML = "";
-        new QRCode(qrOff, { text: body, width: 256, height: 256 });
+        // Generate QR
+        const qrBox = document.getElementById('qr-container');
+        qrBox.innerHTML = "";
+        new QRCode(qrBox, { text: body, width: 256, height: 256 });
 
         setTimeout(() => {
-            const qrCanvas = qrOff.querySelector('canvas');
+            const qrCanvas = qrBox.querySelector('canvas');
             const mainCanvas = document.createElement('canvas');
             const ctx = mainCanvas.getContext('2d');
             mainCanvas.width = video.videoWidth;
@@ -180,7 +178,7 @@
                 document.getElementById('final-step').style.display = 'block';
                 if(videoStream) videoStream.getTracks().forEach(t => t.stop());
             }, 'image/jpeg', 0.85);
-        }, 500);
+        }, 300);
     }
 
     function processAudit() {
@@ -242,13 +240,11 @@
         document.getElementById('set-email').value = localStorage.getItem('rv_email') || "";
         document.getElementById('set-rec-phone').value = localStorage.getItem('rv_rec_phone') || "";
         document.getElementById('set-rec-email').value = localStorage.getItem('rv_rec_email') || "";
-        
         setInterval(() => {
             const n = new Date();
             document.getElementById('display-date').innerText = n.toLocaleDateString();
             document.getElementById('display-time').innerText = n.toLocaleTimeString();
         }, 1000);
-        
         navigator.geolocation.watchPosition(pos => {
             const lat = pos.coords.latitude; const lng = pos.coords.longitude;
             userLocation = `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`;
