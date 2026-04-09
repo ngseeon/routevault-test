@@ -3,169 +3,223 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Route Stamp v17.6</title>
+    <title>RouteVault AI - Route Stamp</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        :root { --blue: #4285F4; --dark: #1a202c; --bg: #f7fafc; }
-        body { font-family: sans-serif; background: var(--bg); margin: 0; padding: 15px; display: flex; justify-content: center; }
-        .container { background: white; width: 100%; max-width: 450px; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); min-height: 80vh; box-sizing: border-box; }
-        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; font-size: 12px; font-weight: bold; }
-        #camera-box { width: 100%; background: #000; border-radius: 10px; overflow: hidden; display: none; aspect-ratio: 4/3; margin-bottom: 10px; }
-        video { width: 100%; height: 100%; object-fit: cover; }
-        #preview-img { width: 100%; border-radius: 10px; display: none; border: 1px solid #ddd; margin-bottom: 10px; }
-        .btn { width: 100%; padding: 15px; border: none; border-radius: 8px; background: var(--blue); color: white; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 16px; }
-        #settings-panel { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 100; padding: 25px; box-sizing: border-box; }
-        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
-        .share-row { display: none; grid-template-columns: 1fr 1fr; gap: 10px; }
+        :root { --primary: #1a202c; --wa: #25d366; --gmail: #EA4335; --bg: #f7fafc; --blue: #4285F4; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 10px; margin: 0; color: #2d3748; }
+        .card { background: white; width: 100%; max-width: 460px; padding: 20px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); position: relative; min-height: 90vh; }
+        .header { display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid #edf2f7; padding-bottom: 8px; align-items: center; }
+        #settings-ui { display: none; background: #fff; position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; padding: 20px; box-sizing: border-box; border-radius: 16px; border: 2px solid var(--blue); overflow-y: auto; }
+        #camera-container { width: 100%; border-radius: 12px; overflow: hidden; background: #000; margin-bottom: 10px; display: none; aspect-ratio: 4/3; }
+        #video-preview { width: 100%; height: 100%; object-fit: cover; }
+        #status-bar { display: none; text-align: center; background: #ebf8ff; color: #2b6cb0; padding: 10px; border-radius: 8px; margin-bottom: 10px; font-size: 12px; font-weight: bold; border: 1px solid #bee3f8; }
+        #review-img { width: 100%; border-radius: 12px; margin-bottom: 15px; border: 2px solid #e2e8f0; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .live-clock { text-align: center; font-family: monospace; font-size: 18px; background: var(--primary); padding: 12px; border-radius: 8px; margin-bottom: 15px; color: #68d391; }
+        .action-btn { width: 100%; padding: 14px; border: none; border-radius: 8px; background: var(--blue); color: white; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 14px; }
+        input { width: 94%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; margin-bottom: 10px; display: block; }
+        label { font-size: 11px; font-weight: bold; color: #718096; margin-left: 5px; }
+        #share-hub { display: none; text-align: center; }
+        .share-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        .btn-link { padding: 14px; border-radius: 8px; border: none; color: white; font-weight: bold; font-size: 13px; cursor: pointer; text-decoration: none; display: flex; align-items: center; justify-content: center; height: 50px; }
+        #qr-hidden { position: absolute; left: -9999px; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div id="settings-panel">
-        <h3>User Settings</h3>
-        <input type="text" id="in-name" placeholder="Your Name">
-        <input type="text" id="in-wa" placeholder="Recipient WhatsApp (e.g. 60123456789)">
-        <input type="email" id="in-mail" placeholder="Recipient Email">
-        <button class="btn" onclick="saveSettings()">Save & Close</button>
+<div id="qr-hidden"></div>
+
+<div class="card">
+    <div id="settings-ui">
+        <h3>App Settings</h3>
+        <label>YOUR DETAILS</label>
+        <input type="text" id="set-name" placeholder="Your Name">
+        <input type="text" id="set-phone" placeholder="Your WhatsApp (60...)">
+        <hr style="margin: 15px 0; border: 0; border-top: 1px solid #eee;">
+        <label>RECIPIENT DETAILS</label>
+        <input type="text" id="set-rec-phone" placeholder="Recipient WhatsApp (60...)">
+        <input type="email" id="set-rec-email" placeholder="Recipient Email">
+        <button class="action-btn" onclick="saveSettings()">Save & Close</button>
     </div>
 
     <div class="header">
-        <div id="status">📍 GPS: PENDING</div>
-        <div onclick="document.getElementById('settings-panel').style.display='block'" style="cursor:pointer; font-size:20px;">⚙️</div>
+        <div id="location-name">📍 DETECTING...</div>
+        <div style="display:flex; gap:10px; align-items:center;">
+            <span id="gps-status" style="color:red">GPS: OFF</span>
+            <span onclick="toggleSettings()" style="cursor:pointer; font-size:18px;">⚙️</span>
+        </div>
     </div>
 
-    <div id="camera-box"><video id="v" autoplay playsinline muted></video></div>
-    <img id="preview-img">
+    <div class="live-clock"><span id="display-date"></span> | <span id="display-time"></span></div>
+    
+    <div id="camera-container"><video id="video-preview" autoplay playsinline></video></div>
+    <div id="status-bar">🛡️ STAMPING PROOF: Securing GPS & QR...</div>
+    <img id="review-img" src="" alt="Proof Review">
 
-    <button id="btn-start" class="btn" onclick="openCamera()">Open Audit Camera</button>
-    <button id="btn-snap" class="btn" style="display:none; background:var(--dark);" onclick="takeStamp()">Capture & Stamp</button>
+    <div id="ui-main">
+        <button id="cameraBtn" class="action-btn" onclick="startCamera()">Open Audit Camera</button>
+        <button id="snapBtn" class="action-btn" style="display:none; background:#2d3748;" onclick="takePhoto()">Capture & Stamp</button>
+        
+        <div id="final-step" style="display:none; text-align:center;">
+            <p style="font-size:11px; font-weight:bold;">Security PIN: <span id="pin-display" style="color:var(--blue);">--</span></p>
+            <input type="number" id="pinInput" placeholder="Enter PIN" style="font-size:24px; text-align:center; width:160px; margin: 10px auto; display: block;">
+            <button class="action-btn" onclick="processAudit()">Verify & Save</button>
+        </div>
 
-    <div id="pin-section" style="display:none; text-align:center; padding: 10px;">
-        <p>SECURITY PIN: <span id="pin-code" style="color:var(--blue); font-weight:bold;">----</span></p>
-        <input type="number" id="pin-entry" placeholder="Enter PIN to Verify" style="text-align:center; font-size:20px;">
-        <button class="btn" onclick="verifyAndSave()">Verify Audit</button>
-    </div>
-
-    <div id="share-section" class="share-row">
-        <button class="btn" style="background:#25d366" onclick="doShare('wa')">WhatsApp</button>
-        <button class="btn" style="background:#EA4335" onclick="doShare('mail')">Email</button>
-        <button class="btn" style="background:#718096; grid-column: span 2;" onclick="location.reload()">Start New</button>
+        <div id="share-hub">
+            <div class="share-grid">
+                <button onclick="shareWhatsApp()" class="btn-link" style="background:var(--wa);">WhatsApp</button>
+                <button onclick="shareGmail()" class="btn-link" style="background:var(--gmail);">Gmail</button>
+            </div>
+            <button class="action-btn" style="background:#718096; margin-top:20px;" onclick="location.reload()">New Audit</button>
+        </div>
     </div>
 </div>
 
-<div id="qr-hidden" style="display:none;"></div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-
 <script>
-    let db, videoStream, currentBlob, auditText, currentPin = "0000", gpsText = "N/A";
+    let videoStream, imageBlob, userLocation = "N/A", currentArea = "DETECTING...", unixTs = 0;
 
-    // Setup Database
-    const req = indexedDB.open("RouteVaultDB", 8);
-    req.onsuccess = e => db = e.target.result;
-    req.onupgradeneeded = e => e.target.result.createObjectStore("audits", { keyPath: "id" });
+    function toggleSettings() {
+        const ui = document.getElementById('settings-ui');
+        ui.style.display = (ui.style.display === 'block') ? 'none' : 'block';
+    }
 
     function saveSettings() {
-        localStorage.setItem('rs_name', document.getElementById('in-name').value);
-        localStorage.setItem('rs_wa', document.getElementById('in-wa').value);
-        localStorage.setItem('rs_mail', document.getElementById('in-mail').value);
-        document.getElementById('settings-panel').style.display = 'none';
+        localStorage.setItem('rv_name', document.getElementById('set-name').value);
+        localStorage.setItem('rv_phone', document.getElementById('set-phone').value);
+        localStorage.setItem('rv_rec_phone', document.getElementById('set-rec-phone').value);
+        localStorage.setItem('rv_rec_email', document.getElementById('set-rec-email').value);
+        toggleSettings();
     }
 
-    function openCamera() {
-        // Start GPS
-        navigator.geolocation.getCurrentPosition(p => {
-            const lat = p.coords.latitude, lon = p.coords.longitude;
-            gpsText = `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
-            currentPin = (Math.round((lat % 1) * 10000) + Math.round((lon % 1) * 10000)).toString();
-            document.getElementById('pin-code').innerText = currentPin;
-            document.getElementById('status').innerText = "📍 GPS: ACTIVE";
-        }, () => alert("Please enable GPS"));
-
-        // Start Video
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-            .then(s => {
-                videoStream = s;
-                document.getElementById('v').srcObject = s;
-                document.getElementById('camera-box').style.display = 'block';
-                document.getElementById('btn-start').style.display = 'none';
-                document.getElementById('btn-snap').style.display = 'block';
-            }).catch(e => alert("Camera error: " + e));
-    }
-
-    function takeStamp() {
-        const video = document.getElementById('v');
-        const qrBox = document.getElementById('qr-hidden');
-        const ts = Math.floor(Date.now()/1000);
-        const name = localStorage.getItem('rs_name') || "User";
-        
-        const lines = [
-            "📌 ROUTE STAMP",
-            `USER: ${name.toUpperCase()}`,
-            `PIN: ${currentPin}`,
-            `ID: ${ts}`,
-            `TIME: ${new Date().toLocaleString()}`,
-            `GPS: ${gpsText}`
-        ];
-        auditText = lines.join('\n');
-
-        qrBox.innerHTML = "";
-        if(window.QRCode) { new QRCode(qrBox, { text: auditText, width: 200, height: 200 }); }
-
-        setTimeout(() => {
-            const canvas = document.createElement('canvas');
-            canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0);
-
-            // Stamp Text
-            ctx.fillStyle = "white"; ctx.strokeStyle = "black"; ctx.lineWidth = 3;
-            ctx.font = "bold 22px Arial";
-            lines.forEach((txt, i) => {
-                ctx.strokeText(txt, 25, 45 + (i*28));
-                ctx.fillText(txt, 25, 45 + (i*28));
-            });
-
-            // Stamp QR
-            const qrCanvas = qrBox.querySelector('canvas');
-            if(qrCanvas) ctx.drawImage(qrCanvas, canvas.width-190, canvas.height-190, 160, 160);
-
-            canvas.toBlob(b => {
-                currentBlob = b;
-                document.getElementById('preview-img').src = URL.createObjectURL(b);
-                document.getElementById('preview-img').style.display = 'block';
-                document.getElementById('camera-box').style.display = 'none';
-                document.getElementById('btn-snap').style.display = 'none';
-                document.getElementById('pin-section').style.display = 'block';
-                videoStream.getTracks().forEach(t => t.stop());
-            }, 'image/jpeg', 0.8);
-        }, 600);
-    }
-
-    function verifyAndSave() {
-        if(document.getElementById('pin-entry').value !== currentPin) return alert("PIN Incorrect");
-        const tx = db.transaction("audits", "readwrite");
-        tx.objectStore("audits").add({ id: Math.floor(Date.now()/1000), text: auditText, img: currentBlob });
-        document.getElementById('pin-section').style.display = 'none';
-        document.getElementById('share-section').style.display = 'grid';
-    }
-
-    function doShare(mode) {
-        const text = encodeURIComponent(auditText);
-        if(mode === 'wa') {
-            const num = (localStorage.getItem('rs_wa') || "").replace(/\D/g,'');
-            window.open(`https://wa.me/${num}?text=${text}`);
-        } else {
-            const mail = localStorage.getItem('rs_mail') || "";
-            window.open(`mailto:${mail}?subject=RouteAudit&body=${text}`);
-        }
+    async function getAddress(lat, lng) {
+        try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+            const data = await res.json();
+            currentArea = data.address.suburb || data.address.town || data.address.city || "Audit Site";
+            document.getElementById('location-name').innerText = `📍 ${currentArea.toUpperCase()}`;
+        } catch(e) { document.getElementById('location-name').innerText = "📍 GPS ACTIVE"; }
     }
 
     window.onload = () => {
-        document.getElementById('in-name').value = localStorage.getItem('rs_name') || "";
-        document.getElementById('in-wa').value = localStorage.getItem('rs_wa') || "";
-        document.getElementById('in-mail').value = localStorage.getItem('rs_mail') || "";
+        document.getElementById('set-name').value = localStorage.getItem('rv_name') || "";
+        document.getElementById('set-phone').value = localStorage.getItem('rv_phone') || "";
+        document.getElementById('set-rec-phone').value = localStorage.getItem('rv_rec_phone') || "";
+        document.getElementById('set-rec-email').value = localStorage.getItem('rv_rec_email') || "";
+        updateTime();
+        
+        navigator.geolocation.watchPosition(pos => {
+            const lat = pos.coords.latitude; const lng = pos.coords.longitude;
+            userLocation = `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`;
+            getAddress(lat, lng);
+            document.getElementById('gps-status').innerText = "GPS: ON";
+            document.getElementById('gps-status').style.color = "green";
+            window.calculatedPin = (Math.round((lat % 1) * 10000) + Math.round((lng % 1) * 10000)).toString();
+            document.getElementById('pin-display').innerText = window.calculatedPin;
+        }, null, { enableHighAccuracy: true });
     };
+
+    async function startCamera() {
+        videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        document.getElementById('video-preview').srcObject = videoStream;
+        document.getElementById('camera-container').style.display = 'block';
+        document.getElementById('cameraBtn').style.display = 'none';
+        document.getElementById('snapBtn').style.display = 'block';
+    }
+
+    function takePhoto() {
+        const video = document.getElementById('video-preview');
+        const statusBar = document.getElementById('status-bar');
+        statusBar.style.display = 'block';
+        
+        const mainCanvas = document.createElement('canvas');
+        const ctx = mainCanvas.getContext('2d');
+        mainCanvas.width = video.videoWidth; 
+        mainCanvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0);
+
+        const now = new Date();
+        unixTs = Math.floor(now.getTime() / 1000);
+        const name = localStorage.getItem('rv_name') || "User";
+        
+        // --- The Official 8-Line Layout ---
+        const finalAuditData = "Route Stamp\n" + // Line 1: Brand
+                                name + "\n" + // Line 2: Name
+                                window.calculatedPin + "\n" + // Line 3: PIN (Updated location)
+                                unixTs + "\n" + // Line 4: Unix
+                                now.toLocaleDateString() + "\n" + // Line 5: Date
+                                now.toLocaleTimeString() + "\n" + // Line 6: Time
+                                currentArea + "\n" + // Line 7: Suburb/City
+                                userLocation; // Line 8: GPS
+
+        // Store this for WA/Gmail usage later
+        window.formattedBody = finalAuditData; 
+
+        // Embedded exact data in the QR
+        const qrContainer = document.getElementById('qr-hidden');
+        qrContainer.innerHTML = "";
+        new QRCode(qrContainer, { text: finalAuditData, width: 256, height: 256, correctLevel: QRCode.CorrectLevel.M });
+
+        setTimeout(() => {
+            const qrCanvas = qrContainer.querySelector('canvas');
+            if (qrCanvas) {
+                const qrSize = Math.floor(mainCanvas.width * 0.28);
+                const margin = 40;
+                const qrX = (now.getDate() % 2 !== 0) ? margin : (mainCanvas.width - qrSize - margin);
+                const qrY = mainCanvas.height - qrSize - margin;
+                ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
+                
+                mainCanvas.toBlob(blob => {
+                    imageBlob = blob;
+                    if(videoStream) videoStream.getTracks().forEach(t => t.stop());
+                    document.getElementById('review-img').src = URL.createObjectURL(imageBlob);
+                    document.getElementById('review-img').style.display = 'block';
+                    document.getElementById('camera-container').style.display = 'none';
+                    document.getElementById('snapBtn').style.display = 'none';
+                    statusBar.style.display = 'none'; 
+                    document.getElementById('final-step').style.display = 'block';
+                }, 'image/jpeg', 0.9);
+            }
+        }, 1500); 
+    }
+
+    function processAudit() {
+        if (document.getElementById('pinInput').value !== window.calculatedPin) return alert("PIN Mismatch");
+        const a = document.createElement('a');
+        a.href = document.getElementById('review-img').src; 
+        a.download = `Audit_${unixTs}.jpg`; a.click();
+        document.getElementById('final-step').style.display = 'none';
+        document.getElementById('share-hub').style.display = 'block';
+    }
+
+    function shareWhatsApp() {
+        const phone = (localStorage.getItem('rv_rec_phone') || "").replace(/\D/g,'');
+        const text = encodeURIComponent(window.formattedBody + "\n\nAttach proof image here.");
+        window.open(`https://wa.me/${phone}?text=${text}`, '_blank');
+    }
+
+    function shareGmail() {
+        const email = localStorage.getItem('rv_rec_email') || "";
+        const sub = `Audit: ${unixTs} (${localStorage.getItem('rv_name')})`;
+        const body = encodeURIComponent(window.formattedBody + "\n\nAttach proof image here.");
+        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+        if (isMobile) {
+            window.location.href = `mailto:${email}?subject=${encodeURIComponent(sub)}&body=${body}`;
+        } else {
+            const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${email}&su=${encodeURIComponent(sub)}&body=${body}`;
+            window.open(gmailUrl, '_blank');
+        }
+    }
+
+    function updateTime() {
+        const n = new Date();
+        document.getElementById('display-date').innerText = n.toLocaleDateString();
+        document.getElementById('display-time').innerText = n.toLocaleTimeString();
+    }
+    setInterval(updateTime, 1000);
 </script>
 </body>
 </html>
+
+    
