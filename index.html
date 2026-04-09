@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RouteVault AI - V15.1 Bypass</title>
+    <title>RouteVault AI - V15.1 Instant</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root { --primary: #1a202c; --wa: #25d366; --gmail: #EA4335; --bg: #f7fafc; --blue: #4285F4; --red: #e53e3e; }
@@ -86,11 +86,10 @@
     let db = null, videoStream, imageBlob, userLocation = "N/A", currentArea = "DETECTING...", unixTs = 0;
     let currentRecordId = null, formattedBodyText = "";
 
-    // 1. IMPROVED DATABASE INIT (Prevents Loops)
+    // Load Database
     const dbReq = indexedDB.open("RouteVaultDB", 1);
     dbReq.onupgradeneeded = e => e.target.result.createObjectStore("captures", { keyPath: "id" });
-    dbReq.onsuccess = e => { db = e.target.result; console.log("DB Ready"); };
-    dbReq.onerror = () => { console.warn("DB Failed, using memory only."); };
+    dbReq.onsuccess = e => { db = e.target.result; };
 
     function switchSection(sect) {
         document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
@@ -109,13 +108,11 @@
     }
 
     async function startCamera() {
-        try {
-            videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-            document.getElementById('video-preview').srcObject = videoStream;
-            document.getElementById('camera-container').style.display = 'block';
-            document.getElementById('cameraBtn').style.display = 'none';
-            document.getElementById('snapBtn').style.display = 'block';
-        } catch (e) { alert("Camera Error. Check Permissions."); }
+        videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        document.getElementById('video-preview').srcObject = videoStream;
+        document.getElementById('camera-container').style.display = 'block';
+        document.getElementById('cameraBtn').style.display = 'none';
+        document.getElementById('snapBtn').style.display = 'block';
     }
 
     function takePhoto() {
@@ -136,8 +133,7 @@
         setTimeout(() => {
             const qrCanvas = qrHidden.querySelector('canvas');
             const qrSize = Math.floor(canvas.width * 0.28);
-            const qrX = (now.getDate() % 2 !== 0) ? 40 : (canvas.width - qrSize - 40);
-            ctx.drawImage(qrCanvas, qrX, canvas.height - qrSize - 40, qrSize, qrSize);
+            ctx.drawImage(qrCanvas, (now.getDate() % 2 !== 0) ? 40 : (canvas.width - qrSize - 40), canvas.height - qrSize - 40, qrSize, qrSize);
             
             canvas.toBlob(blob => {
                 imageBlob = blob;
@@ -149,13 +145,9 @@
         }, 1000);
     }
 
-    // 2. REWRITTEN PROCESS AUDIT (Bypasses error loops)
+    // THE FIX: Instant UI switch before saving
     function processAudit() {
-        const inputPin = document.getElementById('pinInput').value;
-        if (inputPin !== window.calculatedPin) {
-            alert("PIN Error");
-            return;
-        }
+        if (document.getElementById('pinInput').value !== window.calculatedPin) return alert("PIN Error");
 
         const record = {
             id: `Audit_${unixTs}`,
@@ -165,17 +157,14 @@
             body: formattedBodyText
         };
 
-        // Try to save, but always move forward
+        // 1. Move to the next screen immediately
+        showReview(record);
+
+        // 2. Save in background (doesn't stop the UI)
         if (db) {
             try {
-                const tx = db.transaction("captures", "readwrite");
-                const store = tx.objectStore("captures");
-                const req = store.put(record);
-                req.onsuccess = () => showReview(record);
-                req.onerror = () => { console.warn("Save failed"); showReview(record); };
-            } catch (e) { showReview(record); }
-        } else {
-            showReview(record);
+                db.transaction("captures", "readwrite").objectStore("captures").put(record);
+            } catch (e) { console.warn("Background save failed"); }
         }
     }
 
@@ -183,7 +172,7 @@
         currentRecordId = item.id;
         formattedBodyText = item.body;
         const img = document.getElementById('review-img');
-        if (item.blob) img.src = URL.createObjectURL(item.blob);
+        img.src = URL.createObjectURL(item.blob);
         img.style.display = 'block';
         
         document.getElementById('sec-new').classList.remove('active');
@@ -196,7 +185,7 @@
     function loadLogList() {
         const listDiv = document.getElementById('log-list');
         listDiv.innerHTML = "";
-        if (!db) { listDiv.innerHTML = "<p style='padding:20px;'>Database offline.</p>"; return; }
+        if (!db) return;
         db.transaction("captures").objectStore("captures").getAll().onsuccess = e => {
             e.target.result.reverse().forEach(item => {
                 const row = document.createElement('div');
@@ -236,29 +225,5 @@
 
     window.onload = () => {
         ['name','phone','rec-phone','rec-email'].forEach(k => {
-            document.getElementById('set-'+k).value = localStorage.getItem('rv_'+k.replace('-','_')) || "";
-        });
-        setInterval(() => {
-            const n = new Date();
-            document.getElementById('display-date').innerText = n.toLocaleDateString();
-            document.getElementById('display-time').innerText = n.toLocaleTimeString();
-        }, 1000);
-
-        navigator.geolocation.watchPosition(pos => {
-            const lat = pos.coords.latitude, lng = pos.coords.longitude;
-            userLocation = `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`;
-            document.getElementById('gps-status').innerText = "GPS: ON";
-            document.getElementById('gps-status').style.color = "green";
-            window.calculatedPin = (Math.round((lat % 1) * 10000) + Math.round((lng % 1) * 10000)).toString();
-            document.getElementById('pin-display').innerText = window.calculatedPin;
-            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
-                .then(r => r.json()).then(d => {
-                    currentArea = d.address.suburb || d.address.town || d.address.city || "Site";
-                    document.getElementById('location-name').innerText = `📍 ${currentArea.toUpperCase()}`;
-                });
-        }, null, { enableHighAccuracy: true });
-    };
-</script>
-</body>
-    </html>
-            
+            document.getElementById('set-'+k).value =
+                                       
