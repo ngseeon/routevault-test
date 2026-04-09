@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Route Stamp - v16.6</title>
+    <title>Route Stamp - v16.7</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root { --primary: #1a202c; --wa: #25d366; --gmail: #EA4335; --bg: #f7fafc; --blue: #4285F4; --red: #e53e3e; }
@@ -141,7 +141,7 @@
         const video = document.getElementById('video-preview');
         const snapBtn = document.getElementById('snapBtn');
         
-        snapBtn.innerText = "STAMPING...";
+        snapBtn.innerText = "PROCESSING...";
         snapBtn.disabled = true;
 
         const now = new Date();
@@ -149,50 +149,63 @@
         const name = localStorage.getItem('rv_name') || "User";
         const body = `📌 Route Stamp\n${name}\n${window.calculatedPin}\n${unixTs}\n${now.toLocaleDateString()}\n${now.toLocaleTimeString()}\n${currentArea}\n${userLocation}`;
 
-        // 1. Capture camera frame immediately to a canvas
+        // 1. Capture the visual frame immediately
         const mainCanvas = document.createElement('canvas');
         mainCanvas.width = video.videoWidth;
         mainCanvas.height = video.videoHeight;
         const ctx = mainCanvas.getContext('2d');
         ctx.drawImage(video, 0, 0);
 
-        // 2. Clear and generate new QR
+        // 2. Clear and initiate QR generation
         const qrHidden = document.getElementById('qr-hidden');
         qrHidden.innerHTML = "";
-        const qrcode = new QRCode(qrHidden, { text: body, width: 256, height: 256 });
+        try {
+            new QRCode(qrHidden, { text: body, width: 256, height: 256 });
+        } catch(e) { console.error("QR Lib failed"); }
 
-        // 3. Sequential check: Wait for QR then merge
-        let checkCount = 0;
-        const mergeSequence = setInterval(() => {
+        // 3. Fallback Mechanism: Max 1.5 seconds wait
+        let elapsed = 0;
+        const mergeCheck = setInterval(() => {
             const qrCanvas = qrHidden.querySelector('canvas');
-            checkCount++;
+            elapsed += 100;
 
-            if (qrCanvas || checkCount > 20) {
-                clearInterval(mergeSequence);
+            if (qrCanvas || elapsed >= 1500) {
+                clearInterval(mergeCheck);
                 
-                // 4. If QR exists, draw it onto the main canvas
                 if (qrCanvas) {
                     const qrSize = Math.floor(mainCanvas.width * 0.28);
                     const margin = 40;
                     const qrX = (now.getDate() % 2 !== 0) ? margin : (mainCanvas.width - qrSize - margin);
                     ctx.drawImage(qrCanvas, qrX, mainCanvas.height - qrSize - margin, qrSize, qrSize);
+                } else {
+                    // Fail-safe: Text Stamp if QR generation fails
+                    ctx.fillStyle = "rgba(0,0,0,0.5)";
+                    ctx.fillRect(20, mainCanvas.height - 100, 400, 80);
+                    ctx.fillStyle = "white";
+                    ctx.font = "bold 24px Arial";
+                    ctx.fillText(`ID: ${unixTs} | PIN: ${window.calculatedPin}`, 40, mainCanvas.height - 50);
                 }
 
-                // 5. Finalize the image and "Move On"
-                mainCanvas.toBlob(blob => {
-                    imageBlob = blob;
-                    currentAuditData = { id: unixTs, name: `Audit_${unixTs}`, date: now.toLocaleDateString(), time: now.toLocaleTimeString(), body: body, img: blob };
-                    
-                    document.getElementById('review-img').src = URL.createObjectURL(blob);
-                    document.getElementById('review-img').style.display = 'block';
-                    document.getElementById('camera-container').style.display = 'none';
-                    document.getElementById('snapBtn').style.display = 'none';
-                    document.getElementById('final-step').style.display = 'block';
-                    
-                    if(videoStream) videoStream.getTracks().forEach(t => t.stop());
-                }, 'image/jpeg', 0.85);
+                finalizeImage(mainCanvas, body, now);
             }
         }, 100);
+    }
+
+    function finalizeImage(canvas, body, now) {
+        canvas.toBlob(blob => {
+            imageBlob = blob;
+            currentAuditData = { id: unixTs, name: `Audit_${unixTs}`, date: now.toLocaleDateString(), time: now.toLocaleTimeString(), body: body, img: blob };
+            
+            const reviewImg = document.getElementById('review-img');
+            reviewImg.src = URL.createObjectURL(blob);
+            reviewImg.onload = () => {
+                reviewImg.style.display = 'block';
+                document.getElementById('camera-container').style.display = 'none';
+                document.getElementById('snapBtn').style.display = 'none';
+                document.getElementById('final-step').style.display = 'block';
+                if(videoStream) videoStream.getTracks().forEach(t => t.stop());
+            };
+        }, 'image/jpeg', 0.85);
     }
 
     function processAudit() {
