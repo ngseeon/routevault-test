@@ -3,18 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Route Stamp - v17.3</title>
+    <title>Route Stamp - v17.4</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root { --primary: #1a202c; --wa: #25d366; --gmail: #EA4335; --bg: #f7fafc; --blue: #4285F4; --red: #e53e3e; }
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 10px; margin: 0; color: #2d3748; }
-        .card { background: white; width: 100%; max-width: 460px; padding: 20px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); position: relative; min-height: 90vh; display: flex; flex-direction: column; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 10px; margin: 0; color: #2d3748; overflow-x: hidden; }
+        .card { background: white; width: 100%; max-width: 460px; padding: 20px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); position: relative; min-height: 90vh; display: flex; flex-direction: column; box-sizing: border-box; }
         .tabs { display: flex; gap: 10px; margin-bottom: 15px; }
-        .tab-btn { flex: 1; padding: 12px; border: none; border-radius: 8px; background: #edf2f7; cursor: pointer; font-weight: bold; font-size: 13px; }
+        .tab-btn { flex: 1; padding: 12px; border: none; border-radius: 8px; background: #edf2f7; cursor: pointer; font-weight: bold; font-size: 13px; transition: 0.2s; }
         .tab-btn.active { background: var(--blue); color: white; }
         .header { display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid #edf2f7; padding-bottom: 8px; align-items: center; }
         #settings-ui { display: none; background: #fff; position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; padding: 20px; box-sizing: border-box; border-radius: 16px; border: 2px solid var(--blue); overflow-y: auto; }
-        #settings-ui input { width: 94%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; margin-bottom: 10px; display: block; }
+        #settings-ui input { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; margin-bottom: 10px; display: block; box-sizing: border-box; }
         #camera-container { width: 100%; border-radius: 12px; overflow: hidden; background: #000; margin-bottom: 10px; display: none; aspect-ratio: 4/3; }
         #video-preview { width: 100%; height: 100%; object-fit: cover; }
         #review-img { width: 100%; border-radius: 12px; margin-bottom: 15px; border: 2px solid #e2e8f0; display: none; }
@@ -22,7 +22,7 @@
         .action-btn { width: 100%; padding: 14px; border: none; border-radius: 8px; background: var(--blue); color: white; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .share-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 10px; display: none; }
         .btn-link { padding: 14px; border-radius: 8px; border: none; color: white; font-weight: bold; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; text-transform: uppercase; }
-        #qr-buffer { position: absolute; left: -9999px; visibility: hidden; }
+        #qr-buffer { position: absolute; left: -9999px; visibility: hidden; pointer-events: none; }
     </style>
 </head>
 <body>
@@ -31,214 +31,5 @@
 
 <div class="card">
     <div id="settings-ui">
-        <h3 style="margin-top:0;">Profile & Contacts</h3>
-        <label>YOUR NAME</label><input type="text" id="set-name">
-        <label>YOUR WHATSAPP</label><input type="text" id="set-phone">
-        <label>YOUR EMAIL</label><input type="email" id="set-email">
-        <hr>
-        <label>RECIPIENT WHATSAPP</label><input type="text" id="set-rec-phone">
-        <label>RECIPIENT EMAIL</label><input type="email" id="set-rec-email">
-        <button class="action-btn" onclick="saveSettings()">Save & Close</button>
-    </div>
-
-    <div class="tabs">
-        <button class="tab-btn active" id="tab-cap" onclick="showTab('capture')">NEW CAPTURE</button>
-        <button class="tab-btn" id="tab-log" onclick="showTab('history')">LOG HISTORY</button>
-    </div>
-
-    <div class="header">
-        <div id="location-name">📍 DETECTING...</div>
-        <div style="display:flex; gap:10px; align-items:center;">
-            <span id="gps-status" style="color:red">GPS: OFF</span>
-            <span onclick="toggleSettings()" style="cursor:pointer; font-size:18px;">⚙️</span>
-        </div>
-    </div>
-
-    <div id="capture-section">
-        <div class="live-clock"><span id="display-date"></span> | <span id="display-time"></span></div>
-        <div id="camera-container"><video id="video-preview" autoplay playsinline muted></video></div>
-        <img id="review-img" src="" alt="Audit Preview">
-        
-        <div id="ui-main">
-            <button id="cameraBtn" class="action-btn" onclick="startCamera()">Open Audit Camera</button>
-            <button id="snapBtn" class="action-btn" style="display:none; background:var(--primary);" onclick="takePhoto()">Capture & Stamp</button>
+        <h3 style="margin
             
-            <div id="final-step" style="display:none; text-align:center;">
-                <p style="font-size:11px; font-weight:bold;">SECURITY PIN: <span id="pin-display" style="color:var(--blue);">--</span></p>
-                <input type="number" id="pinInput" placeholder="Enter PIN" style="font-size:20px; text-align:center; width:140px; margin: 0 auto 10px; display: block;">
-                <button id="verifyBtn" class="action-btn" onclick="processAudit()">Verify & Store Audit</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="history-section" style="display:none; flex-grow:1; flex-direction:column;">
-        <div style="overflow-y:auto; flex-grow:1; border:1px solid #e2e8f0; border-radius:8px; background:white;">
-            <table style="width:100%; border-collapse:collapse; font-size:12px;">
-                <thead><tr style="background:#f7fafc;"><th style="padding:12px; text-align:left;">File Name</th><th style="padding:12px;">Date</th></tr></thead>
-                <tbody id="history-list"></tbody>
-            </table>
-        </div>
-    </div>
-
-    <div id="share-hub" class="share-grid">
-        <button onclick="shareWhatsApp()" class="btn-link" style="background:var(--wa);">WhatsApp</button>
-        <button onclick="shareGmail()" class="btn-link" style="background:var(--gmail);">Email</button>
-        <button onclick="deleteCurrentAudit()" class="btn-link" style="background:var(--red);">Delete</button>
-        <button class="action-btn" style="background:#718096; grid-column: span 3;" onclick="resetCapture()">Back to Start</button>
-    </div>
-</div>
-
-<script>
-    let db, videoStream, imageBlob, currentAuditData = null, userLocation = "N/A", currentArea = "DETECTING...", unixTs = 0;
-
-    const dbReq = indexedDB.open("RouteStampDB", 5);
-    dbReq.onupgradeneeded = e => { e.target.result.createObjectStore("audits", { keyPath: "id" }); };
-    dbReq.onsuccess = e => { db = e.target.result; };
-
-    function toggleSettings() {
-        const ui = document.getElementById('settings-ui');
-        ui.style.display = (ui.style.display === 'block') ? 'none' : 'block';
-    }
-
-    function saveSettings() {
-        localStorage.setItem('rv_name', document.getElementById('set-name').value);
-        localStorage.setItem('rv_phone', document.getElementById('set-phone').value);
-        localStorage.setItem('rv_email', document.getElementById('set-email').value);
-        localStorage.setItem('rv_rec_phone', document.getElementById('set-rec-phone').value);
-        localStorage.setItem('rv_rec_email', document.getElementById('set-rec-email').value);
-        toggleSettings();
-    }
-
-    function showTab(type) {
-        document.getElementById('capture-section').style.display = type === 'capture' ? 'block' : 'none';
-        document.getElementById('history-section').style.display = type === 'history' ? 'flex' : 'none';
-        document.getElementById('tab-cap').className = `tab-btn ${type==='capture'?'active':''}`;
-        document.getElementById('tab-log').className = `tab-btn ${type==='history'?'active':''}`;
-        if(type === 'history') loadHistory();
-    }
-
-    async function getAddress(lat, lng) {
-        try {
-            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
-            const data = await res.json();
-            currentArea = data.address.suburb || data.address.town || data.address.city || "Audit Site";
-            document.getElementById('location-name').innerText = `📍 ${currentArea.toUpperCase()}`;
-        } catch(e) { document.getElementById('location-name').innerText = "📍 GPS ACTIVE"; }
-    }
-
-    async function startCamera() {
-        try {
-            if(videoStream) videoStream.getTracks().forEach(t => t.stop());
-            videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-            document.getElementById('video-preview').srcObject = videoStream;
-            document.getElementById('camera-container').style.display = 'block';
-            document.getElementById('cameraBtn').style.display = 'none';
-            document.getElementById('snapBtn').style.display = 'block';
-        } catch (e) { alert("Camera Error. Check permissions."); }
-    }
-
-    // NEW: Wait for QR to be ready
-    function waitForQR(buffer) {
-        return new Promise((resolve) => {
-            let attempts = 0;
-            const check = setInterval(() => {
-                const canvas = buffer.querySelector('canvas');
-                attempts++;
-                if (canvas || attempts > 15) { // Max 1.5 seconds
-                    clearInterval(check);
-                    resolve(canvas);
-                }
-            }, 100);
-        });
-    }
-
-    async function takePhoto() {
-        const video = document.getElementById('video-preview');
-        const snapBtn = document.getElementById('snapBtn');
-        const buffer = document.getElementById('qr-buffer');
-        
-        snapBtn.innerText = "STAMPING...";
-        snapBtn.disabled = true;
-
-        const now = new Date();
-        unixTs = Math.floor(now.getTime() / 1000);
-        const name = localStorage.getItem('rv_name') || "User";
-        const pin = window.calculatedPin || "0000";
-        
-        const bodyLines = [
-            "📌 ROUTE STAMP",
-            `USER: ${name.toUpperCase()}`,
-            `PIN: ${pin}`,
-            `ID: ${unixTs}`,
-            `DATE: ${now.toLocaleDateString()}`,
-            `TIME: ${now.toLocaleTimeString()}`,
-            `AREA: ${currentArea.toUpperCase()}`,
-            `GPS: ${userLocation}`
-        ];
-        const bodyText = bodyLines.join('\n');
-
-        buffer.innerHTML = "";
-        new QRCode(buffer, { text: bodyText, width: 256, height: 256 });
-
-        const qrCanvas = await waitForQR(buffer);
-
-        const canvas = document.createElement('canvas');
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        const ctx = canvas.getContext('2d');
-        
-        // 1. Photo
-        ctx.drawImage(video, 0, 0);
-
-        // 2. Text Overlay
-        ctx.fillStyle = "white";
-        ctx.strokeStyle = "black";
-        ctx.lineWidth = 4;
-        ctx.font = "bold 22px Arial";
-        let yPos = 40;
-        bodyLines.forEach(line => {
-            ctx.strokeText(line, 30, yPos);
-            ctx.fillText(line, 30, yPos);
-            yPos += 30;
-        });
-
-        // 3. QR Overlay
-        if (qrCanvas) {
-            const qrSize = Math.floor(canvas.width * 0.28);
-            const qrX = (now.getDate() % 2 !== 0) ? 30 : (canvas.width - qrSize - 30);
-            ctx.drawImage(qrCanvas, qrX, canvas.height - qrSize - 30, qrSize, qrSize);
-        }
-
-        canvas.toBlob(blob => {
-            imageBlob = blob;
-            currentAuditData = { id: unixTs, name: `Audit_${unixTs}`, date: now.toLocaleDateString(), time: now.toLocaleTimeString(), body: bodyText, img: blob };
-            document.getElementById('review-img').src = URL.createObjectURL(blob);
-            document.getElementById('review-img').style.display = 'block';
-            document.getElementById('camera-container').style.display = 'none';
-            document.getElementById('snapBtn').style.display = 'none';
-            document.getElementById('final-step').style.display = 'block';
-            if(videoStream) videoStream.getTracks().forEach(t => t.stop());
-        }, 'image/jpeg', 0.9);
-    }
-
-    function processAudit() {
-        if (document.getElementById('pinInput').value !== window.calculatedPin) return alert("PIN Mismatch");
-        const tx = db.transaction("audits", "readwrite");
-        tx.objectStore("audits").add(currentAuditData);
-        tx.oncomplete = () => {
-            document.getElementById('final-step').style.display = 'none';
-            document.getElementById('share-hub').style.display = 'grid';
-            const a = document.createElement('a');
-            a.href = document.getElementById('review-img').src;
-            a.download = `${currentAuditData.name}.jpg`; a.click();
-        };
-    }
-
-    function loadHistory() {
-        const list = document.getElementById('history-list');
-        list.innerHTML = "";
-        db.transaction("audits").objectStore("audits").getAll().onsuccess = e => {
-            e.target.result.reverse().forEach(item => {
-                const row = list.insertRow();
-                row.innerHTML
-    
