@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Route Stamp - v17.0</title>
+    <title>Route Stamp - v17.1</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root { --primary: #1a202c; --wa: #25d366; --gmail: #EA4335; --bg: #f7fafc; --blue: #4285F4; --red: #e53e3e; }
@@ -66,13 +66,13 @@
             <div id="final-step" style="display:none; text-align:center;">
                 <p style="font-size:11px; font-weight:bold;">SECURITY PIN: <span id="pin-display" style="color:var(--blue);">--</span></p>
                 <input type="number" id="pinInput" placeholder="Enter PIN" style="font-size:20px; text-align:center; width:140px; margin: 0 auto 10px; display: block;">
-                <button class="action-btn" onclick="processAudit()">Verify & Store Audit</button>
+                <button id="verifyBtn" class="action-btn" onclick="processAudit()">Verify & Store Audit</button>
             </div>
         </div>
     </div>
 
     <div id="history-section" style="display:none; flex-grow:1; flex-direction:column;">
-        <div style="overflow-y:auto; flex-grow:1; border:1px solid #e2e8f0; border-radius:8px; background:white;">
+        <div id="history-list-container" style="overflow-y:auto; flex-grow:1; border:1px solid #e2e8f0; border-radius:8px; background:white;">
             <table style="width:100%; border-collapse:collapse; font-size:12px;">
                 <thead><tr style="background:#f7fafc;"><th style="padding:12px; text-align:left;">File Name</th><th style="padding:12px;">Date</th></tr></thead>
                 <tbody id="history-list"></tbody>
@@ -91,7 +91,7 @@
 <script>
     let db, videoStream, imageBlob, currentAuditData = null, userLocation = "N/A", currentArea = "DETECTING...", unixTs = 0;
 
-    const dbReq = indexedDB.open("RouteStampDB", 3);
+    const dbReq = indexedDB.open("RouteStampDB", 4);
     dbReq.onupgradeneeded = e => { e.target.result.createObjectStore("audits", { keyPath: "id" }); };
     dbReq.onsuccess = e => { db = e.target.result; };
 
@@ -101,11 +101,11 @@
     }
 
     function saveSettings() {
-        localStorage.setItem('rv_name', document.getElementById('set-name').value || "User");
-        localStorage.setItem('rv_phone', document.getElementById('set-phone').value || "");
-        localStorage.setItem('rv_email', document.getElementById('set-email').value || "");
-        localStorage.setItem('rv_rec_phone', document.getElementById('set-rec-phone').value || "");
-        localStorage.setItem('rv_rec_email', document.getElementById('set-rec-email').value || "");
+        localStorage.setItem('rv_name', document.getElementById('set-name').value);
+        localStorage.setItem('rv_phone', document.getElementById('set-phone').value);
+        localStorage.setItem('rv_email', document.getElementById('set-email').value);
+        localStorage.setItem('rv_rec_phone', document.getElementById('set-rec-phone').value);
+        localStorage.setItem('rv_rec_email', document.getElementById('set-rec-email').value);
         toggleSettings();
     }
 
@@ -134,10 +134,8 @@
             document.getElementById('camera-container').style.display = 'block';
             document.getElementById('cameraBtn').style.display = 'none';
             document.getElementById('snapBtn').style.display = 'block';
-            
-            // PRE-LOAD QR HERE so it's ready when you snap
             prepareQR();
-        } catch (e) { alert("Camera Access Required."); }
+        } catch (e) { alert("Camera Error: Please check permissions."); }
     }
 
     function prepareQR() {
@@ -145,74 +143,62 @@
         const nTs = Math.floor(now.getTime() / 1000);
         const name = localStorage.getItem('rv_name') || "User";
         const body = `📌 Route Stamp\n${name}\n${window.calculatedPin}\n${nTs}\n${now.toLocaleDateString()}\n${now.toLocaleTimeString()}\n${currentArea}\n${userLocation}`;
-        
         const qrDiv = document.getElementById('qr-preload');
         qrDiv.innerHTML = "";
-        // Force Canvas rendering
-        new QRCode(qrDiv, { text: body, width: 256, height: 256, useSVG: false });
+        new QRCode(qrDiv, { text: body, width: 256, height: 256 });
         window.currentQRBody = body;
         window.currentTimestamp = nTs;
     }
 
     function takePhoto() {
         const video = document.getElementById('video-preview');
-        const snapBtn = document.getElementById('snapBtn');
         const qrDiv = document.getElementById('qr-preload');
-        
-        snapBtn.innerText = "STAMPING...";
-        snapBtn.disabled = true;
-
-        const mainCanvas = document.createElement('canvas');
-        mainCanvas.width = video.videoWidth;
-        mainCanvas.height = video.videoHeight;
-        const ctx = mainCanvas.getContext('2d');
-        
-        // 1. Draw Video Frame
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
         ctx.drawImage(video, 0, 0);
 
-        // 2. Immediate Draw QR (No waiting)
         const qrCanvas = qrDiv.querySelector('canvas');
         if (qrCanvas) {
-            const qrSize = Math.floor(mainCanvas.width * 0.28);
+            const size = Math.floor(canvas.width * 0.28);
             const margin = 40;
-            const qrX = (new Date().getDate() % 2 !== 0) ? margin : (mainCanvas.width - qrSize - margin);
-            ctx.drawImage(qrCanvas, qrX, mainCanvas.height - qrSize - margin, qrSize, qrSize);
+            const x = (new Date().getDate() % 2 !== 0) ? margin : (canvas.width - size - margin);
+            ctx.drawImage(qrCanvas, x, canvas.height - size - margin, size, size);
         }
 
-        // 3. Finalize
-        mainCanvas.toBlob(blob => {
-            const now = new Date();
+        canvas.toBlob(blob => {
             imageBlob = blob;
-            currentAuditData = { 
-                id: window.currentTimestamp, 
-                name: `Audit_${window.currentTimestamp}`, 
-                date: now.toLocaleDateString(), 
-                time: now.toLocaleTimeString(), 
-                body: window.currentQRBody, 
-                img: blob 
-            };
-            
+            currentAuditData = { id: window.currentTimestamp, name: `Audit_${window.currentTimestamp}`, date: new Date().toLocaleDateString(), time: new Date().toLocaleTimeString(), body: window.currentQRBody, img: blob };
             document.getElementById('review-img').src = URL.createObjectURL(blob);
             document.getElementById('review-img').style.display = 'block';
             document.getElementById('camera-container').style.display = 'none';
             document.getElementById('snapBtn').style.display = 'none';
             document.getElementById('final-step').style.display = 'block';
-            
             if(videoStream) videoStream.getTracks().forEach(t => t.stop());
         }, 'image/jpeg', 0.85);
     }
 
     function processAudit() {
-        if (document.getElementById('pinInput').value !== window.calculatedPin) return alert("PIN Mismatch");
-        const tx = db.transaction("audits", "readwrite");
-        tx.objectStore("audits").add(currentAuditData);
-        tx.oncomplete = () => {
-            document.getElementById('final-step').style.display = 'none';
-            document.getElementById('share-hub').style.display = 'grid';
+        const input = document.getElementById('pinInput').value;
+        if (input !== window.calculatedPin) return alert("Incorrect PIN");
+
+        document.getElementById('verifyBtn').innerText = "SAVING...";
+        document.getElementById('verifyBtn').disabled = true;
+
+        // Force UI transition IMMEDIATELY
+        document.getElementById('final-step').style.display = 'none';
+        document.getElementById('share-hub').style.display = 'grid';
+
+        // Background save
+        try {
+            const tx = db.transaction("audits", "readwrite");
+            tx.objectStore("audits").add(currentAuditData);
             const a = document.createElement('a');
             a.href = document.getElementById('review-img').src;
-            a.download = `${currentAuditData.name}.jpg`; a.click();
-        };
+            a.download = `${currentAuditData.name}.jpg`;
+            a.click();
+        } catch(e) { console.error("Auto-save failed, manual share still available."); }
     }
 
     function loadHistory() {
@@ -221,7 +207,7 @@
         db.transaction("audits").objectStore("audits").getAll().onsuccess = e => {
             e.target.result.reverse().forEach(item => {
                 const row = list.insertRow();
-                row.innerHTML = `<td style="padding:12px; border-bottom:1px solid #edf2f7;">${item.name}</td><td style="padding:12px; border-bottom:1px solid #edf2f7;">${item.date}</td>`;
+                row.innerHTML = `<td style="padding:12px;">${item.name}</td><td style="padding:12px;">${item.date}</td>`;
                 row.onclick = () => selectAudit(item);
             });
         };
@@ -251,8 +237,7 @@
     function shareGmail() {
         const email = localStorage.getItem('rv_rec_email') || "";
         const body = encodeURIComponent(currentAuditData.body);
-        const url = /Android|iPhone/i.test(navigator.userAgent) ? `mailto:${email}?subject=Audit_${currentAuditData.id}&body=${body}` : `https://mail.google.com/mail/?view=cm&fs=1&to=${email}&su=Audit_${currentAuditData.id}&body=${body}`;
-        window.open(url, '_blank');
+        window.open(`mailto:${email}?subject=Audit&body=${body}`, '_blank');
     }
 
     window.onload = () => {
