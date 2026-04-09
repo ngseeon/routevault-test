@@ -92,4 +92,134 @@
         toggleSettings();
     }
 
-    async function getAddress(lat
+    async function getAddress(lat, lng) {
+        try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+            const data = await res.json();
+            currentArea = data.address.suburb || data.address.town || data.address.city || "Audit Site";
+            document.getElementById('location-name').innerText = `📍 ${currentArea.toUpperCase()}`;
+        } catch(e) { document.getElementById('location-name').innerText = "📍 GPS ACTIVE"; }
+    }
+
+    window.onload = () => {
+        document.getElementById('set-name').value = localStorage.getItem('rv_name') || "";
+        document.getElementById('set-phone').value = localStorage.getItem('rv_phone') || "";
+        document.getElementById('set-rec-phone').value = localStorage.getItem('rv_rec_phone') || "";
+        document.getElementById('set-rec-email').value = localStorage.getItem('rv_rec_email') || "";
+        updateTime();
+        
+        navigator.geolocation.watchPosition(pos => {
+            const lat = pos.coords.latitude; const lng = pos.coords.longitude;
+            userLocation = `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`;
+            getAddress(lat, lng);
+            document.getElementById('gps-status').innerText = "GPS: ON";
+            document.getElementById('gps-status').style.color = "green";
+            window.calculatedPin = (Math.round((lat % 1) * 10000) + Math.round((lng % 1) * 10000)).toString();
+            document.getElementById('pin-display').innerText = window.calculatedPin;
+        }, null, { enableHighAccuracy: true });
+    };
+
+    async function startCamera() {
+        videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        document.getElementById('video-preview').srcObject = videoStream;
+        document.getElementById('camera-container').style.display = 'block';
+        document.getElementById('cameraBtn').style.display = 'none';
+        document.getElementById('snapBtn').style.display = 'block';
+    }
+
+    function takePhoto() {
+        const video = document.getElementById('video-preview');
+        const statusBar = document.getElementById('status-bar');
+        statusBar.style.display = 'block';
+        
+        const mainCanvas = document.createElement('canvas');
+        const ctx = mainCanvas.getContext('2d');
+        mainCanvas.width = video.videoWidth; 
+        mainCanvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0);
+
+        const now = new Date();
+        unixTs = Math.floor(now.getTime() / 1000);
+        const name = localStorage.getItem('rv_name') || "User";
+        
+        const qrData = "See On NG\n" + name + "\n" + window.calculatedPin + "\n" + unixTs + "\n" + now.toLocaleDateString() + "\n" + now.toLocaleTimeString() + "\n" + currentArea + "\n" + userLocation;
+        
+        const qrContainer = document.getElementById('qr-hidden');
+        qrContainer.innerHTML = "";
+        new QRCode(qrContainer, { text: qrData, width: 256, height: 256, correctLevel: QRCode.CorrectLevel.M });
+
+        setTimeout(() => {
+            const qrCanvas = qrContainer.querySelector('canvas');
+            if (qrCanvas) {
+                const qrSize = Math.floor(mainCanvas.width * 0.28);
+                const margin = 40;
+                const qrX = (now.getDate() % 2 !== 0) ? margin : (mainCanvas.width - qrSize - margin);
+                const qrY = mainCanvas.height - qrSize - margin;
+                ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
+                
+                mainCanvas.toBlob(blob => {
+                    imageBlob = blob;
+                    if(videoStream) videoStream.getTracks().forEach(t => t.stop());
+                    document.getElementById('review-img').src = URL.createObjectURL(imageBlob);
+                    document.getElementById('review-img').style.display = 'block';
+                    document.getElementById('camera-container').style.display = 'none';
+                    document.getElementById('snapBtn').style.display = 'none';
+                    statusBar.style.display = 'none'; 
+                    document.getElementById('final-step').style.display = 'block';
+                }, 'image/jpeg', 0.9);
+            }
+        }, 1500); 
+    }
+
+    function getFormattedText() {
+        const now = new Date();
+        const name = localStorage.getItem('rv_name') || "User";
+        return [
+            "See On NG",
+            name,
+            window.calculatedPin, // PIN on Line 3
+            unixTs,
+            now.toLocaleDateString(),
+            now.toLocaleTimeString(),
+            currentArea,
+            userLocation
+        ].join("\n") + "\n\nAttach proof image here.";
+    }
+
+    function processAudit() {
+        if (document.getElementById('pinInput').value !== window.calculatedPin) return alert("PIN Mismatch");
+        const a = document.createElement('a');
+        a.href = document.getElementById('review-img').src; 
+        a.download = `Audit_${unixTs}.jpg`; a.click();
+        document.getElementById('final-step').style.display = 'none';
+        document.getElementById('share-hub').style.display = 'block';
+    }
+
+    function shareWhatsApp() {
+        const phone = (localStorage.getItem('rv_rec_phone') || "").replace(/\D/g,'');
+        window.open(`https://wa.me/${phone}?text=${encodeURIComponent(getFormattedText())}`, '_blank');
+    }
+
+    function shareGmail() {
+        const email = localStorage.getItem('rv_rec_email') || "";
+        const sub = `Audit: ${unixTs} (${localStorage.getItem('rv_name')})`;
+        const body = getFormattedText();
+        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+        if (isMobile) {
+            window.location.href = `mailto:${email}?subject=${encodeURIComponent(sub)}&body=${encodeURIComponent(body)}`;
+        } else {
+            const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${email}&su=${encodeURIComponent(sub)}&body=${encodeURIComponent(body)}`;
+            window.open(gmailUrl, '_blank');
+        }
+    }
+
+    function updateTime() {
+        const n = new Date();
+        document.getElementById('display-date').innerText = n.toLocaleDateString();
+        document.getElementById('display-time').innerText = n.toLocaleTimeString();
+    }
+    setInterval(updateTime, 1000);
+</script>
+</body>
+</html>
