@@ -3,25 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RouteVault AI - Route Stamp</title>
+    <title>RouteVault AI - Route Stamp V15.1</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        :root { --primary: #1a202c; --wa: #25d366; --gmail: #EA4335; --bg: #f7fafc; --blue: #4285F4; }
+        :root { --primary: #1a202c; --wa: #25d366; --gmail: #EA4335; --bg: #f7fafc; --blue: #4285F4; --red: #e53e3e; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 10px; margin: 0; color: #2d3748; }
-        .card { background: white; width: 100%; max-width: 460px; padding: 20px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); position: relative; min-height: 90vh; }
+        .card { background: white; width: 100%; max-width: 460px; padding: 20px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); position: relative; min-height: 90vh; overflow: hidden; }
+        
+        /* Navigation & Sections */
+        .section { display: none; }
+        .section.active { display: block; }
+        .nav-menu { display: flex; gap: 10px; margin-bottom: 20px; }
+        .nav-btn { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; background: white; cursor: pointer; font-weight: bold; }
+        .nav-btn.active { background: var(--blue); color: white; border-color: var(--blue); }
+
+        /* V15 Styles Preserved */
         .header { display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid #edf2f7; padding-bottom: 8px; align-items: center; }
         #settings-ui { display: none; background: #fff; position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; padding: 20px; box-sizing: border-box; border-radius: 16px; border: 2px solid var(--blue); overflow-y: auto; }
-        #camera-container { width: 100%; border-radius: 12px; overflow: hidden; background: #000; margin-bottom: 10px; display: none; aspect-ratio: 4/3; }
+        #camera-container { width: 100%; border-radius: 12px; overflow: hidden; background: #000; margin-bottom: 10px; aspect-ratio: 4/3; }
         #video-preview { width: 100%; height: 100%; object-fit: cover; }
-        #status-bar { display: none; text-align: center; background: #ebf8ff; color: #2b6cb0; padding: 10px; border-radius: 8px; margin-bottom: 10px; font-size: 12px; font-weight: bold; border: 1px solid #bee3f8; }
-        #review-img { width: 100%; border-radius: 12px; margin-bottom: 15px; border: 2px solid #e2e8f0; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
         .live-clock { text-align: center; font-family: monospace; font-size: 18px; background: var(--primary); padding: 12px; border-radius: 8px; margin-bottom: 15px; color: #68d391; }
         .action-btn { width: 100%; padding: 14px; border: none; border-radius: 8px; background: var(--blue); color: white; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 14px; }
-        input { width: 94%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; margin-bottom: 10px; display: block; }
-        label { font-size: 11px; font-weight: bold; color: #718096; margin-left: 5px; }
-        #share-hub { display: none; text-align: center; }
-        .share-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-        .btn-link { padding: 14px; border-radius: 8px; border: none; color: white; font-weight: bold; font-size: 13px; cursor: pointer; text-decoration: none; display: flex; align-items: center; justify-content: center; height: 50px; }
+        
+        /* Resend List Styles */
+        .log-container { max-height: 400px; overflow-y: auto; border: 1px solid #edf2f7; border-radius: 12px; }
+        .log-item { padding: 15px; border-bottom: 1px solid #edf2f7; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .log-item:hover { background: #f8fafc; }
+        .log-info { font-size: 13px; }
+        .log-date { font-size: 11px; color: #718096; }
+        
+        #review-img { width: 100%; border-radius: 12px; margin-bottom: 15px; border: 2px solid #e2e8f0; display: none; }
+        input { width: 94%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; margin-bottom: 10px; }
         #qr-hidden { position: absolute; left: -9999px; }
     </style>
 </head>
@@ -32,14 +44,11 @@
 <div class="card">
     <div id="settings-ui">
         <h3>App Settings</h3>
-        <label>YOUR DETAILS</label>
         <input type="text" id="set-name" placeholder="Your Name">
         <input type="text" id="set-phone" placeholder="Your WhatsApp (60...)">
-        <hr style="margin: 15px 0; border: 0; border-top: 1px solid #eee;">
-        <label>RECIPIENT DETAILS</label>
         <input type="text" id="set-rec-phone" placeholder="Recipient WhatsApp (60...)">
         <input type="email" id="set-rec-email" placeholder="Recipient Email">
-        <button class="action-btn" onclick="saveSettings()">Save & Close</button>
+        <button class="action-btn" onclick="toggleSettings()">Save & Close</button>
     </div>
 
     <div class="header">
@@ -50,64 +59,75 @@
         </div>
     </div>
 
-    <div class="live-clock"><span id="display-date"></span> | <span id="display-time"></span></div>
-    
-    <div id="camera-container"><video id="video-preview" autoplay playsinline></video></div>
-    <div id="status-bar">🛡️ STAMPING PROOF: Securing GPS & QR...</div>
-    <img id="review-img" src="" alt="Proof Review">
+    <div class="nav-menu">
+        <button id="tab-new" class="nav-btn active" onclick="showSection('new')">New Capture</button>
+        <button id="tab-resend" class="nav-btn" onclick="showSection('resend')">Resend Capture</button>
+    </div>
 
-    <div id="ui-main">
+    <div id="sec-new" class="section active">
+        <div class="live-clock"><span id="display-date"></span> | <span id="display-time"></span></div>
+        <div id="camera-container" style="display:none;"><video id="video-preview" autoplay playsinline></video></div>
         <button id="cameraBtn" class="action-btn" onclick="startCamera()">Open Audit Camera</button>
         <button id="snapBtn" class="action-btn" style="display:none; background:#2d3748;" onclick="takePhoto()">Capture & Stamp</button>
         
         <div id="final-step" style="display:none; text-align:center;">
             <p style="font-size:11px; font-weight:bold;">Security PIN: <span id="pin-display" style="color:var(--blue);">--</span></p>
-            <input type="number" id="pinInput" placeholder="Enter PIN" style="font-size:24px; text-align:center; width:160px; margin: 10px auto; display: block;">
+            <input type="number" id="pinInput" placeholder="Enter PIN" style="font-size:24px; text-align:center; width:160px;">
             <button class="action-btn" onclick="processAudit()">Verify & Save</button>
         </div>
+    </div>
 
-        <div id="share-hub">
-            <div class="share-grid">
-                <button onclick="shareWhatsApp()" class="btn-link" style="background:var(--wa);">WhatsApp</button>
-                <button onclick="shareGmail()" class="btn-link" style="background:var(--gmail);">Gmail</button>
-            </div>
-            <button class="action-btn" style="background:#718096; margin-top:20px;" onclick="location.reload()">New Audit</button>
+    <div id="sec-resend" class="section">
+        <div id="list-view">
+            <div class="log-container" id="log-list">
+                </div>
         </div>
+    </div>
+
+    <div id="review-screen" style="display:none;">
+        <img id="review-img" src="" alt="Review">
+        <div class="share-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <button onclick="shareWhatsApp()" class="action-btn" style="background:var(--wa); margin-top:0;">WhatsApp</button>
+            <button onclick="shareGmail()" class="action-btn" style="background:var(--gmail); margin-top:0;">Gmail</button>
+        </div>
+        <button id="del-btn" class="action-btn" style="background:var(--red);" onclick="deleteEntry()">Delete Record</button>
+        <button class="action-btn" style="background:#718096;" onclick="resetToHome()">Back</button>
     </div>
 </div>
 
 <script>
-    let videoStream, imageBlob, userLocation = "N/A", currentArea = "DETECTING...", unixTs = 0;
+    let db, videoStream, imageBlob, userLocation = "N/A", currentArea = "DETECTING...", unixTs = 0;
+    let currentRecordId = null;
 
-    function toggleSettings() {
-        const ui = document.getElementById('settings-ui');
-        ui.style.display = (ui.style.display === 'block') ? 'none' : 'block';
-    }
+    // Database Setup
+    const request = indexedDB.open("RouteVaultDB", 1);
+    request.onupgradeneeded = e => {
+        db = e.target.result;
+        db.createObjectStore("captures", { keyPath: "id" });
+    };
+    request.onsuccess = e => db = e.target.result;
 
-    function saveSettings() {
-        localStorage.setItem('rv_name', document.getElementById('set-name').value);
-        localStorage.setItem('rv_phone', document.getElementById('set-phone').value);
-        localStorage.setItem('rv_rec_phone', document.getElementById('set-rec-phone').value);
-        localStorage.setItem('rv_rec_email', document.getElementById('set-rec-email').value);
-        toggleSettings();
-    }
-
-    async function getAddress(lat, lng) {
-        try {
-            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
-            const data = await res.json();
-            currentArea = data.address.suburb || data.address.town || data.address.city || "Audit Site";
-            document.getElementById('location-name').innerText = `📍 ${currentArea.toUpperCase()}`;
-        } catch(e) { document.getElementById('location-name').innerText = "📍 GPS ACTIVE"; }
-    }
-
-    window.onload = () => {
-        document.getElementById('set-name').value = localStorage.getItem('rv_name') || "";
-        document.getElementById('set-phone').value = localStorage.getItem('rv_phone') || "";
-        document.getElementById('set-rec-phone').value = localStorage.getItem('rv_rec_phone') || "";
-        document.getElementById('set-rec-email').value = localStorage.getItem('rv_rec_email') || "";
-        updateTime();
+    function showSection(type) {
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('review-screen').style.display = 'none';
         
+        if(type === 'new') {
+            document.getElementById('sec-new').classList.add('active');
+            document.getElementById('tab-new').classList.add('active');
+        } else {
+            document.getElementById('sec-resend').classList.add('active');
+            document.getElementById('tab-resend').classList.add('active');
+            loadLogs();
+        }
+    }
+
+    // V15 Locked Logic: QR & PIN
+    window.onload = () => {
+        ['set-name', 'set-phone', 'set-rec-phone', 'set-rec-email'].forEach(id => {
+            document.getElementById(id).value = localStorage.getItem('rv_' + id.split('-')[1]) || "";
+        });
+        updateTime();
         navigator.geolocation.watchPosition(pos => {
             const lat = pos.coords.latitude; const lng = pos.coords.longitude;
             userLocation = `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`;
@@ -129,9 +149,6 @@
 
     function takePhoto() {
         const video = document.getElementById('video-preview');
-        const statusBar = document.getElementById('status-bar');
-        statusBar.style.display = 'block';
-        
         const mainCanvas = document.createElement('canvas');
         const ctx = mainCanvas.getContext('2d');
         mainCanvas.width = video.videoWidth; 
@@ -142,74 +159,114 @@
         unixTs = Math.floor(now.getTime() / 1000);
         const name = localStorage.getItem('rv_name') || "User";
         
-        // --- The Official 8-Line Layout ---
-        const finalAuditData = "Route Stamp\n" + // Line 1: Brand
-                                name + "\n" + // Line 2: Name
-                                window.calculatedPin + "\n" + // Line 3: PIN (Updated location)
-                                unixTs + "\n" + // Line 4: Unix
-                                now.toLocaleDateString() + "\n" + // Line 5: Date
-                                now.toLocaleTimeString() + "\n" + // Line 6: Time
-                                currentArea + "\n" + // Line 7: Suburb/City
-                                userLocation; // Line 8: GPS
-
-        // Store this for WA/Gmail usage later
+        // Locked V15 8-Line Format
+        const finalAuditData = `Route Stamp\n${name}\n${window.calculatedPin}\n${unixTs}\n${now.toLocaleDateString()}\n${now.toLocaleTimeString()}\n${currentArea}\n${userLocation}`;
         window.formattedBody = finalAuditData; 
 
-        // Embedded exact data in the QR
         const qrContainer = document.getElementById('qr-hidden');
         qrContainer.innerHTML = "";
         new QRCode(qrContainer, { text: finalAuditData, width: 256, height: 256, correctLevel: QRCode.CorrectLevel.M });
 
         setTimeout(() => {
             const qrCanvas = qrContainer.querySelector('canvas');
-            if (qrCanvas) {
-                const qrSize = Math.floor(mainCanvas.width * 0.28);
-                const margin = 40;
-                const qrX = (now.getDate() % 2 !== 0) ? margin : (mainCanvas.width - qrSize - margin);
-                const qrY = mainCanvas.height - qrSize - margin;
-                ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
-                
-                mainCanvas.toBlob(blob => {
-                    imageBlob = blob;
-                    if(videoStream) videoStream.getTracks().forEach(t => t.stop());
-                    document.getElementById('review-img').src = URL.createObjectURL(imageBlob);
-                    document.getElementById('review-img').style.display = 'block';
-                    document.getElementById('camera-container').style.display = 'none';
-                    document.getElementById('snapBtn').style.display = 'none';
-                    statusBar.style.display = 'none'; 
-                    document.getElementById('final-step').style.display = 'block';
-                }, 'image/jpeg', 0.9);
-            }
-        }, 1500); 
+            const qrSize = Math.floor(mainCanvas.width * 0.28);
+            const margin = 40;
+            const qrX = (now.getDate() % 2 !== 0) ? margin : (mainCanvas.width - qrSize - margin);
+            ctx.drawImage(qrCanvas, qrX, mainCanvas.height - qrSize - margin, qrSize, qrSize);
+            
+            mainCanvas.toBlob(blob => {
+                imageBlob = blob;
+                if(videoStream) videoStream.getTracks().forEach(t => t.stop());
+                document.getElementById('review-img').src = URL.createObjectURL(imageBlob);
+                document.getElementById('camera-container').style.display = 'none';
+                document.getElementById('snapBtn').style.display = 'none';
+                document.getElementById('final-step').style.display = 'block';
+            }, 'image/jpeg', 0.9);
+        }, 1000); 
     }
 
     function processAudit() {
         if (document.getElementById('pinInput').value !== window.calculatedPin) return alert("PIN Mismatch");
-        const a = document.createElement('a');
-        a.href = document.getElementById('review-img').src; 
-        a.download = `Audit_${unixTs}.jpg`; a.click();
+        
+        const record = {
+            id: `Audit_${unixTs}`,
+            date: new Date().toLocaleDateString(),
+            time: new Date().toLocaleTimeString(),
+            blob: imageBlob,
+            body: window.formattedBody
+        };
+
+        const tx = db.transaction("captures", "readwrite");
+        tx.objectStore("captures").add(record);
+        tx.oncomplete = () => {
+            currentRecordId = record.id;
+            openReview(record);
+        };
+    }
+
+    function loadLogs() {
+        const list = document.getElementById('log-list');
+        list.innerHTML = "";
+        db.transaction("captures").objectStore("captures").getAll().onsuccess = e => {
+            e.target.result.reverse().forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'log-item';
+                div.onclick = () => openReview(item);
+                div.innerHTML = `<div class="log-info"><b>${item.id}</b><div class="log-date">${item.date} | ${item.time}</div></div><span>View ➔</span>`;
+                list.appendChild(div);
+            });
+        };
+    }
+
+    function openReview(item) {
+        currentRecordId = item.id;
+        window.formattedBody = item.body;
+        const img = document.getElementById('review-img');
+        img.src = URL.createObjectURL(item.blob);
+        img.style.display = 'block';
+        document.getElementById('sec-new').classList.remove('active');
+        document.getElementById('sec-resend').classList.remove('active');
         document.getElementById('final-step').style.display = 'none';
-        document.getElementById('share-hub').style.display = 'block';
+        document.getElementById('review-screen').style.display = 'block';
+    }
+
+    function deleteEntry() {
+        if(!confirm("Delete this record permanently?")) return;
+        const tx = db.transaction("captures", "readwrite");
+        tx.objectStore("captures").delete(currentRecordId);
+        tx.oncomplete = () => resetToHome();
+    }
+
+    function resetToHome() {
+        location.reload();
+    }
+
+    // Shared Utilities
+    function toggleSettings() {
+        const ui = document.getElementById('settings-ui');
+        if(ui.style.display === 'block') {
+            ['name','phone','rec_phone','rec_email'].forEach(k => localStorage.setItem('rv_'+k, document.getElementById('set-'+k.replace('_','-')).value));
+            ui.style.display = 'none';
+        } else { ui.style.display = 'block'; }
     }
 
     function shareWhatsApp() {
         const phone = (localStorage.getItem('rv_rec_phone') || "").replace(/\D/g,'');
-        const text = encodeURIComponent(window.formattedBody + "\n\nAttach proof image here.");
-        window.open(`https://wa.me/${phone}?text=${text}`, '_blank');
+        window.open(`https://wa.me/${phone}?text=${encodeURIComponent(window.formattedBody + "\n\n(Attach proof image)")}`, '_blank');
     }
 
     function shareGmail() {
         const email = localStorage.getItem('rv_rec_email') || "";
-        const sub = `Audit: ${unixTs} (${localStorage.getItem('rv_name')})`;
-        const body = encodeURIComponent(window.formattedBody + "\n\nAttach proof image here.");
-        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+        window.location.href = `mailto:${email}?subject=Audit Log&body=${encodeURIComponent(window.formattedBody)}`;
+    }
 
-        if (isMobile) {
-            window.location.href = `mailto:${email}?subject=${encodeURIComponent(sub)}&body=${body}`;
-        } else {
-            const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${email}&su=${encodeURIComponent(sub)}&body=${body}`;
-            window.open(gmailUrl, '_blank');
-        }
+    async function getAddress(lat, lng) {
+        try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+            const data = await res.json();
+            currentArea = data.address.suburb || data.address.town || data.address.city || "Site";
+            document.getElementById('location-name').innerText = `📍 ${currentArea.toUpperCase()}`;
+        } catch(e) {}
     }
 
     function updateTime() {
@@ -221,5 +278,3 @@
 </script>
 </body>
 </html>
-
-    
