@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RouteVault AI - Security Build</title>
+    <title>RouteVault AI - Route Stamp</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root { --primary: #1a202c; --wa: #25d366; --gmail: #EA4335; --bg: #f7fafc; --blue: #4285F4; }
@@ -54,7 +54,7 @@
     
     <div id="camera-container"><video id="video-preview" autoplay playsinline></video></div>
     <div id="status-bar">🛡️ STAMPING PROOF: Securing GPS & QR...</div>
-    <img id="review-img" src="" alt="Proof Preview">
+    <img id="review-img" src="" alt="Proof Review">
 
     <div id="ui-main">
         <button id="cameraBtn" class="action-btn" onclick="startCamera()">Open Audit Camera</button>
@@ -142,11 +142,23 @@
         unixTs = Math.floor(now.getTime() / 1000);
         const name = localStorage.getItem('rv_name') || "User";
         
-        const qrData = "See On NG\n" + name + "\n" + window.calculatedPin + "\n" + unixTs + "\n" + now.toLocaleDateString() + "\n" + now.toLocaleTimeString() + "\n" + currentArea + "\n" + userLocation;
-        
+        // --- The Official 8-Line Layout ---
+        const finalAuditData = "Route Stamp\n" + // Line 1: Brand
+                                name + "\n" + // Line 2: Name
+                                window.calculatedPin + "\n" + // Line 3: PIN (Updated location)
+                                unixTs + "\n" + // Line 4: Unix
+                                now.toLocaleDateString() + "\n" + // Line 5: Date
+                                now.toLocaleTimeString() + "\n" + // Line 6: Time
+                                currentArea + "\n" + // Line 7: Suburb/City
+                                userLocation; // Line 8: GPS
+
+        // Store this for WA/Gmail usage later
+        window.formattedBody = finalAuditData; 
+
+        // Embedded exact data in the QR
         const qrContainer = document.getElementById('qr-hidden');
         qrContainer.innerHTML = "";
-        new QRCode(qrContainer, { text: qrData, width: 256, height: 256, correctLevel: QRCode.CorrectLevel.M });
+        new QRCode(qrContainer, { text: finalAuditData, width: 256, height: 256, correctLevel: QRCode.CorrectLevel.M });
 
         setTimeout(() => {
             const qrCanvas = qrContainer.querySelector('canvas');
@@ -171,21 +183,6 @@
         }, 1500); 
     }
 
-    function getFormattedText() {
-        const now = new Date();
-        const name = localStorage.getItem('rv_name') || "User";
-        return [
-            "See On NG",
-            name,
-            window.calculatedPin, // PIN on Line 3
-            unixTs,
-            now.toLocaleDateString(),
-            now.toLocaleTimeString(),
-            currentArea,
-            userLocation
-        ].join("\n") + "\n\nAttach proof image here.";
-    }
-
     function processAudit() {
         if (document.getElementById('pinInput').value !== window.calculatedPin) return alert("PIN Mismatch");
         const a = document.createElement('a');
@@ -197,19 +194,20 @@
 
     function shareWhatsApp() {
         const phone = (localStorage.getItem('rv_rec_phone') || "").replace(/\D/g,'');
-        window.open(`https://wa.me/${phone}?text=${encodeURIComponent(getFormattedText())}`, '_blank');
+        const text = encodeURIComponent(window.formattedBody + "\n\nAttach proof image here.");
+        window.open(`https://wa.me/${phone}?text=${text}`, '_blank');
     }
 
     function shareGmail() {
         const email = localStorage.getItem('rv_rec_email') || "";
         const sub = `Audit: ${unixTs} (${localStorage.getItem('rv_name')})`;
-        const body = getFormattedText();
+        const body = encodeURIComponent(window.formattedBody + "\n\nAttach proof image here.");
         const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
         if (isMobile) {
-            window.location.href = `mailto:${email}?subject=${encodeURIComponent(sub)}&body=${encodeURIComponent(body)}`;
+            window.location.href = `mailto:${email}?subject=${encodeURIComponent(sub)}&body=${body}`;
         } else {
-            const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${email}&su=${encodeURIComponent(sub)}&body=${encodeURIComponent(body)}`;
+            const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${email}&su=${encodeURIComponent(sub)}&body=${body}`;
             window.open(gmailUrl, '_blank');
         }
     }
