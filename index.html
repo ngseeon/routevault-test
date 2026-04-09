@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RouteVault AI - V15.1 Instant</title>
+    <title>RouteVault AI - V15.2 (Auto-Save)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root { --primary: #1a202c; --wa: #25d366; --gmail: #EA4335; --bg: #f7fafc; --blue: #4285F4; --red: #e53e3e; }
@@ -72,12 +72,12 @@
     </div>
 
     <div id="review-screen" style="display:none;">
-        <img id="review-img" src="" alt="Audit Proof">
+        <img id="review-img" src="" alt="Audit Result">
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
             <button onclick="shareWhatsApp()" class="action-btn" style="background:var(--wa); margin-top:0;">WhatsApp</button>
             <button onclick="shareGmail()" class="action-btn" style="background:var(--gmail); margin-top:0;">Gmail</button>
         </div>
-        <button class="action-btn" style="background:var(--red);" onclick="deleteCurrentRecord()">Delete</button>
+        <button class="action-btn" style="background:var(--red);" onclick="deleteCurrentRecord()">Delete Record</button>
         <button class="action-btn" style="background:#718096;" onclick="closeReview()">Back</button>
     </div>
 </div>
@@ -86,7 +86,7 @@
     let db = null, videoStream, imageBlob, userLocation = "N/A", currentArea = "DETECTING...", unixTs = 0;
     let currentRecordId = null, formattedBodyText = "";
 
-    // Load Database
+    // Initialize DB
     const dbReq = indexedDB.open("RouteVaultDB", 1);
     dbReq.onupgradeneeded = e => e.target.result.createObjectStore("captures", { keyPath: "id" });
     dbReq.onsuccess = e => { db = e.target.result; };
@@ -108,11 +108,13 @@
     }
 
     async function startCamera() {
-        videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-        document.getElementById('video-preview').srcObject = videoStream;
-        document.getElementById('camera-container').style.display = 'block';
-        document.getElementById('cameraBtn').style.display = 'none';
-        document.getElementById('snapBtn').style.display = 'block';
+        try {
+            videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+            document.getElementById('video-preview').srcObject = videoStream;
+            document.getElementById('camera-container').style.display = 'block';
+            document.getElementById('cameraBtn').style.display = 'none';
+            document.getElementById('snapBtn').style.display = 'block';
+        } catch (e) { alert("Camera Access Denied."); }
     }
 
     function takePhoto() {
@@ -141,13 +143,13 @@
                 document.getElementById('camera-container').style.display = 'none';
                 document.getElementById('snapBtn').style.display = 'none';
                 document.getElementById('final-step').style.display = 'block';
-            }, 'image/jpeg', 0.8);
+            }, 'image/jpeg', 0.85);
         }, 1000);
     }
 
-    // THE FIX: Instant UI switch before saving
+    // THE PROCESS AUDIT (PIN -> Save -> Download -> Jump)
     function processAudit() {
-        if (document.getElementById('pinInput').value !== window.calculatedPin) return alert("PIN Error");
+        if (document.getElementById('pinInput').value !== window.calculatedPin) return alert("Incorrect PIN");
 
         const record = {
             id: `Audit_${unixTs}`,
@@ -157,14 +159,22 @@
             body: formattedBodyText
         };
 
-        // 1. Move to the next screen immediately
+        // 1. FORCE DOWNLOAD TO LOCAL STORAGE
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(imageBlob);
+        link.download = `Audit_${unixTs}.jpg`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        // 2. SHOW REVIEW SCREEN
         showReview(record);
 
-        // 2. Save in background (doesn't stop the UI)
+        // 3. BACKGROUND LOG SAVE
         if (db) {
             try {
                 db.transaction("captures", "readwrite").objectStore("captures").put(record);
-            } catch (e) { console.warn("Background save failed"); }
+            } catch (e) { console.warn("Internal log failed"); }
         }
     }
 
@@ -191,14 +201,14 @@
                 const row = document.createElement('div');
                 row.className = 'log-item';
                 row.onclick = () => showReview(item);
-                row.innerHTML = `<div><b>${item.id}</b><br><small>${item.date} ${item.time}</small></div><span>View ➔</span>`;
+                row.innerHTML = `<div><b>${item.id}</b><br><small>${item.date} at ${item.time}</small></div><span>Open ➔</span>`;
                 listDiv.appendChild(row);
             });
         };
     }
 
     function deleteCurrentRecord() {
-        if(!confirm("Delete?")) return;
+        if(!confirm("Delete this log entry?")) return;
         if(db) db.transaction("captures", "readwrite").objectStore("captures").delete(currentRecordId);
         closeReview();
     }
@@ -212,7 +222,7 @@
 
     function shareGmail() {
         const e = localStorage.getItem('rv_rec_email') || "";
-        window.location.href = `mailto:${e}?subject=Audit&body=${encodeURIComponent(formattedBodyText)}`;
+        window.location.href = `mailto:${e}?subject=Audit Log&body=${encodeURIComponent(formattedBodyText)}`;
     }
 
     function toggleSettings() { document.getElementById('settings-ui').style.display = 'block'; }
@@ -249,5 +259,4 @@
     };
 </script>
 </body>
-            </html>
-    
+</html>
