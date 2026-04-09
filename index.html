@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Route Stamp - v15.6</title>
+    <title>Route Stamp - v15.7</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root { --primary: #1a202c; --wa: #25d366; --gmail: #EA4335; --bg: #f7fafc; --blue: #4285F4; --red: #e53e3e; }
@@ -27,7 +27,7 @@
         .action-btn { width: 100%; padding: 14px; border: none; border-radius: 8px; background: var(--blue); color: white; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .share-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 10px; display: none; }
         .btn-link { padding: 14px; border-radius: 8px; border: none; color: white; font-weight: bold; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; text-transform: uppercase; }
-        #qr-hidden { position: absolute; left: -9999px; }
+        #qr-hidden { position: absolute; left: -9999px; visibility: hidden; }
         #loading-msg { display: none; text-align: center; color: var(--blue); font-weight: bold; margin-bottom: 10px; }
     </style>
 </head>
@@ -61,7 +61,7 @@
     </div>
 
     <div id="capture-section">
-        <div id="loading-msg">⚙️ STAMPING IMAGE...</div>
+        <div id="loading-msg">⚙️ GENERATING STAMP...</div>
         <div class="live-clock"><span id="display-date"></span> | <span id="display-time"></span></div>
         <div id="camera-container"><video id="video-preview" autoplay playsinline muted></video></div>
         <img id="review-img" src="" alt="Audit Preview">
@@ -99,12 +99,6 @@
     let db, videoStream, imageBlob, currentAuditData = null, userLocation = "N/A", currentArea = "DETECTING...", unixTs = 0;
 
     const dbReq = indexedDB.open("RouteStampDB", 3);
-    dbReq.onupgradeneeded = e => {
-        let database = e.target.result;
-        if (!database.objectStoreNames.contains("audits")) {
-            database.createObjectStore("audits", { keyPath: "id" });
-        }
-    };
     dbReq.onsuccess = e => { db = e.target.result; };
 
     function toggleSettings() {
@@ -142,96 +136,83 @@
         try {
             if(videoStream) videoStream.getTracks().forEach(t => t.stop());
             videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-            const video = document.getElementById('video-preview');
-            video.srcObject = videoStream;
-            video.onloadedmetadata = () => {
-                document.getElementById('camera-container').style.display = 'block';
-                document.getElementById('cameraBtn').style.display = 'none';
-                document.getElementById('snapBtn').style.display = 'block';
-                document.getElementById('review-img').style.display = 'none';
-                document.getElementById('share-hub').style.display = 'none';
-            };
+            document.getElementById('video-preview').srcObject = videoStream;
+            document.getElementById('camera-container').style.display = 'block';
+            document.getElementById('cameraBtn').style.display = 'none';
+            document.getElementById('snapBtn').style.display = 'block';
+            document.getElementById('review-img').style.display = 'none';
         } catch (e) { alert("Camera Access Required."); }
     }
 
     function takePhoto() {
         const video = document.getElementById('video-preview');
-        if (video.readyState < 2) return alert("Camera not ready.");
+        if (video.readyState < 2) return;
         
         document.getElementById('loading-msg').style.display = 'block';
-        document.getElementById('snapBtn').disabled = true;
-
-        const mainCanvas = document.createElement('canvas');
-        const ctx = mainCanvas.getContext('2d');
-        mainCanvas.width = video.videoWidth; 
-        mainCanvas.height = video.videoHeight;
-        ctx.drawImage(video, 0, 0);
+        document.getElementById('snapBtn').style.display = 'none';
 
         const now = new Date();
         unixTs = Math.floor(now.getTime() / 1000);
         const name = localStorage.getItem('rv_name') || "User";
         const body = `📌 Route Stamp\n${name}\n${window.calculatedPin}\n${unixTs}\n${now.toLocaleDateString()}\n${now.toLocaleTimeString()}\n${currentArea}\n${userLocation}`;
         
-        const qrContainer = document.getElementById('qr-hidden');
-        qrContainer.innerHTML = "";
-        
-        // Wait for QR library to be available
-        try {
-            new QRCode(qrContainer, { text: body, width: 256, height: 256, correctLevel: QRCode.CorrectLevel.M });
-        } catch(e) { console.error("QR Error", e); }
+        // 1. Generate QR first
+        const qrDiv = document.getElementById('qr-hidden');
+        qrDiv.innerHTML = "";
+        const qrGenerator = new QRCode(qrDiv, {
+            text: body,
+            width: 256,
+            height: 256,
+            correctLevel: QRCode.CorrectLevel.H
+        });
 
+        // 2. Wait for QR to be rendered to its internal canvas, then draw the photo
         setTimeout(() => {
-            const qrCanvas = qrContainer.querySelector('canvas');
+            const qrCanvas = qrDiv.querySelector('canvas');
+            const mainCanvas = document.createElement('canvas');
+            const ctx = mainCanvas.getContext('2d');
+            
+            mainCanvas.width = video.videoWidth;
+            mainCanvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0);
+
             if (qrCanvas) {
-                const qrSize = Math.floor(mainCanvas.width * 0.30);
+                const qrSize = Math.floor(mainCanvas.width * 0.28);
                 const margin = 40;
+                // Alternate position based on odd/even day
                 const qrX = (now.getDate() % 2 !== 0) ? margin : (mainCanvas.width - qrSize - margin);
                 ctx.drawImage(qrCanvas, qrX, mainCanvas.height - qrSize - margin, qrSize, qrSize);
-                
-                mainCanvas.toBlob(blob => {
-                    imageBlob = blob;
-                    currentAuditData = { id: unixTs, name: `Audit_${unixTs}`, date: now.toLocaleDateString(), time: now.toLocaleTimeString(), body: body, img: blob };
-                    
-                    const imgUrl = URL.createObjectURL(blob);
-                    document.getElementById('review-img').src = imgUrl;
-                    document.getElementById('review-img').style.display = 'block';
-                    document.getElementById('camera-container').style.display = 'none';
-                    document.getElementById('snapBtn').style.display = 'none';
-                    document.getElementById('snapBtn').disabled = false;
-                    document.getElementById('loading-msg').style.display = 'none';
-                    document.getElementById('final-step').style.display = 'block';
-                    
-                    if(videoStream) videoStream.getTracks().forEach(t => t.stop());
-                }, 'image/jpeg', 0.85);
-            } else {
-                alert("Processing error. Please try again.");
-                document.getElementById('loading-msg').style.display = 'none';
-                document.getElementById('snapBtn').disabled = false;
             }
-        }, 1500);
+
+            mainCanvas.toBlob(blob => {
+                imageBlob = blob;
+                currentAuditData = { id: unixTs, name: `Audit_${unixTs}`, date: now.toLocaleDateString(), time: now.toLocaleTimeString(), body: body, img: blob };
+                document.getElementById('review-img').src = URL.createObjectURL(blob);
+                document.getElementById('review-img').style.display = 'block';
+                document.getElementById('camera-container').style.display = 'none';
+                document.getElementById('loading-msg').style.display = 'none';
+                document.getElementById('final-step').style.display = 'block';
+                if(videoStream) videoStream.getTracks().forEach(t => t.stop());
+            }, 'image/jpeg', 0.85);
+        }, 800); 
     }
 
     function processAudit() {
         if (document.getElementById('pinInput').value !== window.calculatedPin) return alert("PIN Mismatch");
-        if (!db) return alert("Database not ready.");
-        
-        try {
-            const tx = db.transaction("audits", "readwrite");
-            tx.objectStore("audits").add(currentAuditData);
-            tx.oncomplete = () => {
-                document.getElementById('final-step').style.display = 'none';
-                document.getElementById('share-hub').style.display = 'grid';
-                const a = document.createElement('a');
-                a.href = document.getElementById('review-img').src;
-                a.download = `${currentAuditData.name}.jpg`; a.click();
-            };
-        } catch(e) { alert("Save failed. Try refreshing."); }
+        const tx = db.transaction("audits", "readwrite");
+        tx.objectStore("audits").add(currentAuditData);
+        tx.oncomplete = () => {
+            document.getElementById('final-step').style.display = 'none';
+            document.getElementById('share-hub').style.display = 'grid';
+            const a = document.createElement('a');
+            a.href = document.getElementById('review-img').src;
+            a.download = `${currentAuditData.name}.jpg`; a.click();
+        };
     }
 
     function loadHistory() {
         const list = document.getElementById('history-list');
         list.innerHTML = "";
-        if (!db) return;
         db.transaction("audits").objectStore("audits").getAll().onsuccess = e => {
             e.target.result.reverse().forEach(item => {
                 const row = list.insertRow();
