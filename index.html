@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RouteVault AI - Web Optimized</title>
+    <title>RouteVault AI - Hybrid Sync</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root { --primary: #1a202c; --wa: #25d366; --gmail: #EA4335; --bg: #f7fafc; --blue: #4285F4; }
@@ -54,7 +54,7 @@
     
     <div id="camera-container"><video id="video-preview" autoplay playsinline></video></div>
     <div id="status-bar">🛡️ STAMPING PROOF: Securing GPS & QR...</div>
-    <img id="review-img" src="" alt="Proof Preview">
+    <img id="review-img" src="" alt="Proof Review">
 
     <div id="ui-main">
         <button id="cameraBtn" class="action-btn" onclick="startCamera()">Open Audit Camera</button>
@@ -183,8 +183,7 @@
 
         const a = document.createElement('a');
         a.href = document.getElementById('review-img').src; 
-        a.download = `Audit_${unixTs}.jpg`; 
-        a.click();
+        a.download = `Audit_${unixTs}.jpg`; a.click();
         
         document.getElementById('final-step').style.display = 'none';
         document.getElementById('share-hub').style.display = 'block';
@@ -201,9 +200,17 @@
         const sub = encodeURIComponent(`Audit: ${unixTs} (${localStorage.getItem('rv_name')})`);
         const body = encodeURIComponent(`${emailBody}\n\nAttach proof image here.`);
         
-        // This direct link forces Chrome to open Gmail Compose in a new tab
-        const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${email}&su=${sub}&body=${body}`;
-        window.open(gmailUrl, '_blank');
+        // DETECTION LOGIC:
+        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+        if (isMobile) {
+            // MOBILE: Use mailto to trigger the App
+            window.location.href = `mailto:${email}?subject=${decodeURIComponent(sub)}&body=${decodeURIComponent(body)}`;
+        } else {
+            // COMPUTER: Use direct Gmail Web Link
+            const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${email}&su=${decodeURIComponent(sub)}&body=${decodeURIComponent(body)}`;
+            window.open(gmailUrl, '_blank');
+        }
     }
 
     function updateTime() {
