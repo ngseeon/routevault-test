@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RouteVault AI - V16.0</title>
+    <title>RouteVault AI - V16.1</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root { --primary: #1a202c; --wa: #25d366; --gmail: #EA4335; --bg: #f7fafc; --blue: #4285F4; --red: #e53e3e; --gold: #d69e2e; }
@@ -27,6 +27,7 @@
         .disclaimer-notice { font-size: 10px; color: #718096; margin-top: 20px; text-align: center; font-style: italic; line-height: 1.4; padding: 0 10px; }
         #qr-hidden { position: absolute; left: -9999px; }
         #settings-ui { display: none; background: #fff; position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; padding: 20px; box-sizing: border-box; border-radius: 16px; border: 2px solid var(--blue); overflow-y: auto;}
+        .email-fallback { display: none; font-size: 11px; margin-top: 5px; color: var(--gmail); text-decoration: underline; cursor: pointer; text-align: center; width: 100%; }
     </style>
 </head>
 <body>
@@ -80,7 +81,10 @@
             </div>
             <div id="share-options-row" style="display:none; grid-template-columns: 1fr 1fr; gap: 10px;">
                 <button onclick="shareWhatsApp()" class="action-btn" style="background:var(--wa); margin-top:10px;">WhatsApp</button>
-                <button onclick="shareGmail()" class="action-btn" style="background:var(--gmail); margin-top:10px;">Email</button>
+                <div style="display:flex; flex-direction:column; align-items:center;">
+                    <button onclick="shareGmail()" class="action-btn" style="background:var(--gmail); margin-top:10px; width: 100%;">Email</button>
+                    <div id="fallback-email-new" class="email-fallback" onclick="manualEmailTrigger()">Email didn't open? Click here</div>
+                </div>
             </div>
         </div>
     </div>
@@ -97,7 +101,10 @@
         <div class="review-details" id="review-data-text"></div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
             <button onclick="shareWhatsApp()" class="action-btn" style="background:var(--wa); margin-top:0;">WhatsApp</button>
-            <button onclick="shareGmail()" class="action-btn" style="background:var(--gmail); margin-top:0;">Email</button>
+            <div style="display:flex; flex-direction:column; align-items:center;">
+                <button onclick="shareGmail()" class="action-btn" style="background:var(--gmail); margin-top:0; width: 100%;">Email</button>
+                <div id="fallback-email-review" class="email-fallback" onclick="manualEmailTrigger()">Click here to launch Email</div>
+            </div>
         </div>
         <button class="action-btn" style="background:var(--red);" onclick="deleteCurrentRecord()">Remove from History</button>
         <button class="action-btn" style="background:#718096;" onclick="closeReview()">New Capture</button>
@@ -108,7 +115,6 @@
     let db = null, sessionHistory = [], videoStream, imageBlob, userLocation = "N/A", currentArea = "DETECTING...", unixTs = 0;
     let currentRecordId = null, formattedBodyText = "";
 
-    // DUAL-STORAGE SYSTEM (Permanent DB + Session Fallback)
     function getDB() {
         return new Promise((resolve) => {
             if (db) return resolve(db);
@@ -126,6 +132,7 @@
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         document.getElementById('review-screen').style.display = 'none';
         document.getElementById('main-nav').style.display = 'flex';
+        document.querySelectorAll('.email-fallback').forEach(f => f.style.display = 'none');
         if(sect === 'new') {
             document.getElementById('sec-new').classList.add('active');
             document.getElementById('btn-nav-new').classList.add('active');
@@ -161,7 +168,7 @@
         qrHidden.innerHTML = "";
         new QRCode(qrHidden, { text: formattedBodyText, width: 256, height: 256 });
         setTimeout(() => {
-            const qrSize = Math.floor(canvas.width * 0.28); // REVERT TO 28% SCALE
+            const qrSize = Math.floor(canvas.width * 0.28); 
             ctx.drawImage(qrHidden.querySelector('canvas'), (now.getDate() % 2 !== 0) ? 40 : (canvas.width - qrSize - 40), canvas.height - qrSize - 40, qrSize, qrSize);
             canvas.toBlob(blob => {
                 imageBlob = blob;
@@ -211,10 +218,9 @@
         const listDiv = document.getElementById('log-list');
         listDiv.innerHTML = "<p style='padding:20px;'>Syncing...</p>";
         const localDb = await getDB();
-        
         const renderList = (data) => {
             listDiv.innerHTML = data.length ? "" : "<p style='padding:20px;'>No history found.</p>";
-            data.reverse().forEach(item => {
+            [...data].reverse().forEach(item => {
                 const row = document.createElement('div');
                 row.className = 'log-item';
                 row.onclick = () => showReview(item);
@@ -222,12 +228,8 @@
                 listDiv.appendChild(row);
             });
         };
-
-        if(localDb) {
-            localDb.transaction("captures").objectStore("captures").getAll().onsuccess = e => renderList(e.target.result);
-        } else {
-            renderList(sessionHistory);
-        }
+        if(localDb) localDb.transaction("captures").objectStore("captures").getAll().onsuccess = e => renderList(e.target.result);
+        else renderList(sessionHistory);
     }
 
     function showReview(item) {
@@ -244,12 +246,8 @@
     async function deleteCurrentRecord() {
         if(!confirm("Remove entry from App History?")) return;
         const localDb = await getDB();
-        if(localDb) {
-            localDb.transaction("captures", "readwrite").objectStore("captures").delete(currentRecordId).onsuccess = () => closeReview();
-        } else {
-            sessionHistory = sessionHistory.filter(h => h.id !== currentRecordId);
-            closeReview();
-        }
+        if(localDb) localDb.transaction("captures", "readwrite").objectStore("captures").delete(currentRecordId).onsuccess = () => closeReview();
+        else { sessionHistory = sessionHistory.filter(h => h.id !== currentRecordId); closeReview(); }
     }
 
     function closeReview() { switchSection('new'); }
@@ -262,10 +260,18 @@
     function shareGmail() {
         const e = localStorage.getItem('rv_r_email') || "";
         const url = `mailto:${e}?subject=Route Audit Report&body=${encodeURIComponent(formattedBodyText)}`;
-        // TRIPLE TRIGGER FOR COMPUTER
         document.getElementById('mail-frame').src = url;
         window.location.assign(url);
-        const a = document.createElement('a'); a.href = url; a.click();
+        document.getElementById('fallback-email-new').style.display = 'block';
+        document.getElementById('fallback-email-review').style.display = 'block';
+    }
+
+    function manualEmailTrigger() {
+        const e = localStorage.getItem('rv_r_email') || "";
+        const url = `mailto:${e}?subject=Route Audit Report&body=${encodeURIComponent(formattedBodyText)}`;
+        const a = document.createElement('a');
+        a.href = url;
+        a.click();
     }
 
     function toggleSettings() { document.getElementById('settings-ui').style.display = 'block'; }
