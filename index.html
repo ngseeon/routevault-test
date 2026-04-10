@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RouteVault AI - V16.3</title>
+    <title>RouteVault AI - V16.4 (Smart Sync)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        :root { --primary: #1a202c; --wa: #25d366; --gmail: #EA4335; --bg: #f7fafc; --blue: #4285F4; --red: #e53e3e; --gold: #d69e2e; --web: #5f6368; }
+        :root { --primary: #1a202c; --wa: #25d366; --gmail: #EA4335; --bg: #f7fafc; --blue: #4285F4; --red: #e53e3e; --gold: #d69e2e; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 10px; margin: 0; color: #2d3748; }
         .card { background: white; width: 100%; max-width: 460px; padding: 20px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); position: relative; min-height: 90vh; }
         .nav-menu { display: flex; gap: 10px; margin-bottom: 20px; }
@@ -27,8 +27,6 @@
         .disclaimer-notice { font-size: 10px; color: #718096; margin-top: 20px; text-align: center; font-style: italic; line-height: 1.4; padding: 0 10px; }
         #qr-hidden { position: absolute; left: -9999px; }
         #settings-ui { display: none; background: #fff; position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; padding: 20px; box-sizing: border-box; border-radius: 16px; border: 2px solid var(--blue); overflow-y: auto;}
-        .email-options { display: flex; flex-direction: column; gap: 5px; width: 100%; margin-top: 10px; }
-        .sub-btn { font-size: 11px; padding: 8px; background: #f1f5f9; border: 1px solid #cbd5e0; border-radius: 6px; cursor: pointer; color: #4a5568; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -82,10 +80,7 @@
             </div>
             <div id="share-options-row" style="display:none; grid-template-columns: 1fr 1fr; gap: 10px;">
                 <button onclick="shareWhatsApp()" class="action-btn" style="background:var(--wa); margin-top:10px;">WhatsApp</button>
-                <div class="email-options">
-                    <button onclick="shareGmail()" class="action-btn" style="background:var(--gmail); margin-top:10px;">Email App</button>
-                    <button onclick="shareGmailWeb()" class="sub-btn">Gmail Web (Computer)</button>
-                </div>
+                <div id="smart-email-container-new"></div>
             </div>
         </div>
     </div>
@@ -102,10 +97,7 @@
         <div class="review-details" id="review-data-text"></div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
             <button onclick="shareWhatsApp()" class="action-btn" style="background:var(--wa); margin-top:0;">WhatsApp</button>
-            <div class="email-options" style="margin-top:0;">
-                <button onclick="shareGmail()" class="action-btn" style="background:var(--gmail); margin-top:0;">Email App</button>
-                <button onclick="shareGmailWeb()" class="sub-btn">Gmail Web (Computer)</button>
-            </div>
+            <div id="smart-email-container-review"></div>
         </div>
         <button class="action-btn" style="background:var(--red);" onclick="deleteCurrentRecord()">Remove from History</button>
         <button class="action-btn" style="background:#718096;" onclick="closeReview()">New Capture</button>
@@ -116,6 +108,8 @@
     const DB_NAME = "RV_FINAL_PERMANENT"; 
     let db = null, sessionHistory = [], videoStream, imageBlob, userLocation = "N/A", currentArea = "DETECTING...", unixTs = 0;
     let currentRecordId = null, formattedBodyText = "";
+
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
     function getDB() {
         return new Promise((resolve) => {
@@ -195,6 +189,29 @@
         } else {
             sessionHistory.push(record);
         }
+        setupEmailButtons();
+    }
+
+    function setupEmailButtons() {
+        const containers = ['smart-email-container-new', 'smart-email-container-review'];
+        containers.forEach(id => {
+            const container = document.getElementById(id);
+            if (!container) return;
+            container.innerHTML = "";
+            const btn = document.createElement('button');
+            btn.className = "action-btn";
+            btn.style.background = "var(--gmail)";
+            btn.style.marginTop = id.includes('new') ? "10px" : "0";
+            
+            if (isMobile) {
+                btn.innerText = "Email App";
+                btn.onclick = () => shareGmail();
+            } else {
+                btn.innerText = "Gmail Web";
+                btn.onclick = () => shareGmailWeb();
+            }
+            container.appendChild(btn);
+        });
     }
 
     function saveToDevice() {
@@ -244,6 +261,7 @@
         formattedBodyText = item.body;
         document.getElementById('review-img').src = URL.createObjectURL(item.blob);
         document.getElementById('review-data-text').innerHTML = `<b>File Name:</b> ${item.id}<br><b>Date:</b> ${item.date}<br><b>Time:</b> ${item.time}`;
+        setupEmailButtons();
         document.getElementById('sec-new').classList.remove('active');
         document.getElementById('sec-resend').classList.remove('active');
         document.getElementById('main-nav').style.display = 'none';
