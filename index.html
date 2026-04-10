@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RouteVault AI - V16.8 (Clean Audit)</title>
+    <title>RouteVault AI - V16.9 (Audit Arrows)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root { --primary: #1a202c; --wa: #25d366; --gmail: #EA4335; --bg: #f7fafc; --blue: #4285F4; --red: #e53e3e; --gold: #d69e2e; }
@@ -162,7 +162,6 @@
         const netType = (navigator.connection && navigator.connection.type === 'wifi') ? "WiFi" : "4G";
         const platform = navigator.platform.substring(0,4).toUpperCase();
         const devID = `${window.screen.width}-${platform}`;
-        // Removed Parentheses per request
         return `${prefix} ${netType} | IP: ${currentIP} | ID: WEB-${devID}`;
     }
 
@@ -177,7 +176,7 @@
         unixTs = Math.floor(now.getTime() / 1000);
         
         const liveIP = await fetchIP();
-        const captureLine = generateNetProof("-", liveIP);
+        const captureLine = generateNetProof("<", liveIP);
         
         baseBodyText = `Route Stamp\n${localStorage.getItem('rv_u_name') || "User"}\n${window.calculatedPin}\n${unixTs}\n${now.toLocaleDateString()}\n${now.toLocaleTimeString()}\n${currentArea}\n${userLocation}\n${captureLine}`;
         
@@ -311,7 +310,7 @@
         const originalText = btn.innerText;
         btn.innerText = "Verifying...";
         const liveIP = await fetchIP();
-        const transferLine = generateNetProof("=", liveIP);
+        const transferLine = generateNetProof(">", liveIP);
         btn.innerText = originalText;
         return baseBodyText + "\n" + transferLine;
     }
