@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RouteVault AI - V15.4</title>
+    <title>RouteVault AI - V15.5</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root { --primary: #1a202c; --wa: #25d366; --gmail: #EA4335; --bg: #f7fafc; --blue: #4285F4; --red: #e53e3e; --gold: #d69e2e; }
@@ -21,10 +21,10 @@
         .action-btn { width: 100%; padding: 14px; border: none; border-radius: 8px; background: var(--blue); color: white; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 14px; }
         .log-container { max-height: 60vh; overflow-y: auto; border: 1px solid #edf2f7; border-radius: 12px; background: #fff; }
         .log-item { padding: 15px; border-bottom: 1px solid #edf2f7; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
-        #review-img { width: 100%; border-radius: 12px; margin-bottom: 15px; border: 2px solid #e2e8f0; display: none; }
+        #preview-img { width: 100%; border-radius: 12px; margin-bottom: 15px; border: 2px solid #e2e8f0; display: block; }
         input { width: 94%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; margin-bottom: 10px; display: block; }
         #qr-hidden { position: absolute; left: -9999px; }
-        #settings-ui { display: none; background: #fff; position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; padding: 20px; box-sizing: border-box; border-radius: 16px; border: 2px solid var(--blue); }
+        #settings-ui { display: none; background: #fff; position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; padding: 20px; box-sizing: border-box; border-radius: 16px; border: 2px solid var(--blue); overflow-y: auto;}
     </style>
 </head>
 <body>
@@ -34,9 +34,12 @@
 <div class="card">
     <div id="settings-ui">
         <h3>App Settings</h3>
-        <input type="text" id="set-name" placeholder="Your Name">
-        <input type="text" id="set-rec-phone" placeholder="Recipient WhatsApp (60...)">
-        <input type="email" id="set-rec-email" placeholder="Recipient Email">
+        <input type="text" id="set-u-name" placeholder="User's Name">
+        <input type="email" id="set-u-email" placeholder="User's Email Address">
+        <input type="text" id="set-u-phone" placeholder="User's Handphone Number">
+        <hr>
+        <input type="email" id="set-r-email" placeholder="Recipient's Email Address">
+        <input type="text" id="set-r-phone" placeholder="Recipient's Handphone Number">
         <button class="action-btn" onclick="saveSettings()">Save & Close</button>
     </div>
 
@@ -54,15 +57,32 @@
     </div>
 
     <div id="sec-new" class="section active">
-        <div class="live-clock"><span id="display-date"></span> | <span id="display-time"></span></div>
-        <div id="camera-container"><video id="video-preview" autoplay playsinline></video></div>
-        <button id="cameraBtn" class="action-btn" onclick="startCamera()">Open Audit Camera</button>
-        <button id="snapBtn" class="action-btn" style="display:none; background:#2d3748;" onclick="takePhoto()">Capture & Stamp</button>
-        
-        <div id="final-step" style="display:none; text-align:center;">
-            <p style="font-size:11px; font-weight:bold;">Security PIN: <span id="pin-display" style="color:var(--blue);">--</span></p>
-            <input type="number" id="pinInput" placeholder="Enter PIN" style="font-size:24px; text-align:center; width:160px; margin: 10px auto;">
-            <button type="button" class="action-btn" onclick="processAudit()">Verify PIN & Continue</button>
+        <div id="capture-ui-stack">
+            <div class="live-clock"><span id="display-date"></span> | <span id="display-time"></span></div>
+            <div id="camera-container"><video id="video-preview" autoplay playsinline></video></div>
+            
+            <img id="pin-view-img" style="display:none; width:100%; border-radius:12px; margin-bottom:10px;">
+
+            <button id="cameraBtn" class="action-btn" onclick="startCamera()">Open Camera</button>
+            <button id="snapBtn" class="action-btn" style="display:none; background:#2d3748;" onclick="takePhoto()">Capture & Stamp</button>
+            
+            <div id="pin-step" style="display:none; text-align:center;">
+                <p style="font-size:11px; font-weight:bold;">Security PIN: <span id="pin-display" style="color:var(--blue);">--</span></p>
+                <input type="number" id="pinInput" placeholder="Enter PIN" style="font-size:24px; text-align:center; width:160px; margin: 10px auto;">
+                <button type="button" class="action-btn" onclick="verifyPin()">Verify PIN & Continue</button>
+            </div>
+        </div>
+
+        <div id="post-verify-step" style="display:none;">
+            <img id="final-view-img" style="width:100%; border-radius:12px; margin-bottom:10px;">
+            <div id="save-options-row">
+                <button class="action-btn" style="background:var(--gold);" onclick="saveToDevice()">Save to Device</button>
+                <button class="action-btn" style="background:#718096;" onclick="resetToNew()">New Capture</button>
+            </div>
+            <div id="share-options-row" style="display:none; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <button onclick="shareWhatsApp()" class="action-btn" style="background:var(--wa); margin-top:10px;">WhatsApp</button>
+                <button onclick="shareGmail()" class="action-btn" style="background:var(--gmail); margin-top:10px;">Email</button>
+            </div>
         </div>
     </div>
 
@@ -72,14 +92,12 @@
 
     <div id="review-screen" style="display:none;">
         <img id="review-img" src="" alt="Audit">
-        
-        <button id="download-link-btn" class="action-btn" style="background:var(--gold); border: 2px solid #000;">STEP 1: SAVE TO PHONE GALLERY</button>
-        
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;">
-            <button onclick="shareWhatsApp()" class="action-btn" style="background:var(--wa); margin-top:0;">STEP 2: WhatsApp</button>
-            <button onclick="shareGmail()" class="action-btn" style="background:var(--gmail); margin-top:0;">STEP 2: Email</button>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <button onclick="shareWhatsApp()" class="action-btn" style="background:var(--wa); margin-top:0;">WhatsApp</button>
+            <button onclick="shareGmail()" class="action-btn" style="background:var(--gmail); margin-top:0;">Email</button>
         </div>
-        <button class="action-btn" style="background:#718096;" onclick="closeReview()">Back</button>
+        <button class="action-btn" style="background:var(--red);" onclick="deleteCurrentRecord()">Remove from Device</button>
+        <button class="action-btn" style="background:#718096;" onclick="closeReview()">New Capture</button>
     </div>
 </div>
 
@@ -87,18 +105,30 @@
     let db = null, videoStream, imageBlob, userLocation = "N/A", currentArea = "DETECTING...", unixTs = 0;
     let currentRecordId = null, formattedBodyText = "";
 
-    const dbReq = indexedDB.open("RouteVaultDB", 1);
-    dbReq.onupgradeneeded = e => e.target.result.createObjectStore("captures", { keyPath: "id" });
-    dbReq.onsuccess = e => { db = e.target.result; };
+    // Robust Database Initialization for Mobile
+    function initDB() {
+        const dbReq = indexedDB.open("RouteVaultDB", 1);
+        dbReq.onupgradeneeded = e => {
+            const store = e.target.result.createObjectStore("captures", { keyPath: "id" });
+        };
+        dbReq.onsuccess = e => { 
+            db = e.target.result; 
+            if(document.getElementById('sec-resend').classList.contains('active')) loadLogList();
+        };
+        dbReq.onerror = e => console.error("DB Error");
+    }
+    initDB();
 
     function switchSection(sect) {
         document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         document.getElementById('review-screen').style.display = 'none';
         document.getElementById('main-nav').style.display = 'flex';
+        
         if(sect === 'new') {
             document.getElementById('sec-new').classList.add('active');
             document.getElementById('btn-nav-new').classList.add('active');
+            resetToNew(); // Ensures "Open Camera" shows up
         } else {
             document.getElementById('sec-resend').classList.add('active');
             document.getElementById('btn-nav-resend').classList.add('active');
@@ -107,11 +137,13 @@
     }
 
     async function startCamera() {
-        videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-        document.getElementById('video-preview').srcObject = videoStream;
-        document.getElementById('camera-container').style.display = 'block';
-        document.getElementById('cameraBtn').style.display = 'none';
-        document.getElementById('snapBtn').style.display = 'block';
+        try {
+            videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+            document.getElementById('video-preview').srcObject = videoStream;
+            document.getElementById('camera-container').style.display = 'block';
+            document.getElementById('cameraBtn').style.display = 'none';
+            document.getElementById('snapBtn').style.display = 'block';
+        } catch (e) { alert("Camera Error: Check Permissions."); }
     }
 
     function takePhoto() {
@@ -123,7 +155,7 @@
 
         const now = new Date();
         unixTs = Math.floor(now.getTime() / 1000);
-        formattedBodyText = `Route Stamp\n${localStorage.getItem('rv_name') || "User"}\n${window.calculatedPin}\n${unixTs}\n${now.toLocaleDateString()}\n${now.toLocaleTimeString()}\n${currentArea}\n${userLocation}`;
+        formattedBodyText = `Route Stamp\n${localStorage.getItem('rv_u_name') || "User"}\n${window.calculatedPin}\n${unixTs}\n${now.toLocaleDateString()}\n${now.toLocaleTimeString()}\n${currentArea}\n${userLocation}`;
 
         const qrHidden = document.getElementById('qr-hidden');
         qrHidden.innerHTML = "";
@@ -136,54 +168,72 @@
             
             canvas.toBlob(blob => {
                 imageBlob = blob;
+                const blobUrl = URL.createObjectURL(blob);
                 if(videoStream) videoStream.getTracks().forEach(t => t.stop());
+                
+                // Keep image on screen while asking for PIN
                 document.getElementById('camera-container').style.display = 'none';
                 document.getElementById('snapBtn').style.display = 'none';
-                document.getElementById('final-step').style.display = 'block';
-            }, 'image/jpeg', 0.95);
+                document.getElementById('pin-view-img').src = blobUrl;
+                document.getElementById('pin-view-img').style.display = 'block';
+                document.getElementById('pin-step').style.display = 'block';
+            }, 'image/jpeg', 0.9);
         }, 1000);
     }
 
-    function processAudit() {
+    function verifyPin() {
         if (document.getElementById('pinInput').value !== window.calculatedPin) return alert("PIN Incorrect");
+        
+        // Switch to Post-Verify Screen
+        document.getElementById('capture-ui-stack').style.display = 'none';
+        document.getElementById('post-verify-step').style.display = 'block';
+        document.getElementById('final-view-img').src = URL.createObjectURL(imageBlob);
+        
+        // Save to internal History DB automatically upon verification
         const record = { id: `Audit_${unixTs}`, date: new Date().toLocaleDateString(), time: new Date().toLocaleTimeString(), blob: imageBlob, body: formattedBodyText };
         if (db) db.transaction("captures", "readwrite").objectStore("captures").put(record);
-        showReview(record);
     }
 
-    function showReview(item) {
-        currentRecordId = item.id;
-        formattedBodyText = item.body;
-        const img = document.getElementById('review-img');
-        const blobUrl = URL.createObjectURL(item.blob);
-        img.src = blobUrl;
-        img.style.display = 'block';
+    function saveToDevice() {
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(imageBlob);
+        link.download = `RouteStamp_${unixTs}.jpg`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        document.getElementById('share-options-row').style.display = 'grid';
+        alert("Image Saved! Now you can Share.");
+    }
 
-        // Update the gold download button
-        const dlBtn = document.getElementById('download-link-btn');
-        dlBtn.onclick = () => {
-            const a = document.createElement('a');
-            a.href = blobUrl;
-            a.download = `Audit_${unixTs}.jpg`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            alert("Check your 'Downloads' folder or 'Recent Images' in your gallery!");
-        };
-
-        document.getElementById('sec-new').classList.remove('active');
-        document.getElementById('sec-resend').classList.remove('active');
-        document.getElementById('main-nav').style.display = 'none';
-        document.getElementById('final-step').style.display = 'none';
-        document.getElementById('review-screen').style.display = 'block';
+    function resetToNew() {
+        // Clear variables
+        imageBlob = null;
+        document.getElementById('pinInput').value = "";
+        
+        // Reset UI visibility
+        document.getElementById('capture-ui-stack').style.display = 'block';
+        document.getElementById('post-verify-step').style.display = 'none';
+        document.getElementById('pin-step').style.display = 'none';
+        document.getElementById('pin-view-img').style.display = 'none';
+        document.getElementById('camera-container').style.display = 'none';
+        document.getElementById('cameraBtn').style.display = 'block';
+        document.getElementById('snapBtn').style.display = 'none';
+        document.getElementById('share-options-row').style.display = 'none';
     }
 
     function loadLogList() {
         const listDiv = document.getElementById('log-list');
-        listDiv.innerHTML = "";
-        if (!db) return;
-        db.transaction("captures").objectStore("captures").getAll().onsuccess = e => {
-            e.target.result.reverse().forEach(item => {
+        listDiv.innerHTML = "<p style='padding:10px;'>Loading History...</p>";
+        if (!db) { initDB(); return; }
+        
+        const tx = db.transaction("captures", "readonly");
+        const store = tx.objectStore("captures");
+        store.getAll().onsuccess = e => {
+            const results = e.target.result;
+            listDiv.innerHTML = "";
+            if(results.length === 0) listDiv.innerHTML = "<p style='padding:20px;'>No history found.</p>";
+            results.reverse().forEach(item => {
                 const row = document.createElement('div');
                 row.className = 'log-item';
                 row.onclick = () => showReview(item);
@@ -193,30 +243,61 @@
         };
     }
 
-    function closeReview() { switchSection('resend'); }
+    function showReview(item) {
+        currentRecordId = item.id;
+        formattedBodyText = item.body;
+        const img = document.getElementById('review-img');
+        img.src = URL.createObjectURL(item.blob);
+        
+        document.getElementById('sec-new').classList.remove('active');
+        document.getElementById('sec-resend').classList.remove('active');
+        document.getElementById('main-nav').style.display = 'none';
+        document.getElementById('review-screen').style.display = 'block';
+    }
+
+    function deleteCurrentRecord() {
+        if(!confirm("Remove from device history?")) return;
+        if(db) {
+            db.transaction("captures", "readwrite").objectStore("captures").delete(currentRecordId).onsuccess = () => {
+                closeReview();
+            };
+        }
+    }
+
+    function closeReview() { switchSection('new'); }
 
     function shareWhatsApp() {
-        const p = (localStorage.getItem('rv_rec_phone') || "").replace(/\D/g,'');
+        const p = (localStorage.getItem('rv_r_phone') || "").replace(/\D/g,'');
         window.open(`https://wa.me/${p}?text=${encodeURIComponent(formattedBodyText)}`, '_blank');
     }
 
     function shareGmail() {
-        const e = localStorage.getItem('rv_rec_email') || "";
-        window.location.href = `mailto:${e}?subject=Route Audit&body=${encodeURIComponent(formattedBodyText)}`;
+        const e = localStorage.getItem('rv_r_email') || "";
+        const subject = "Route Audit Report";
+        const body = encodeURIComponent(formattedBodyText);
+        // Robust window.open fix for desktop email
+        const mailtoUrl = `mailto:${e}?subject=${subject}&body=${body}`;
+        const a = document.createElement('a');
+        a.href = mailtoUrl;
+        a.click();
     }
 
     function toggleSettings() { document.getElementById('settings-ui').style.display = 'block'; }
     function saveSettings() {
-        localStorage.setItem('rv_name', document.getElementById('set-name').value);
-        localStorage.setItem('rv_rec_phone', document.getElementById('set-rec-phone').value);
-        localStorage.setItem('rv_rec_email', document.getElementById('set-rec-email').value);
+        localStorage.setItem('rv_u_name', document.getElementById('set-u-name').value);
+        localStorage.setItem('rv_u_email', document.getElementById('set-u-email').value);
+        localStorage.setItem('rv_u_phone', document.getElementById('set-u-phone').value);
+        localStorage.setItem('rv_r_email', document.getElementById('set-r-email').value);
+        localStorage.setItem('rv_r_phone', document.getElementById('set-r-phone').value);
         document.getElementById('settings-ui').style.display = 'none';
     }
 
     window.onload = () => {
-        document.getElementById('set-name').value = localStorage.getItem('rv_name') || "";
-        document.getElementById('set-rec-phone').value = localStorage.getItem('rv_rec_phone') || "";
-        document.getElementById('set-rec-email').value = localStorage.getItem('rv_rec_email') || "";
+        document.getElementById('set-u-name').value = localStorage.getItem('rv_u_name') || "";
+        document.getElementById('set-u-email').value = localStorage.getItem('rv_u_email') || "";
+        document.getElementById('set-u-phone').value = localStorage.getItem('rv_u_phone') || "";
+        document.getElementById('set-r-email').value = localStorage.getItem('rv_r_email') || "";
+        document.getElementById('set-r-phone').value = localStorage.getItem('rv_r_phone') || "";
         
         setInterval(() => {
             const n = new Date();
