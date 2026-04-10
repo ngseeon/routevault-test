@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RouteVault AI - V16.4 (Smart Sync)</title>
+    <title>RouteVault AI - V16.5 (Network Proof)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root { --primary: #1a202c; --wa: #25d366; --gmail: #EA4335; --bg: #f7fafc; --blue: #4285F4; --red: #e53e3e; --gold: #d69e2e; }
@@ -24,7 +24,6 @@
         input { width: 94%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; margin-bottom: 15px; display: block; background: #fff; }
         label { font-size: 12px; font-weight: bold; color: #4a5568; display: block; margin-bottom: 4px; margin-left: 2px; }
         .review-details { background: #f1f5f9; padding: 10px; border-radius: 8px; font-size: 12px; margin-bottom: 10px; border-left: 4px solid var(--blue); line-height: 1.6; }
-        .disclaimer-notice { font-size: 10px; color: #718096; margin-top: 20px; text-align: center; font-style: italic; line-height: 1.4; padding: 0 10px; }
         #qr-hidden { position: absolute; left: -9999px; }
         #settings-ui { display: none; background: #fff; position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; padding: 20px; box-sizing: border-box; border-radius: 16px; border: 2px solid var(--blue); overflow-y: auto;}
     </style>
@@ -87,9 +86,6 @@
 
     <div id="sec-resend" class="section">
         <div class="log-container" id="log-list"></div>
-        <div class="disclaimer-notice">
-            Note: "Remove from History" only deletes records from the App History. To delete saved images, please go to your device's Gallery or Downloads folder.
-        </div>
     </div>
 
     <div id="review-screen" style="display:none;">
@@ -107,7 +103,7 @@
 <script>
     const DB_NAME = "RV_FINAL_PERMANENT"; 
     let db = null, sessionHistory = [], videoStream, imageBlob, userLocation = "N/A", currentArea = "DETECTING...", unixTs = 0;
-    let currentRecordId = null, formattedBodyText = "";
+    let currentRecordId = null, formattedBodyText = "", userIP = "Checking...", netProof = "";
 
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
@@ -156,12 +152,21 @@
         const ctx = canvas.getContext('2d');
         canvas.width = video.videoWidth; canvas.height = video.videoHeight;
         ctx.drawImage(video, 0, 0);
+        
         const now = new Date();
         unixTs = Math.floor(now.getTime() / 1000);
-        formattedBodyText = `Route Stamp\n${localStorage.getItem('rv_u_name') || "User"}\n${window.calculatedPin}\n${unixTs}\n${now.toLocaleDateString()}\n${now.toLocaleTimeString()}\n${currentArea}\n${userLocation}`;
+        
+        // Generate Network Proof Line
+        const netType = (navigator.connection && navigator.connection.type === 'wifi') ? "WiFi" : "4G";
+        const deviceHash = navigator.userAgent.split(')')[0].split('(').pop().substring(0,4).toUpperCase();
+        netProof = `(${netType} | IP: ${userIP} | ID: WEB-${deviceHash})`;
+
+        formattedBodyText = `Route Stamp\n${localStorage.getItem('rv_u_name') || "User"}\n${window.calculatedPin}\n${unixTs}\n${now.toLocaleDateString()}\n${now.toLocaleTimeString()}\n${currentArea}\n${userLocation}\n${netProof}`;
+        
         const qrHidden = document.getElementById('qr-hidden');
         qrHidden.innerHTML = "";
         new QRCode(qrHidden, { text: formattedBodyText, width: 256, height: 256 });
+        
         setTimeout(() => {
             const qrSize = Math.floor(canvas.width * 0.28); 
             ctx.drawImage(qrHidden.querySelector('canvas'), (now.getDate() % 2 !== 0) ? 40 : (canvas.width - qrSize - 40), canvas.height - qrSize - 40, qrSize, qrSize);
@@ -311,16 +316,21 @@
     }
 
     window.onload = () => {
+        // Retrieve User IP
+        fetch('https://api.ipify.org?format=json').then(r => r.json()).then(d => { userIP = d.ip; }).catch(() => { userIP = "Offline"; });
+        
         document.getElementById('set-u-name').value = localStorage.getItem('rv_u_name') || "";
         document.getElementById('set-u-email').value = localStorage.getItem('rv_u_email') || "";
         document.getElementById('set-u-phone').value = localStorage.getItem('rv_u_phone') || "";
         document.getElementById('set-r-email').value = localStorage.getItem('rv_r_email') || "";
         document.getElementById('set-r-phone').value = localStorage.getItem('rv_r_phone') || "";
+        
         setInterval(() => {
             const n = new Date();
             document.getElementById('display-date').innerText = n.toLocaleDateString();
             document.getElementById('display-time').innerText = n.toLocaleTimeString();
         }, 1000);
+        
         navigator.geolocation.watchPosition(pos => {
             const lat = pos.coords.latitude, lng = pos.coords.longitude;
             userLocation = `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`;
