@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RouteVault AI - V16.6 (Double Proof)</title>
+    <title>RouteVault AI - V16.8 (Clean Audit)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root { --primary: #1a202c; --wa: #25d366; --gmail: #EA4335; --bg: #f7fafc; --blue: #4285F4; --red: #e53e3e; --gold: #d69e2e; }
@@ -78,7 +78,7 @@
                 <button class="action-btn" style="background:#718096;" onclick="resetToNew()">New Capture</button>
             </div>
             <div id="share-options-row" style="display:none; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <button onclick="shareWhatsApp()" class="action-btn" style="background:var(--wa); margin-top:10px;">WhatsApp</button>
+                <button id="btn-wa-new" onclick="shareWhatsApp('btn-wa-new')" class="action-btn" style="background:var(--wa); margin-top:10px;">WhatsApp</button>
                 <div id="smart-email-container-new"></div>
             </div>
         </div>
@@ -92,7 +92,7 @@
         <img id="review-img" src="" style="width:100%; border-radius:12px; margin-bottom:10px; border:1px solid #ddd;">
         <div class="review-details" id="review-data-text"></div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-            <button onclick="shareWhatsApp()" class="action-btn" style="background:var(--wa); margin-top:0;">WhatsApp</button>
+            <button id="btn-wa-rev" onclick="shareWhatsApp('btn-wa-rev')" class="action-btn" style="background:var(--wa); margin-top:0;">WhatsApp</button>
             <div id="smart-email-container-review"></div>
         </div>
         <button class="action-btn" style="background:var(--red);" onclick="deleteCurrentRecord()">Remove from History</button>
@@ -103,19 +103,31 @@
 <script>
     const DB_NAME = "RV_FINAL_PERMANENT"; 
     let db = null, sessionHistory = [], videoStream, imageBlob, userLocation = "N/A", currentArea = "DETECTING...", unixTs = 0;
-    let currentRecordId = null, baseBodyText = "", userIP = "Checking...";
+    let currentRecordId = null, baseBodyText = "", cachedIP = null;
 
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+    async function fetchIP() {
+        try {
+            const controller = new AbortController();
+            const id = setTimeout(() => controller.abort(), 2000);
+            const r = await fetch('https://api.ipify.org?format=json', { signal: controller.signal });
+            clearTimeout(id);
+            const d = await r.json();
+            cachedIP = d.ip;
+            return d.ip;
+        } catch (e) {
+            return cachedIP || "LAN-ACTIVE";
+        }
+    }
 
     function getDB() {
         return new Promise((resolve) => {
             if (db) return resolve(db);
-            try {
-                const req = indexedDB.open(DB_NAME, 1);
-                req.onupgradeneeded = e => e.target.result.createObjectStore("captures", { keyPath: "id" });
-                req.onsuccess = e => { db = e.target.result; resolve(db); };
-                req.onerror = () => resolve(null);
-            } catch (e) { resolve(null); }
+            const req = indexedDB.open(DB_NAME, 1);
+            req.onupgradeneeded = e => e.target.result.createObjectStore("captures", { keyPath: "id" });
+            req.onsuccess = e => { db = e.target.result; resolve(db); };
+            req.onerror = () => resolve(null);
         });
     }
 
@@ -146,13 +158,15 @@
         } catch (e) { alert("Camera Access Required."); }
     }
 
-    function getNetLine(prefix) {
+    function generateNetProof(prefix, currentIP) {
         const netType = (navigator.connection && navigator.connection.type === 'wifi') ? "WiFi" : "4G";
-        const deviceHash = navigator.userAgent.split(')')[0].split('(').pop().substring(0,4).toUpperCase();
-        return `${prefix} (${netType} | IP: ${userIP} | ID: WEB-${deviceHash})`;
+        const platform = navigator.platform.substring(0,4).toUpperCase();
+        const devID = `${window.screen.width}-${platform}`;
+        // Removed Parentheses per request
+        return `${prefix} ${netType} | IP: ${currentIP} | ID: WEB-${devID}`;
     }
 
-    function takePhoto() {
+    async function takePhoto() {
         const video = document.getElementById('video-preview');
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
@@ -162,7 +176,9 @@
         const now = new Date();
         unixTs = Math.floor(now.getTime() / 1000);
         
-        const captureLine = getNetLine("@");
+        const liveIP = await fetchIP();
+        const captureLine = generateNetProof("-", liveIP);
+        
         baseBodyText = `Route Stamp\n${localStorage.getItem('rv_u_name') || "User"}\n${window.calculatedPin}\n${unixTs}\n${now.toLocaleDateString()}\n${now.toLocaleTimeString()}\n${currentArea}\n${userLocation}\n${captureLine}`;
         
         const qrHidden = document.getElementById('qr-hidden');
@@ -206,16 +222,18 @@
             if (!container) return;
             container.innerHTML = "";
             const btn = document.createElement('button');
+            const btnID = id + "-btn-email";
+            btn.id = btnID;
             btn.className = "action-btn";
             btn.style.background = "var(--gmail)";
             btn.style.marginTop = id.includes('new') ? "10px" : "0";
             
             if (isMobile) {
                 btn.innerText = "Email App";
-                btn.onclick = () => shareGmail();
+                btn.onclick = () => shareGmail(btnID);
             } else {
                 btn.innerText = "Gmail Web";
-                btn.onclick = () => shareGmailWeb();
+                btn.onclick = () => shareGmailWeb(btnID);
             }
             container.appendChild(btn);
         });
@@ -284,68 +302,3 @@
             sessionHistory = sessionHistory.filter(h => h.id !== currentRecordId);
             closeReview();
         }
-    }
-
-    function closeReview() { switchSection('new'); }
-
-    function getFinalBody() {
-        return baseBodyText + "\n" + getNetLine("=");
-    }
-
-    function shareWhatsApp() {
-        const p = (localStorage.getItem('rv_r_phone') || "").replace(/\D/g,'');
-        window.open(`https://wa.me/${p}?text=${encodeURIComponent(getFinalBody())}`, '_blank');
-    }
-
-    function shareGmail() {
-        const e = localStorage.getItem('rv_r_email') || "";
-        const url = `mailto:${e}?subject=Route Audit Report&body=${encodeURIComponent(getFinalBody())}`;
-        document.getElementById('mail-frame').src = url;
-        window.location.assign(url);
-    }
-
-    function shareGmailWeb() {
-        const e = localStorage.getItem('rv_r_email') || "";
-        const subject = encodeURIComponent("Route Audit Report");
-        const body = encodeURIComponent(getFinalBody());
-        window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${e}&su=${subject}&body=${body}`, '_blank');
-    }
-
-    function toggleSettings() { document.getElementById('settings-ui').style.display = 'block'; }
-    function saveSettings() {
-        localStorage.setItem('rv_u_name', document.getElementById('set-u-name').value);
-        localStorage.setItem('rv_u_email', document.getElementById('set-u-email').value);
-        localStorage.setItem('rv_u_phone', document.getElementById('set-u-phone').value);
-        localStorage.setItem('rv_r_email', document.getElementById('set-r-email').value);
-        localStorage.setItem('rv_r_phone', document.getElementById('set-r-phone').value);
-        document.getElementById('settings-ui').style.display = 'none';
-    }
-
-    window.onload = () => {
-        fetch('https://api.ipify.org?format=json').then(r => r.json()).then(d => { userIP = d.ip; }).catch(() => { userIP = "Offline"; });
-        document.getElementById('set-u-name').value = localStorage.getItem('rv_u_name') || "";
-        document.getElementById('set-u-email').value = localStorage.getItem('rv_u_email') || "";
-        document.getElementById('set-u-phone').value = localStorage.getItem('rv_u_phone') || "";
-        document.getElementById('set-r-email').value = localStorage.getItem('rv_r_email') || "";
-        document.getElementById('set-r-phone').value = localStorage.getItem('rv_r_phone') || "";
-        setInterval(() => {
-            const n = new Date();
-            document.getElementById('display-date').innerText = n.toLocaleDateString();
-            document.getElementById('display-time').innerText = n.toLocaleTimeString();
-        }, 1000);
-        navigator.geolocation.watchPosition(pos => {
-            const lat = pos.coords.latitude, lng = pos.coords.longitude;
-            userLocation = `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`;
-            document.getElementById('gps-status').innerText = "GPS: ON";
-            document.getElementById('gps-status').style.color = "green";
-            window.calculatedPin = (Math.round((lat % 1) * 10000) + Math.round((lng % 1) * 10000)).toString();
-            document.getElementById('pin-display').innerText = window.calculatedPin;
-            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`).then(r => r.json()).then(d => {
-                currentArea = d.address.suburb || d.address.town || d.address.city || "Site";
-                document.getElementById('location-name').innerText = `📍 ${currentArea.toUpperCase()}`;
-            });
-        }, null, { enableHighAccuracy: true });
-    };
-</script>
-</body>
-</html>
