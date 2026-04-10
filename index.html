@@ -302,3 +302,77 @@
             sessionHistory = sessionHistory.filter(h => h.id !== currentRecordId);
             closeReview();
         }
+    }
+
+    function closeReview() { switchSection('new'); }
+
+    async function getVerifiedBody(btnID) {
+        const btn = document.getElementById(btnID);
+        const originalText = btn.innerText;
+        btn.innerText = "Verifying...";
+        const liveIP = await fetchIP();
+        const transferLine = generateNetProof("=", liveIP);
+        btn.innerText = originalText;
+        return baseBodyText + "\n" + transferLine;
+    }
+
+    async function shareWhatsApp(btnID) {
+        const p = (localStorage.getItem('rv_r_phone') || "").replace(/\D/g,'');
+        const finalBody = await getVerifiedBody(btnID);
+        window.open(`https://wa.me/${p}?text=${encodeURIComponent(finalBody)}`, '_blank');
+    }
+
+    async function shareGmail(btnID) {
+        const e = localStorage.getItem('rv_r_email') || "";
+        const finalBody = await getVerifiedBody(btnID);
+        const url = `mailto:${e}?subject=Route Audit Report&body=${encodeURIComponent(finalBody)}`;
+        document.getElementById('mail-frame').src = url;
+        window.location.assign(url);
+    }
+
+    async function shareGmailWeb(btnID) {
+        const e = localStorage.getItem('rv_r_email') || "";
+        const finalBody = await getVerifiedBody(btnID);
+        const subject = encodeURIComponent("Route Audit Report");
+        const body = encodeURIComponent(finalBody);
+        window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${e}&su=${subject}&body=${body}`, '_blank');
+    }
+
+    function toggleSettings() { document.getElementById('settings-ui').style.display = 'block'; }
+    function saveSettings() {
+        localStorage.setItem('rv_u_name', document.getElementById('set-u-name').value);
+        localStorage.setItem('rv_u_email', document.getElementById('set-u-email').value);
+        localStorage.setItem('rv_u_phone', document.getElementById('set-u-phone').value);
+        localStorage.setItem('rv_r_email', document.getElementById('set-r-email').value);
+        localStorage.setItem('rv_r_phone', document.getElementById('set-r-phone').value);
+        document.getElementById('settings-ui').style.display = 'none';
+    }
+
+    window.onload = () => {
+        fetchIP(); 
+        document.getElementById('set-u-name').value = localStorage.getItem('rv_u_name') || "";
+        document.getElementById('set-u-email').value = localStorage.getItem('rv_u_email') || "";
+        document.getElementById('set-u-phone').value = localStorage.getItem('rv_u_phone') || "";
+        document.getElementById('set-r-email').value = localStorage.getItem('rv_r_email') || "";
+        document.getElementById('set-r-phone').value = localStorage.getItem('rv_r_phone') || "";
+        setInterval(() => {
+            const n = new Date();
+            document.getElementById('display-date').innerText = n.toLocaleDateString();
+            document.getElementById('display-time').innerText = n.toLocaleTimeString();
+        }, 1000);
+        navigator.geolocation.watchPosition(pos => {
+            const lat = pos.coords.latitude, lng = pos.coords.longitude;
+            userLocation = `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`;
+            document.getElementById('gps-status').innerText = "GPS: ON";
+            document.getElementById('gps-status').style.color = "green";
+            window.calculatedPin = (Math.round((lat % 1) * 10000) + Math.round((lng % 1) * 10000)).toString();
+            document.getElementById('pin-display').innerText = window.calculatedPin;
+            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`).then(r => r.json()).then(d => {
+                currentArea = d.address.suburb || d.address.town || d.address.city || "Site";
+                document.getElementById('location-name').innerText = `📍 ${currentArea.toUpperCase()}`;
+            });
+        }, null, { enableHighAccuracy: true });
+    };
+</script>
+</body>
+</html>
