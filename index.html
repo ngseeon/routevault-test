@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RouteVault AI - V15.8</title>
+    <title>RouteVault AI - V15.9</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root { --primary: #1a202c; --wa: #25d366; --gmail: #EA4335; --bg: #f7fafc; --blue: #4285F4; --red: #e53e3e; --gold: #d69e2e; }
@@ -19,11 +19,12 @@
         #video-preview { width: 100%; height: 100%; object-fit: cover; }
         .live-clock { text-align: center; font-family: monospace; font-size: 18px; background: var(--primary); padding: 12px; border-radius: 8px; margin-bottom: 15px; color: #68d391; }
         .action-btn { width: 100%; padding: 14px; border: none; border-radius: 8px; background: var(--blue); color: white; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 14px; }
-        .log-container { max-height: 60vh; overflow-y: auto; border: 1px solid #edf2f7; border-radius: 12px; background: #fff; }
+        .log-container { max-height: 55vh; overflow-y: auto; border: 1px solid #edf2f7; border-radius: 12px; background: #fff; }
         .log-item { padding: 15px; border-bottom: 1px solid #edf2f7; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
         input { width: 94%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; margin-bottom: 15px; display: block; background: #fff; }
         label { font-size: 12px; font-weight: bold; color: #4a5568; display: block; margin-bottom: 4px; margin-left: 2px; }
-        .review-details { background: #f1f5f9; padding: 10px; border-radius: 8px; font-size: 12px; margin-bottom: 10px; border-left: 4px solid var(--blue); }
+        .review-details { background: #f1f5f9; padding: 10px; border-radius: 8px; font-size: 12px; margin-bottom: 10px; border-left: 4px solid var(--blue); line-height: 1.6; }
+        .disclaimer-notice { font-size: 10px; color: #718096; margin-top: 20px; text-align: center; font-style: italic; line-height: 1.4; padding: 0 10px; }
         #qr-hidden { position: absolute; left: -9999px; }
         #settings-ui { display: none; background: #fff; position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; padding: 20px; box-sizing: border-box; border-radius: 16px; border: 2px solid var(--blue); overflow-y: auto;}
     </style>
@@ -86,6 +87,9 @@
 
     <div id="sec-resend" class="section">
         <div class="log-container" id="log-list"></div>
+        <div class="disclaimer-notice">
+            Note: "Remove from Device" only deletes records from the App History. To delete saved images, please go to your device's Gallery or Downloads folder.
+        </div>
     </div>
 
     <div id="review-screen" style="display:none;">
@@ -97,6 +101,9 @@
         </div>
         <button class="action-btn" style="background:var(--red);" onclick="deleteCurrentRecord()">Remove from Device</button>
         <button class="action-btn" style="background:#718096;" onclick="closeReview()">New Capture</button>
+        <div class="disclaimer-notice" style="margin-top:10px;">
+            Deletes from App History list only.
+        </div>
     </div>
 </div>
 
@@ -104,19 +111,23 @@
     let db = null, videoStream, imageBlob, userLocation = "N/A", currentArea = "DETECTING...", unixTs = 0;
     let currentRecordId = null, formattedBodyText = "";
 
-    // RE-ENGINEERED DB INIT FOR MOBILE
-    function initDB(callback) {
-        const req = indexedDB.open("RouteVaultDB", 1);
-        req.onupgradeneeded = e => e.target.result.createObjectStore("captures", { keyPath: "id" });
-        req.onsuccess = e => { db = e.target.result; if(callback) callback(); };
-        req.onerror = () => alert("Storage Error. Check permissions.");
+    // GENTLE DB INIT - NO STARTUP POPUPS
+    function getDB() {
+        return new Promise((resolve) => {
+            if (db) return resolve(db);
+            const req = indexedDB.open("RouteVaultDB", 1);
+            req.onupgradeneeded = e => e.target.result.createObjectStore("captures", { keyPath: "id" });
+            req.onsuccess = e => { db = e.target.result; resolve(db); };
+            req.onerror = () => resolve(null); // Fail silently
+        });
     }
 
-    function switchSection(sect) {
+    async function switchSection(sect) {
         document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         document.getElementById('review-screen').style.display = 'none';
         document.getElementById('main-nav').style.display = 'flex';
+        
         if(sect === 'new') {
             document.getElementById('sec-new').classList.add('active');
             document.getElementById('btn-nav-new').classList.add('active');
@@ -136,7 +147,7 @@
             document.getElementById('camera-container').style.display = 'block';
             document.getElementById('cameraBtn').style.display = 'none';
             document.getElementById('snapBtn').style.display = 'block';
-        } catch (e) { alert("Enable Camera Access."); }
+        } catch (e) { alert("Camera Permission Required."); }
     }
 
     function takePhoto() {
@@ -165,14 +176,15 @@
         }, 800);
     }
 
-    function verifyPin() {
+    async function verifyPin() {
         if (document.getElementById('pinInput').value !== window.calculatedPin) return alert("PIN Incorrect");
         document.getElementById('capture-ui-stack').style.display = 'none';
         document.getElementById('post-verify-step').style.display = 'block';
         document.getElementById('final-view-img').src = URL.createObjectURL(imageBlob);
+        
         const record = { id: `Audit_${unixTs}`, date: new Date().toLocaleDateString(), time: new Date().toLocaleTimeString(), blob: imageBlob, body: formattedBodyText };
-        if(db) db.transaction("captures", "readwrite").objectStore("captures").put(record);
-        else initDB(() => db.transaction("captures", "readwrite").objectStore("captures").put(record));
+        const localDb = await getDB();
+        if(localDb) localDb.transaction("captures", "readwrite").objectStore("captures").put(record);
     }
 
     function saveToDevice() {
@@ -196,11 +208,13 @@
         document.getElementById('pinInput').value = "";
     }
 
-    function loadLogList() {
+    async function loadLogList() {
         const listDiv = document.getElementById('log-list');
-        listDiv.innerHTML = "<p style='padding:20px;'>Syncing...</p>";
-        if (!db) { initDB(loadLogList); return; }
-        db.transaction("captures").objectStore("captures").getAll().onsuccess = e => {
+        listDiv.innerHTML = "<p style='padding:20px;'>Syncing history...</p>";
+        const localDb = await getDB();
+        if(!localDb) { listDiv.innerHTML = "<p style='padding:20px; color:red;'>Storage Unavailable on this browser.</p>"; return; }
+        
+        localDb.transaction("captures").objectStore("captures").getAll().onsuccess = e => {
             const res = e.target.result;
             listDiv.innerHTML = res.length ? "" : "<p style='padding:20px;'>No history found.</p>";
             res.reverse().forEach(item => {
@@ -217,15 +231,19 @@
         currentRecordId = item.id;
         formattedBodyText = item.body;
         document.getElementById('review-img').src = URL.createObjectURL(item.blob);
-        document.getElementById('review-data-text').innerHTML = `<b>File:</b> ${item.id}<br><b>Date:</b> ${item.date}<br><b>Time:</b> ${item.time}`;
+        document.getElementById('review-data-text').innerHTML = `<b>File Name:</b> ${item.id}<br><b>Date:</b> ${item.date}<br><b>Time:</b> ${item.time}`;
         document.getElementById('sec-new').classList.remove('active');
         document.getElementById('sec-resend').classList.remove('active');
         document.getElementById('main-nav').style.display = 'none';
         document.getElementById('review-screen').style.display = 'block';
     }
 
-    function deleteCurrentRecord() {
-        if(confirm("Delete this?")) db.transaction("captures", "readwrite").objectStore("captures").delete(currentRecordId).onsuccess = () => closeReview();
+    async function deleteCurrentRecord() {
+        if(!confirm("Remove entry from App History list?")) return;
+        const localDb = await getDB();
+        if(localDb) {
+            localDb.transaction("captures", "readwrite").objectStore("captures").delete(currentRecordId).onsuccess = () => closeReview();
+        }
     }
 
     function closeReview() { switchSection('new'); }
@@ -238,7 +256,7 @@
     function shareGmail() {
         const e = localStorage.getItem('rv_r_email') || "";
         const url = `mailto:${e}?subject=Route Audit Report&body=${encodeURIComponent(formattedBodyText)}`;
-        // COMPUTER FIX: Use Frame + Location for widest compatibility
+        // Triple-Trigger for computer browsers
         document.getElementById('mail-frame').src = url;
         window.location.href = url;
     }
@@ -254,17 +272,18 @@
     }
 
     window.onload = () => {
-        initDB();
         document.getElementById('set-u-name').value = localStorage.getItem('rv_u_name') || "";
         document.getElementById('set-u-email').value = localStorage.getItem('rv_u_email') || "";
         document.getElementById('set-u-phone').value = localStorage.getItem('rv_u_phone') || "";
         document.getElementById('set-r-email').value = localStorage.getItem('rv_r_email') || "";
         document.getElementById('set-r-phone').value = localStorage.getItem('rv_r_phone') || "";
+        
         setInterval(() => {
             const n = new Date();
             document.getElementById('display-date').innerText = n.toLocaleDateString();
             document.getElementById('display-time').innerText = n.toLocaleTimeString();
         }, 1000);
+
         navigator.geolocation.watchPosition(pos => {
             const lat = pos.coords.latitude, lng = pos.coords.longitude;
             userLocation = `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`;
