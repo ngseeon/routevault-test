@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RouteVault AI - V15.9</title>
+    <title>RouteVault AI - V16.0</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root { --primary: #1a202c; --wa: #25d366; --gmail: #EA4335; --bg: #f7fafc; --blue: #4285F4; --red: #e53e3e; --gold: #d69e2e; }
@@ -88,7 +88,7 @@
     <div id="sec-resend" class="section">
         <div class="log-container" id="log-list"></div>
         <div class="disclaimer-notice">
-            Note: "Remove from Device" only deletes records from the App History. To delete saved images, please go to your device's Gallery or Downloads folder.
+            Note: "Remove from History" only deletes records from the App History. To delete saved images, please go to your device's Gallery or Downloads folder.
         </div>
     </div>
 
@@ -99,26 +99,25 @@
             <button onclick="shareWhatsApp()" class="action-btn" style="background:var(--wa); margin-top:0;">WhatsApp</button>
             <button onclick="shareGmail()" class="action-btn" style="background:var(--gmail); margin-top:0;">Email</button>
         </div>
-        <button class="action-btn" style="background:var(--red);" onclick="deleteCurrentRecord()">Remove from Device</button>
+        <button class="action-btn" style="background:var(--red);" onclick="deleteCurrentRecord()">Remove from History</button>
         <button class="action-btn" style="background:#718096;" onclick="closeReview()">New Capture</button>
-        <div class="disclaimer-notice" style="margin-top:10px;">
-            Deletes from App History list only.
-        </div>
     </div>
 </div>
 
 <script>
-    let db = null, videoStream, imageBlob, userLocation = "N/A", currentArea = "DETECTING...", unixTs = 0;
+    let db = null, sessionHistory = [], videoStream, imageBlob, userLocation = "N/A", currentArea = "DETECTING...", unixTs = 0;
     let currentRecordId = null, formattedBodyText = "";
 
-    // GENTLE DB INIT - NO STARTUP POPUPS
+    // DUAL-STORAGE SYSTEM (Permanent DB + Session Fallback)
     function getDB() {
         return new Promise((resolve) => {
             if (db) return resolve(db);
-            const req = indexedDB.open("RouteVaultDB", 1);
-            req.onupgradeneeded = e => e.target.result.createObjectStore("captures", { keyPath: "id" });
-            req.onsuccess = e => { db = e.target.result; resolve(db); };
-            req.onerror = () => resolve(null); // Fail silently
+            try {
+                const req = indexedDB.open("RouteVaultDB", 1);
+                req.onupgradeneeded = e => e.target.result.createObjectStore("captures", { keyPath: "id" });
+                req.onsuccess = e => { db = e.target.result; resolve(db); };
+                req.onerror = () => resolve(null);
+            } catch (e) { resolve(null); }
         });
     }
 
@@ -127,7 +126,6 @@
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         document.getElementById('review-screen').style.display = 'none';
         document.getElementById('main-nav').style.display = 'flex';
-        
         if(sect === 'new') {
             document.getElementById('sec-new').classList.add('active');
             document.getElementById('btn-nav-new').classList.add('active');
@@ -147,7 +145,7 @@
             document.getElementById('camera-container').style.display = 'block';
             document.getElementById('cameraBtn').style.display = 'none';
             document.getElementById('snapBtn').style.display = 'block';
-        } catch (e) { alert("Camera Permission Required."); }
+        } catch (e) { alert("Camera Access Required."); }
     }
 
     function takePhoto() {
@@ -163,7 +161,8 @@
         qrHidden.innerHTML = "";
         new QRCode(qrHidden, { text: formattedBodyText, width: 256, height: 256 });
         setTimeout(() => {
-            ctx.drawImage(qrHidden.querySelector('canvas'), (now.getDate() % 2 !== 0) ? 40 : (canvas.width - 340), canvas.height - 340, 300, 300);
+            const qrSize = Math.floor(canvas.width * 0.28); // REVERT TO 28% SCALE
+            ctx.drawImage(qrHidden.querySelector('canvas'), (now.getDate() % 2 !== 0) ? 40 : (canvas.width - qrSize - 40), canvas.height - qrSize - 40, qrSize, qrSize);
             canvas.toBlob(blob => {
                 imageBlob = blob;
                 if(videoStream) videoStream.getTracks().forEach(t => t.stop());
@@ -181,10 +180,10 @@
         document.getElementById('capture-ui-stack').style.display = 'none';
         document.getElementById('post-verify-step').style.display = 'block';
         document.getElementById('final-view-img').src = URL.createObjectURL(imageBlob);
-        
         const record = { id: `Audit_${unixTs}`, date: new Date().toLocaleDateString(), time: new Date().toLocaleTimeString(), blob: imageBlob, body: formattedBodyText };
         const localDb = await getDB();
         if(localDb) localDb.transaction("captures", "readwrite").objectStore("captures").put(record);
+        else sessionHistory.push(record);
     }
 
     function saveToDevice() {
@@ -210,14 +209,12 @@
 
     async function loadLogList() {
         const listDiv = document.getElementById('log-list');
-        listDiv.innerHTML = "<p style='padding:20px;'>Syncing history...</p>";
+        listDiv.innerHTML = "<p style='padding:20px;'>Syncing...</p>";
         const localDb = await getDB();
-        if(!localDb) { listDiv.innerHTML = "<p style='padding:20px; color:red;'>Storage Unavailable on this browser.</p>"; return; }
         
-        localDb.transaction("captures").objectStore("captures").getAll().onsuccess = e => {
-            const res = e.target.result;
-            listDiv.innerHTML = res.length ? "" : "<p style='padding:20px;'>No history found.</p>";
-            res.reverse().forEach(item => {
+        const renderList = (data) => {
+            listDiv.innerHTML = data.length ? "" : "<p style='padding:20px;'>No history found.</p>";
+            data.reverse().forEach(item => {
                 const row = document.createElement('div');
                 row.className = 'log-item';
                 row.onclick = () => showReview(item);
@@ -225,6 +222,12 @@
                 listDiv.appendChild(row);
             });
         };
+
+        if(localDb) {
+            localDb.transaction("captures").objectStore("captures").getAll().onsuccess = e => renderList(e.target.result);
+        } else {
+            renderList(sessionHistory);
+        }
     }
 
     function showReview(item) {
@@ -239,10 +242,13 @@
     }
 
     async function deleteCurrentRecord() {
-        if(!confirm("Remove entry from App History list?")) return;
+        if(!confirm("Remove entry from App History?")) return;
         const localDb = await getDB();
         if(localDb) {
             localDb.transaction("captures", "readwrite").objectStore("captures").delete(currentRecordId).onsuccess = () => closeReview();
+        } else {
+            sessionHistory = sessionHistory.filter(h => h.id !== currentRecordId);
+            closeReview();
         }
     }
 
@@ -256,9 +262,10 @@
     function shareGmail() {
         const e = localStorage.getItem('rv_r_email') || "";
         const url = `mailto:${e}?subject=Route Audit Report&body=${encodeURIComponent(formattedBodyText)}`;
-        // Triple-Trigger for computer browsers
+        // TRIPLE TRIGGER FOR COMPUTER
         document.getElementById('mail-frame').src = url;
-        window.location.href = url;
+        window.location.assign(url);
+        const a = document.createElement('a'); a.href = url; a.click();
     }
 
     function toggleSettings() { document.getElementById('settings-ui').style.display = 'block'; }
@@ -277,13 +284,11 @@
         document.getElementById('set-u-phone').value = localStorage.getItem('rv_u_phone') || "";
         document.getElementById('set-r-email').value = localStorage.getItem('rv_r_email') || "";
         document.getElementById('set-r-phone').value = localStorage.getItem('rv_r_phone') || "";
-        
         setInterval(() => {
             const n = new Date();
             document.getElementById('display-date').innerText = n.toLocaleDateString();
             document.getElementById('display-time').innerText = n.toLocaleTimeString();
         }, 1000);
-
         navigator.geolocation.watchPosition(pos => {
             const lat = pos.coords.latitude, lng = pos.coords.longitude;
             userLocation = `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`;
