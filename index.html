@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RouteVault AI - V15.7</title>
+    <title>RouteVault AI - V15.8</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root { --primary: #1a202c; --wa: #25d366; --gmail: #EA4335; --bg: #f7fafc; --blue: #4285F4; --red: #e53e3e; --gold: #d69e2e; }
@@ -23,6 +23,7 @@
         .log-item { padding: 15px; border-bottom: 1px solid #edf2f7; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
         input { width: 94%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; margin-bottom: 15px; display: block; background: #fff; }
         label { font-size: 12px; font-weight: bold; color: #4a5568; display: block; margin-bottom: 4px; margin-left: 2px; }
+        .review-details { background: #f1f5f9; padding: 10px; border-radius: 8px; font-size: 12px; margin-bottom: 10px; border-left: 4px solid var(--blue); }
         #qr-hidden { position: absolute; left: -9999px; }
         #settings-ui { display: none; background: #fff; position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; padding: 20px; box-sizing: border-box; border-radius: 16px; border: 2px solid var(--blue); overflow-y: auto;}
     </style>
@@ -30,21 +31,17 @@
 <body>
 
 <div id="qr-hidden"></div>
+<iframe id="mail-frame" style="display:none;"></iframe>
 
 <div class="card">
     <div id="settings-ui">
         <h3>App Settings</h3>
-        <label>User's Name</label>
-        <input type="text" id="set-u-name" placeholder="Enter Name">
-        <label>User's Email Address</label>
-        <input type="email" id="set-u-email" placeholder="Enter Email">
-        <label>User's Handphone Number</label>
-        <input type="text" id="set-u-phone" placeholder="Enter Phone">
+        <label>User's Name</label><input type="text" id="set-u-name">
+        <label>User's Email Address</label><input type="email" id="set-u-email">
+        <label>User's Handphone Number</label><input type="text" id="set-u-phone">
         <hr style="border:0; border-top:1px solid #eee; margin: 10px 0;">
-        <label>Recipient's Email Address</label>
-        <input type="email" id="set-r-email" placeholder="Enter Recipient Email">
-        <label>Recipient's Handphone Number</label>
-        <input type="text" id="set-r-phone" placeholder="Enter Recipient Phone">
+        <label>Recipient's Email Address</label><input type="email" id="set-r-email">
+        <label>Recipient's Handphone Number</label><input type="text" id="set-r-phone">
         <button class="action-btn" onclick="saveSettings()">Save & Close</button>
     </div>
 
@@ -92,7 +89,8 @@
     </div>
 
     <div id="review-screen" style="display:none;">
-        <img id="review-img" src="" style="width:100%; border-radius:12px; margin-bottom:15px; border:2px solid #e2e8f0;">
+        <img id="review-img" src="" style="width:100%; border-radius:12px; margin-bottom:10px; border:1px solid #ddd;">
+        <div class="review-details" id="review-data-text"></div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
             <button onclick="shareWhatsApp()" class="action-btn" style="background:var(--wa); margin-top:0;">WhatsApp</button>
             <button onclick="shareGmail()" class="action-btn" style="background:var(--gmail); margin-top:0;">Email</button>
@@ -106,16 +104,15 @@
     let db = null, videoStream, imageBlob, userLocation = "N/A", currentArea = "DETECTING...", unixTs = 0;
     let currentRecordId = null, formattedBodyText = "";
 
-    function getDB() {
-        return new Promise((resolve) => {
-            if (db) return resolve(db);
-            const req = indexedDB.open("RouteVaultDB", 1);
-            req.onupgradeneeded = e => e.target.result.createObjectStore("captures", { keyPath: "id" });
-            req.onsuccess = e => { db = e.target.result; resolve(db); };
-        });
+    // RE-ENGINEERED DB INIT FOR MOBILE
+    function initDB(callback) {
+        const req = indexedDB.open("RouteVaultDB", 1);
+        req.onupgradeneeded = e => e.target.result.createObjectStore("captures", { keyPath: "id" });
+        req.onsuccess = e => { db = e.target.result; if(callback) callback(); };
+        req.onerror = () => alert("Storage Error. Check permissions.");
     }
 
-    async function switchSection(sect) {
+    function switchSection(sect) {
         document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         document.getElementById('review-screen').style.display = 'none';
@@ -127,7 +124,7 @@
         } else {
             document.getElementById('sec-resend').classList.add('active');
             document.getElementById('btn-nav-resend').classList.add('active');
-            await loadLogList();
+            loadLogList();
         }
     }
 
@@ -139,7 +136,7 @@
             document.getElementById('camera-container').style.display = 'block';
             document.getElementById('cameraBtn').style.display = 'none';
             document.getElementById('snapBtn').style.display = 'block';
-        } catch (e) { alert("Camera access required."); }
+        } catch (e) { alert("Enable Camera Access."); }
     }
 
     function takePhoto() {
@@ -155,64 +152,57 @@
         qrHidden.innerHTML = "";
         new QRCode(qrHidden, { text: formattedBodyText, width: 256, height: 256 });
         setTimeout(() => {
-            const qrCanvas = qrHidden.querySelector('canvas');
-            const qrSize = Math.floor(canvas.width * 0.28);
-            ctx.drawImage(qrCanvas, (now.getDate() % 2 !== 0) ? 40 : (canvas.width - qrSize - 40), canvas.height - qrSize - 40, qrSize, qrSize);
+            ctx.drawImage(qrHidden.querySelector('canvas'), (now.getDate() % 2 !== 0) ? 40 : (canvas.width - 340), canvas.height - 340, 300, 300);
             canvas.toBlob(blob => {
                 imageBlob = blob;
-                const blobUrl = URL.createObjectURL(blob);
                 if(videoStream) videoStream.getTracks().forEach(t => t.stop());
                 document.getElementById('camera-container').style.display = 'none';
                 document.getElementById('snapBtn').style.display = 'none';
-                document.getElementById('pin-view-img').src = blobUrl;
+                document.getElementById('pin-view-img').src = URL.createObjectURL(blob);
                 document.getElementById('pin-view-img').style.display = 'block';
                 document.getElementById('pin-step').style.display = 'block';
             }, 'image/jpeg', 0.9);
-        }, 1000);
+        }, 800);
     }
 
-    async function verifyPin() {
+    function verifyPin() {
         if (document.getElementById('pinInput').value !== window.calculatedPin) return alert("PIN Incorrect");
         document.getElementById('capture-ui-stack').style.display = 'none';
         document.getElementById('post-verify-step').style.display = 'block';
         document.getElementById('final-view-img').src = URL.createObjectURL(imageBlob);
         const record = { id: `Audit_${unixTs}`, date: new Date().toLocaleDateString(), time: new Date().toLocaleTimeString(), blob: imageBlob, body: formattedBodyText };
-        const localDb = await getDB();
-        localDb.transaction("captures", "readwrite").objectStore("captures").put(record);
+        if(db) db.transaction("captures", "readwrite").objectStore("captures").put(record);
+        else initDB(() => db.transaction("captures", "readwrite").objectStore("captures").put(record));
     }
 
     function saveToDevice() {
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(imageBlob);
-        link.download = `RouteStamp_${unixTs}.jpg`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(imageBlob);
+        a.download = `Audit_${unixTs}.jpg`;
+        a.click();
         document.getElementById('save-to-device-btn').style.display = 'none';
         document.getElementById('share-options-row').style.display = 'grid';
     }
 
     function resetToNew() {
-        imageBlob = null;
-        document.getElementById('pinInput').value = "";
         document.getElementById('capture-ui-stack').style.display = 'block';
         document.getElementById('post-verify-step').style.display = 'none';
         document.getElementById('pin-step').style.display = 'none';
         document.getElementById('pin-view-img').style.display = 'none';
-        document.getElementById('camera-container').style.display = 'none';
         document.getElementById('cameraBtn').style.display = 'block';
         document.getElementById('snapBtn').style.display = 'none';
-        document.getElementById('share-options-row').style.display = 'none';
         document.getElementById('save-to-device-btn').style.display = 'block';
+        document.getElementById('share-options-row').style.display = 'none';
+        document.getElementById('pinInput').value = "";
     }
 
-    async function loadLogList() {
+    function loadLogList() {
         const listDiv = document.getElementById('log-list');
         listDiv.innerHTML = "<p style='padding:20px;'>Syncing...</p>";
-        const localDb = await getDB();
-        localDb.transaction("captures", "readonly").objectStore("captures").getAll().onsuccess = e => {
+        if (!db) { initDB(loadLogList); return; }
+        db.transaction("captures").objectStore("captures").getAll().onsuccess = e => {
             const res = e.target.result;
-            listDiv.innerHTML = res.length ? "" : "<p style='padding:20px;'>No history.</p>";
+            listDiv.innerHTML = res.length ? "" : "<p style='padding:20px;'>No history found.</p>";
             res.reverse().forEach(item => {
                 const row = document.createElement('div');
                 row.className = 'log-item';
@@ -227,16 +217,15 @@
         currentRecordId = item.id;
         formattedBodyText = item.body;
         document.getElementById('review-img').src = URL.createObjectURL(item.blob);
+        document.getElementById('review-data-text').innerHTML = `<b>File:</b> ${item.id}<br><b>Date:</b> ${item.date}<br><b>Time:</b> ${item.time}`;
         document.getElementById('sec-new').classList.remove('active');
         document.getElementById('sec-resend').classList.remove('active');
         document.getElementById('main-nav').style.display = 'none';
         document.getElementById('review-screen').style.display = 'block';
     }
 
-    async function deleteCurrentRecord() {
-        if(!confirm("Remove from history?")) return;
-        const localDb = await getDB();
-        localDb.transaction("captures", "readwrite").objectStore("captures").delete(currentRecordId).onsuccess = () => closeReview();
+    function deleteCurrentRecord() {
+        if(confirm("Delete this?")) db.transaction("captures", "readwrite").objectStore("captures").delete(currentRecordId).onsuccess = () => closeReview();
     }
 
     function closeReview() { switchSection('new'); }
@@ -248,9 +237,10 @@
 
     function shareGmail() {
         const e = localStorage.getItem('rv_r_email') || "";
-        const mailtoUrl = `mailto:${e}?subject=Route Audit Report&body=${encodeURIComponent(formattedBodyText)}`;
-        // FIX: Direct assignment to location.href prevents computer blank tabs
-        window.location.href = mailtoUrl;
+        const url = `mailto:${e}?subject=Route Audit Report&body=${encodeURIComponent(formattedBodyText)}`;
+        // COMPUTER FIX: Use Frame + Location for widest compatibility
+        document.getElementById('mail-frame').src = url;
+        window.location.href = url;
     }
 
     function toggleSettings() { document.getElementById('settings-ui').style.display = 'block'; }
@@ -264,12 +254,12 @@
     }
 
     window.onload = () => {
+        initDB();
         document.getElementById('set-u-name').value = localStorage.getItem('rv_u_name') || "";
         document.getElementById('set-u-email').value = localStorage.getItem('rv_u_email') || "";
         document.getElementById('set-u-phone').value = localStorage.getItem('rv_u_phone') || "";
         document.getElementById('set-r-email').value = localStorage.getItem('rv_r_email') || "";
         document.getElementById('set-r-phone').value = localStorage.getItem('rv_r_phone') || "";
-        getDB();
         setInterval(() => {
             const n = new Date();
             document.getElementById('display-date').innerText = n.toLocaleDateString();
@@ -282,11 +272,10 @@
             document.getElementById('gps-status').style.color = "green";
             window.calculatedPin = (Math.round((lat % 1) * 10000) + Math.round((lng % 1) * 10000)).toString();
             document.getElementById('pin-display').innerText = window.calculatedPin;
-            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
-                .then(r => r.json()).then(d => {
-                    currentArea = d.address.suburb || d.address.town || d.address.city || "Site";
-                    document.getElementById('location-name').innerText = `📍 ${currentArea.toUpperCase()}`;
-                });
+            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`).then(r => r.json()).then(d => {
+                currentArea = d.address.suburb || d.address.town || d.address.city || "Site";
+                document.getElementById('location-name').innerText = `📍 ${currentArea.toUpperCase()}`;
+            });
         }, null, { enableHighAccuracy: true });
     };
 </script>
