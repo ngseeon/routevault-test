@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RouteVault AI - V16.1</title>
+    <title>RouteVault AI - V16.2</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root { --primary: #1a202c; --wa: #25d366; --gmail: #EA4335; --bg: #f7fafc; --blue: #4285F4; --red: #e53e3e; --gold: #d69e2e; }
@@ -112,6 +112,8 @@
 </div>
 
 <script>
+    // CLEAN SLATE DATABASE NAME FOR V16.2
+    const DB_NAME = "RV_FINAL_PERMANENT"; 
     let db = null, sessionHistory = [], videoStream, imageBlob, userLocation = "N/A", currentArea = "DETECTING...", unixTs = 0;
     let currentRecordId = null, formattedBodyText = "";
 
@@ -119,7 +121,7 @@
         return new Promise((resolve) => {
             if (db) return resolve(db);
             try {
-                const req = indexedDB.open("RouteVaultDB", 1);
+                const req = indexedDB.open(DB_NAME, 1);
                 req.onupgradeneeded = e => e.target.result.createObjectStore("captures", { keyPath: "id" });
                 req.onsuccess = e => { db = e.target.result; resolve(db); };
                 req.onerror = () => resolve(null);
@@ -188,9 +190,15 @@
         document.getElementById('post-verify-step').style.display = 'block';
         document.getElementById('final-view-img').src = URL.createObjectURL(imageBlob);
         const record = { id: `Audit_${unixTs}`, date: new Date().toLocaleDateString(), time: new Date().toLocaleTimeString(), blob: imageBlob, body: formattedBodyText };
+        
+        // SAVE TO DATABASE
         const localDb = await getDB();
-        if(localDb) localDb.transaction("captures", "readwrite").objectStore("captures").put(record);
-        else sessionHistory.push(record);
+        if(localDb) {
+            const tx = localDb.transaction("captures", "readwrite");
+            tx.objectStore("captures").put(record);
+        } else {
+            sessionHistory.push(record);
+        }
     }
 
     function saveToDevice() {
@@ -216,8 +224,9 @@
 
     async function loadLogList() {
         const listDiv = document.getElementById('log-list');
-        listDiv.innerHTML = "<p style='padding:20px;'>Syncing...</p>";
+        listDiv.innerHTML = "<p style='padding:20px;'>Loading History...</p>";
         const localDb = await getDB();
+        
         const renderList = (data) => {
             listDiv.innerHTML = data.length ? "" : "<p style='padding:20px;'>No history found.</p>";
             [...data].reverse().forEach(item => {
@@ -228,8 +237,12 @@
                 listDiv.appendChild(row);
             });
         };
-        if(localDb) localDb.transaction("captures").objectStore("captures").getAll().onsuccess = e => renderList(e.target.result);
-        else renderList(sessionHistory);
+
+        if(localDb) {
+            localDb.transaction("captures").objectStore("captures").getAll().onsuccess = e => renderList(e.target.result);
+        } else {
+            renderList(sessionHistory);
+        }
     }
 
     function showReview(item) {
@@ -244,10 +257,14 @@
     }
 
     async function deleteCurrentRecord() {
-        if(!confirm("Remove entry from App History?")) return;
+        if(!confirm("Remove from App History?")) return;
         const localDb = await getDB();
-        if(localDb) localDb.transaction("captures", "readwrite").objectStore("captures").delete(currentRecordId).onsuccess = () => closeReview();
-        else { sessionHistory = sessionHistory.filter(h => h.id !== currentRecordId); closeReview(); }
+        if(localDb) {
+            localDb.transaction("captures", "readwrite").objectStore("captures").delete(currentRecordId).onsuccess = () => closeReview();
+        } else {
+            sessionHistory = sessionHistory.filter(h => h.id !== currentRecordId);
+            closeReview();
+        }
     }
 
     function closeReview() { switchSection('new'); }
