@@ -3,36 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SiteVerify V17.5</title>
+    <title>SiteVerify V17.7</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        :root { --primary-red: #ff0000; --brand-grey: #737373; --light-bg: #f8f9fa; --wa-green: #25d366; }
-        body { font-family: sans-serif; background: var(--light-bg); display: flex; justify-content: center; padding: 10px; margin: 0; color: var(--brand-grey); }
+        :root { --p-red: #ff0000; --b-grey: #737373; --l-bg: #f8f9fa; --wa-g: #25d366; }
+        body { font-family: sans-serif; background: var(--l-bg); display: flex; justify-content: center; padding: 10px; margin: 0; color: var(--b-grey); }
         .card { background: white; width: 100%; max-width: 460px; padding: 20px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); position: relative; min-height: 95vh; display: flex; flex-direction: column; box-sizing: border-box; }
         
-        /* Official Logo Implementation */
-        .logo-container { text-align: center; margin-bottom: 15px; }
-        .logo-svg { width: 100%; max-width: 300px; height: auto; }
+        /* Official Logo - SiteVerify */
+        .logo-container { text-align: center; margin-bottom: 20px; }
+        .logo-svg { width: 100%; max-width: 320px; height: auto; }
 
         .header { display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 10px; align-items: center; }
         .nav-menu { display: flex; gap: 8px; margin-bottom: 20px; }
-        .nav-btn { flex: 1; padding: 12px; border-radius: 8px; border: 2px solid var(--brand-grey); background: white; cursor: pointer; font-weight: bold; font-size: 13px; color: var(--brand-grey); }
-        .nav-btn.active { background: var(--brand-grey); color: white; }
+        .nav-btn { flex: 1; padding: 12px; border-radius: 8px; border: 2px solid var(--b-grey); background: white; cursor: pointer; font-weight: bold; font-size: 13px; color: var(--b-grey); }
+        .nav-btn.active { background: var(--b-grey); color: white; }
         .nav-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        .live-clock { text-align: center; font-family: monospace; font-size: 18px; background: #f1f5f9; padding: 12px; border-radius: 8px; margin-bottom: 15px; color: var(--primary-red); border: 1px solid #ddd; }
-        #camera-container { width: 100%; border-radius: 12px; overflow: hidden; background: #000; margin-bottom: 10px; display: none; aspect-ratio: 4/3; border: 3px solid var(--brand-grey); }
+        .live-clock { text-align: center; font-family: monospace; font-size: 18px; background: #f1f5f9; padding: 12px; border-radius: 8px; margin-bottom: 15px; color: var(--p-red); border: 1px solid #ddd; }
+        #camera-container { width: 100%; border-radius: 12px; overflow: hidden; background: #000; margin-bottom: 10px; display: none; aspect-ratio: 4/3; border: 3px solid var(--b-grey); }
         #video-preview { width: 100%; height: 100%; object-fit: cover; }
         
-        .action-btn { width: 100%; padding: 14px; border: none; border-radius: 8px; background: var(--primary-red); color: white; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 14px; text-transform: uppercase; }
-        .action-btn.grey { background: var(--brand-grey); }
+        .action-btn { width: 100%; padding: 14px; border: none; border-radius: 8px; background: var(--p-red); color: white; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 14px; text-transform: uppercase; }
+        .action-btn.grey { background: var(--b-grey); }
 
         .share-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
         .share-row .action-btn { margin-top: 0; }
 
         .log-container { flex-grow: 1; overflow-y: auto; border: 1px solid #eee; border-radius: 12px; }
         .log-item { padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
-        input { width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 8px; margin-bottom: 15px; box-sizing: border-box; }
+        input { width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 8px; margin-bottom: 15px; box-sizing: border-box; font-size: 16px; }
         #settings-ui { display: none; background: #fff; position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; padding: 20px; box-sizing: border-box; }
     </style>
 </head>
@@ -42,27 +42,27 @@
 
 <div class="card">
     <div class="logo-container">
-        <svg class="logo-svg" viewBox="0 0 540 160" xmlns="http://www.w3.org/2000/svg">
-            <text x="10" y="110" font-family="Arial, sans-serif" font-weight="bold" font-style="italic" font-size="100" fill="#737373">Site</text>
-            <path d="M220 25 L275 145 L330 25" fill="none" stroke="#737373" stroke-width="18" stroke-linejoin="miter" />
-            <path d="M250 40 L275 75 L300 40 Z" fill="#ff0000" />
-            <text x="290" y="110" font-family="Arial, sans-serif" font-weight="bold" font-style="italic" font-size="100" fill="#737373">erify</text>
+        <svg class="logo-svg" viewBox="0 0 540 180" xmlns="http://www.w3.org/2000/svg">
+            <text x="10" y="125" font-family="Arial, sans-serif" font-weight="bold" font-style="italic" font-size="105" fill="#737373">Site</text>
+            <path d="M225 25 L290 155 L355 25" fill="none" stroke="#737373" stroke-width="20" stroke-linejoin="miter" />
+            <path d="M265 45 L290 85 L315 45 Z" fill="#ff0000" />
+            <text x="310" y="125" font-family="Arial, sans-serif" font-weight="bold" font-style="italic" font-size="105" fill="#737373">erify</text>
         </svg>
     </div>
 
     <div id="settings-ui">
-        <h3>Settings</h3>
+        <h3>System Settings</h3>
         <label>User Name</label><input type="text" id="set-u-name">
-        <label>Email</label><input type="email" id="set-r-email">
-        <label>Phone</label><input type="text" id="set-r-phone">
-        <button class="action-btn" onclick="saveSettings()">Save</button>
+        <label>Recipient Email</label><input type="email" id="set-r-email">
+        <label>WhatsApp Phone</label><input type="text" id="set-r-phone">
+        <button class="action-btn" onclick="saveSettings()">Save & Close</button>
     </div>
 
     <div class="header">
         <div id="location-name">📍 DETECTING...</div>
         <div style="display:flex; gap:10px; align-items:center;">
-            <span id="gps-status" style="color:var(--primary-red)">GPS: OFF</span>
-            <span onclick="toggleSettings()" style="cursor:pointer;">⚙️</span>
+            <span id="gps-status" style="color:var(--p-red)">GPS: OFF</span>
+            <span onclick="toggleSettings()" style="cursor:pointer; font-size: 18px;">⚙️</span>
         </div>
     </div>
 
@@ -80,18 +80,19 @@
             <button id="snapBtn" class="action-btn grey" style="display:none;" onclick="takePhoto()">Capture & Stamp</button>
             
             <div id="pin-area" style="display:none; text-align:center;">
-                <p>PIN: <span id="pin-display" style="color:var(--primary-red); font-weight:bold;">--</span></p>
-                <input type="number" id="pinInput" placeholder="ENTER PIN" style="text-align:center; font-size:20px;">
-                <button class="action-btn" onclick="verifyPin()">Verify & Lock</button>
+                <p style="font-size:12px; font-weight:bold;">PIN: <span id="pin-display" style="color:var(--p-red);">--</span></p>
+                <input type="number" id="pinInput" placeholder="ENTER PIN" style="text-align:center; font-size:24px;">
+                <button class="action-btn" onclick="verifyPin()">Verify & Lock Data</button>
             </div>
         </div>
 
         <div id="success-stack" style="display:none;">
             <img id="final-img" style="width:100%; border-radius:12px;">
             <div class="share-row">
-                <button onclick="shareWhatsApp()" class="action-btn" style="background:var(--wa-green);">WhatsApp</button>
+                <button onclick="shareWhatsApp()" class="action-btn" style="background:var(--wa-g);">WhatsApp</button>
                 <button onclick="handleEmailShare()" class="action-btn">Gmail Web</button>
             </div>
+            <button onclick="saveToDevice()" class="action-btn" style="background:var(--b-grey);">Save to Device</button>
             <button class="action-btn grey" onclick="resetApp()">New Capture</button>
         </div>
     </div>
@@ -104,16 +105,18 @@
         <img id="review-img" style="width:100%; border-radius:12px; margin-bottom:10px;">
         <div id="review-text" style="font-size:12px; margin-bottom:10px;"></div>
         <div class="share-row">
-            <button onclick="shareWhatsApp()" class="action-btn" style="background:var(--wa-green);">WhatsApp</button>
+            <button onclick="shareWhatsApp()" class="action-btn" style="background:var(--wa-g);">WhatsApp</button>
             <button onclick="handleEmailShare()" class="action-btn">Gmail Web</button>
         </div>
-        <button class="action-btn grey" onclick="closeReview()">Back</button>
+        <button onclick="saveToDevice()" class="action-btn" style="background:var(--b-grey);">Save to Device</button>
+        <button class="action-btn" style="background:#555;" onclick="deleteLog()">Delete Record</button>
+        <button class="action-btn grey" onclick="closeReview()">Back to History</button>
     </div>
 </div>
 
 <script>
-    const DB_NAME = "SITEVERIFY_V175";
-    let db, stream, blob, loc = "N/A", area = "SEARCHING...", ts = 0, capturing = false, currentId = "";
+    const DB_NAME = "SITEVERIFY_V177";
+    let db, stream, blob, loc = "N/A", area = "DETECTING...", ts = 0, capturing = false, currentLogId = "";
 
     function openDB() {
         return new Promise(res => {
@@ -148,7 +151,7 @@
             document.getElementById('camera-container').style.display = 'block';
             document.getElementById('cameraBtn').style.display = 'none';
             document.getElementById('snapBtn').style.display = 'block';
-        } catch (e) { alert("Camera Error"); resetApp(); }
+        } catch (e) { alert("Camera error."); resetApp(); }
     }
 
     async function takePhoto() {
@@ -158,15 +161,15 @@
         c.getContext('2d').drawImage(v, 0, 0);
         
         ts = Math.floor(Date.now()/1000);
-        const body = `Verify Report\nUser: ${localStorage.getItem('rv_u_name')}\nPIN: ${window.pin}\nLoc: ${area}\nGPS: ${loc}\nTS: ${ts}`;
+        const body = `Verify Report\nUser: ${localStorage.getItem('rv_u_name') || "Field"}\nPIN: ${window.pin}\nLoc: ${area}\nGPS: ${loc}\nTS: ${ts}`;
         
         const qr = document.getElementById('qr-hidden');
         qr.innerHTML = "";
-        new QRCode(qr, {text: body, width: 200, height: 200});
+        new QRCode(qr, {text: body, width: 220, height: 220});
         
         setTimeout(() => {
             const ctx = c.getContext('2d');
-            ctx.drawImage(qr.querySelector('canvas'), c.width-220, c.height-220, 200, 200);
+            ctx.drawImage(qr.querySelector('canvas'), c.width-240, c.height-240, 220, 220);
             c.toBlob(b => {
                 blob = b;
                 stream.getTracks().forEach(t => t.stop());
@@ -181,7 +184,8 @@
     }
 
     async function verifyPin() {
-        if(document.getElementById('pinInput').value !== window.pin) return alert("Wrong PIN");
+        if(document.getElementById('pinInput').value !== window.pin) return alert("Security PIN Mismatch");
+        
         const rec = {id: `Verify_${ts}`, blob, text: window.lastText, date: new Date().toLocaleString()};
         const tx = db.transaction("logs", "readwrite");
         await tx.objectStore("logs").put(rec);
@@ -191,6 +195,13 @@
         document.getElementById('final-img').src = URL.createObjectURL(blob);
         capturing = false;
         document.getElementById('btn-nav-resend').disabled = false;
+    }
+
+    function saveToDevice() {
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `VerifyStamp_${ts}.jpg`;
+        link.click();
     }
 
     function shareWhatsApp() {
@@ -203,29 +214,40 @@
         window.open(`mailto:${e}?subject=Verify_${ts}&body=${encodeURIComponent(window.lastText)}`);
     }
 
-    function resetApp() {
-        location.reload();
-    }
+    function resetApp() { location.reload(); }
 
     async function loadLogs() {
         const list = document.getElementById('log-list');
-        list.innerHTML = "";
+        list.innerHTML = "<p style='padding:10px;'>Syncing...</p>";
         const tx = db.transaction("logs").objectStore("logs").getAll();
         tx.onsuccess = e => {
-            e.target.result.reverse().forEach(r => {
+            const data = e.target.result.reverse();
+            list.innerHTML = data.length ? "" : "<p style='padding:10px;'>No History.</p>";
+            data.forEach(r => {
                 const d = document.createElement('div');
                 d.className = 'log-item';
-                d.innerHTML = `<span>${r.id}</span><small>${r.date}</small>`;
+                d.innerHTML = `<div><b>${r.id}</b><br><small>${r.date}</small></div><span>➔</span>`;
                 d.onclick = () => {
+                    blob = r.blob;
+                    ts = r.id.split('_')[1];
                     document.getElementById('review-img').src = URL.createObjectURL(r.blob);
                     document.getElementById('review-text').innerText = r.text;
                     window.lastText = r.text;
+                    currentLogId = r.id;
                     document.getElementById('sec-resend').style.display = 'none';
                     document.getElementById('review-screen').style.display = 'block';
                 };
                 list.appendChild(d);
             });
         };
+    }
+
+    async function deleteLog() {
+        if(confirm("Delete this Verify record?")) {
+            const tx = db.transaction("logs", "readwrite");
+            await tx.objectStore("logs").delete(currentLogId);
+            switchSection('resend');
+        }
     }
 
     function closeReview() { switchSection('resend'); }
@@ -257,7 +279,7 @@
             document.getElementById('gps-status').innerText = "GPS: ACTIVE";
             fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${la}&lon=${lo}`)
                 .then(r => r.json()).then(d => {
-                    area = d.address.suburb || d.address.city || "Site";
+                    area = d.address.suburb || d.address.town || d.address.city || "Field Site";
                     document.getElementById('location-name').innerText = `📍 ${area.toUpperCase()}`;
                 });
         });
