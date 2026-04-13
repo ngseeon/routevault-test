@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SiteVerify - Professional V17.4</title>
+    <title>SiteVerify - Professional V17.5</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root { 
@@ -15,7 +15,7 @@
         body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--light-bg); display: flex; justify-content: center; padding: 10px; margin: 0; color: var(--brand-grey); overflow-x: hidden; }
         .card { background: white; width: 100%; max-width: 460px; padding: 20px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); position: relative; min-height: 95vh; border: 1px solid #e2e8f0; box-sizing: border-box; display: flex; flex-direction: column; }
         
-        /* High-Precision SVG Logo */
+        /* Integrated Official SVG Logo */
         .logo-container { text-align: center; margin-bottom: 10px; padding: 10px 0; }
         .logo-svg { width: 100%; max-width: 320px; height: auto; }
 
@@ -34,8 +34,9 @@
         .action-btn { width: 100%; padding: 14px; border: none; border-radius: 8px; background: var(--primary-red); color: white; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 14px; text-transform: uppercase; }
         .action-btn.grey { background: var(--brand-grey); }
 
+        /* Perfect Share Row Alignment */
         .share-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; width: 100%; }
-        .share-row .action-btn { margin-top: 0; }
+        .share-row .action-btn { margin-top: 0; height: 50px; }
 
         .log-container { flex-grow: 1; overflow-y: auto; border: 1px solid #edf2f7; border-radius: 12px; }
         .log-item { padding: 15px; border-bottom: 1px solid #edf2f7; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #fff; }
@@ -53,11 +54,11 @@
 
 <div class="card">
     <div class="logo-container">
-        <svg class="logo-svg" viewBox="0 0 500 150" xmlns="http://www.w3.org/2000/svg">
-            <text x="20" y="115" font-family="Arial, sans-serif" font-weight="bold" font-style="italic" font-size="95" fill="#737373">Site</text>
-            <path d="M210 20 L275 140 L340 20" fill="none" stroke="#737373" stroke-width="16" stroke-linejoin="miter" />
-            <path d="M255 35 L235 65 L275 65 Z" fill="#ff0000" />
-            <text x="270" y="115" font-family="Arial, sans-serif" font-weight="bold" font-style="italic" font-size="95" fill="#737373">erify</text>
+        <svg class="logo-svg" viewBox="0 0 1018 410" xmlns="http://www.w3.org/2000/svg">
+          <path d="M125.1,139.1c-14.9,0-27.4,3.7-37.4,11.1c-10,7.4-15,17.4-15,30.1c0,11.2,4,19.9,12,25.9c8,6,20.6,11.1,37.8,15.1 c21.4,5,36.5,12.5,45.4,22.4c8.9,9.9,13.3,23.3,13.3,40.1c0,19-7.2,34.4-21.6,46.1c-14.4,11.7-34,17.6-58.8,17.6 c-23.3,0-43.1-4.8-59.5-14.3l13.1-36.9c16.9,9.8,32.7,14.6,47.3,14.6c13.7,0,24.6-2.9,32.6-8.7c8-5.8,12-14,12-24.6 c0-11-4.1-19.4-12.4-25.2c-8.3-5.8-21.4-10.9-39.3-15.3c-20-4.9-34.5-12.1-43.6-21.6c-9.1-9.5-13.6-22.5-13.6-39 c0-17.6,6.6-32,19.7-43.2c13.1-11.2,31-16.8,53.8-16.8c19.3,0,37.9,4.2,55.8,12.5l-12.8,36.1C152.1,142.9,139.1,139.1,125.1,139.1z M193,133.2c0-8.6,2.6-15.5,7.9-20.6c5.3-5.1,11.9-7.7,19.8-7.7c7.9,0,14.3,2.5,19.3,7.4c5,4.9,7.5,11.4,7.5,19.4 c0,8.7-2.6,15.8-7.8,21.1c-5.2,5.3-11.8,8-19.7,8c-8.2,0-14.8-2.6-19.8-7.9C195.4,147.5,193,141.1,193,133.2z M196.8,173.2h46.1 v170.9h-46.1V173.2z M314.5,134.1h-33.8v-32.9h33.8V49.1h46.1v52.1h44.1v32.9h-44.1v128.8c0,13.1,6.5,19.7,19.5,19.7 c8.8,0,16.5-1.9,23.3-5.7l9.8,33.2c-12.1,6.3-26.6,9.5-43.6,9.5c-19.2,0-34-5.6-44.5-16.7c-10.5-11.1-15.7-27.4-15.7-48.8V134.1z M523.6,269.8c0,23.1-6.1,41-18.4,53.8c-12.3,12.7-29.2,19.1-50.6,19.1c-23,0-40.8-7.2-53.2-21.7l-4.4,18.1h-40.2V44.1h46.1v108.6 c12.2-13.4,29-20.1,50.3-20.1c21.2,0,37.9,6.5,50,19.6C516.4,223.3,523.6,242.4,523.6,269.8z M476.5,270.9c0-30.8-10.1-46.1-30.4-46.1 c-10,0-18.2,3.3-24.6,9.8c-6.4,6.5-9.6,16.1-9.6,28.7c0,32.3,10.2,48.5,30.5,48.5C463.3,311.9,476.5,298.2,476.5,270.9z M616.5,37.4 L544.7,370.1h-47.5L569,203.2L497.1,37.4h51.3l48.1,123.6L644.6,37.4H616.5z" fill="#737373"/>
+          <path d="M518,44.1l111.9,210.4l111.9-210.4" fill="none" stroke="#737373" stroke-width="30" stroke-linejoin="miter"/>
+          <path d="M629.9,104.1l-40,60h80Z" fill="#ff0000"/>
+          <path d="M676,173.2c16.9,0,30.1,3.3,39.6,9.9c9.5,6.6,14.3,16,14.3,28.2c0,11.2-3.7,20.1-11,26.7c-7.3,6.6-17.5,10.6-30.5,12.1 c13.4,3,23.3,8.7,29.9,17c6.6,8.3,9.9,18.9,9.9,32c0,13.7-4.8,24.6-14.4,32.8c-9.6,8.2-23.8,12.3-42.6,12.3c-14.4,0-27.1-2-38.1-6 v-34.9c10.4,4.7,21.5,7,33.3,7c16.1,0,24.2-6.5,24.2-19.4c0-6.1-2.2-10.8-6.6-14.1c-4.4-3.3-11.4-4.9-21.1-4.9h-10.5v-29.2h9.5 c9.2,0,16-1.5,20.3-4.5c4.3-3,6.5-7.7,6.5-14c0-11-7.1-16.5-21.3-16.5c-9.5,0-18.4,1.8-26.7,5.4v-32.9 C650,175.2,662.7,173.2,676,173.2z M744,133.2c0-8.6,2.6-15.5,7.9-20.6c5.3-5.1,11.9-7.7,19.8-7.7c7.9,0,14.3,2.5,19.3,7.4 c5,4.9,7.5,11.4,7.5,19.4c0,8.7-2.6,15.8-7.8,21.1c-5.2,5.3-11.8,8-19.7,8c-8.2,0-14.8-2.6-19.8-7.9 C746.4,147.5,744,141.1,744,133.2z M747.8,173.2h46.1v170.9h-46.1V173.2z M865.5,134.1h-33.8v-32.9h33.8V49.1h46.1v52.1h44.1v32.9 h-44.1v128.8c0,13.1,6.5,19.7,19.5,19.7c8.8,0,16.5-1.9,23.3-5.7l9.8,33.2c-12.1,6.3-26.6,9.5-43.6,9.5c-19.2,0-34-5.6-44.5-16.7 c-10.5-11.1-15.7-27.4-15.7-48.8V134.1z M1074.6,269.8c0,23.1-6.1,41-18.4,53.8c-12.3,12.7-29.2,19.1-50.6,19.1 c-23,0-40.8-7.2-53.2-21.7l-4.4,18.1h-40.2V44.1h46.1v108.6c12.2-13.4,29-20.1,50.3-20.1c21.2,0,37.9,6.5,50,19.6 C1067.4,223.3,1074.6,242.4,1074.6,269.8z M1027.5,270.9c0-30.8-10.1-46.1-30.4-46.1c-10,0-18.2,3.3-24.6,9.8 c-6.4,6.5-9.6,16.1-9.6,28.7c0,32.3,10.2,48.5,30.5,48.5C1014.3,311.9,1027.5,298.2,1027.5,270.9z" fill="#737373"/>
         </svg>
     </div>
 
@@ -181,7 +182,7 @@
             document.getElementById('camera-container').style.display = 'block';
             document.getElementById('cameraBtn').style.display = 'none';
             document.getElementById('snapBtn').style.display = 'block';
-        } catch (e) { alert("Camera Error"); isCapturing = false; document.getElementById('btn-nav-resend').disabled = false; }
+        } catch (e) { alert("Camera Permission Required"); isCapturing = false; document.getElementById('btn-nav-resend').disabled = false; }
     }
 
     async function takePhoto() {
@@ -217,7 +218,7 @@
     }
 
     async function verifyPin() {
-        if (document.getElementById('pinInput').value !== window.calculatedPin) return alert("Security PIN Mismatch");
+        if (document.getElementById('pinInput').value !== window.calculatedPin) return alert("Security PIN Error");
         document.getElementById('capture-ui-stack').style.display = 'none';
         document.getElementById('post-verify-step').style.display = 'block';
         document.getElementById('final-view-img').src = URL.createObjectURL(imageBlob);
@@ -257,11 +258,11 @@
 
     async function loadLogList() {
         const listDiv = document.getElementById('log-list');
-        listDiv.innerHTML = "<p style='padding:20px;'>Loading...</p>";
+        listDiv.innerHTML = "<p style='padding:20px;'>Syncing Verify History...</p>";
         const localDb = await getDB();
         localDb.transaction("captures").objectStore("captures").getAll().onsuccess = e => {
             const data = e.target.result;
-            listDiv.innerHTML = data.length ? "" : "<p style='padding:20px;'>No history.</p>";
+            listDiv.innerHTML = data.length ? "" : "<p style='padding:20px;'>History Empty.</p>";
             data.reverse().forEach(item => {
                 const row = document.createElement('div');
                 row.className = 'log-item';
@@ -277,14 +278,14 @@
         currentRecordId = item.id; 
         baseBodyText = item.body;
         document.getElementById('review-img').src = URL.createObjectURL(item.blob);
-        document.getElementById('review-data-text').innerHTML = `<b>Verify ID:</b> ${item.id}<br><b>Stamp:</b> ${item.date} ${item.time}`;
+        document.getElementById('review-data-text').innerHTML = `<b>Verify ID:</b> ${item.id}<br><b>Logged:</b> ${item.date} ${item.time}`;
         document.getElementById('sec-new').classList.remove('active');
         document.getElementById('sec-resend').classList.remove('active');
         document.getElementById('review-screen').style.display = 'block';
     }
 
     async function deleteRecord() {
-        if(confirm("Delete record?")) {
+        if(confirm("Permanently delete Verify record?")) {
             const localDb = await getDB();
             localDb.transaction("captures", "readwrite").objectStore("captures").delete(currentRecordId).onsuccess = () => switchSection('resend');
         }
