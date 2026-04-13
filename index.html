@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SiteVerify - Professional Audit V17.1</title>
+    <title>SiteVerify - Professional V17.2</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root { 
@@ -12,12 +12,12 @@
             --light-bg: #f8f9fa; 
             --wa-green: #25d366;
         }
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--light-bg); display: flex; justify-content: center; padding: 10px; margin: 0; color: var(--brand-grey); }
-        .card { background: white; width: 100%; max-width: 460px; padding: 20px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); position: relative; min-height: 90vh; border: 1px solid #e2e8f0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--light-bg); display: flex; justify-content: center; padding: 10px; margin: 0; color: var(--brand-grey); overflow-x: hidden; }
+        .card { background: white; width: 100%; max-width: 460px; padding: 20px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); position: relative; min-height: 92vh; border: 1px solid #e2e8f0; box-sizing: border-box; display: flex; flex-direction: column; }
         
-        /* Fixed SVG Logo Styling */
-        .logo-container { text-align: center; margin-bottom: 10px; padding-top: 5px; }
-        .logo-svg { width: 100%; max-width: 300px; height: auto; }
+        /* Fixed SVG Logo */
+        .logo-container { text-align: center; margin-bottom: 15px; padding: 10px 0; }
+        .logo-svg { width: 100%; max-width: 280px; height: auto; display: block; margin: 0 auto; }
 
         .header { display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; margin-bottom: 15px; border-bottom: 2px solid #edf2f7; padding-bottom: 10px; align-items: center; }
         
@@ -33,11 +33,14 @@
         .action-btn { width: 100%; padding: 14px; border: none; border-radius: 8px; background: var(--primary-red); color: white; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 14px; text-transform: uppercase; }
         .action-btn.grey { background: var(--brand-grey); }
 
-        .log-container { max-height: 50vh; overflow-y: auto; border: 1px solid #edf2f7; border-radius: 12px; }
-        .log-item { padding: 15px; border-bottom: 1px solid #edf2f7; cursor: pointer; display: flex; justify-content: space-between; }
+        /* Row Alignment for Share Buttons */
+        .share-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; width: 100%; }
+        .share-row .action-btn { margin-top: 0; height: 50px; }
+
+        .log-container { flex-grow: 1; overflow-y: auto; border: 1px solid #edf2f7; border-radius: 12px; margin-top: 10px; }
+        .log-item { padding: 15px; border-bottom: 1px solid #edf2f7; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #fff; }
         
         input { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px; margin-bottom: 15px; display: block; box-sizing: border-box; }
-        input:focus { border-color: var(--primary-red); outline: none; }
         
         .review-details { background: #f8fafc; padding: 12px; border-radius: 8px; font-size: 12px; margin-bottom: 10px; border-left: 5px solid var(--primary-red); line-height: 1.6; }
         
@@ -50,20 +53,19 @@
 
 <div class="card">
     <div class="logo-container">
-        <svg class="logo-svg" viewBox="0 0 450 120" xmlns="http://www.w3.org/2000/svg">
-            <text x="10" y="90" font-family="Arial, sans-serif" font-weight="bold" font-style="italic" font-size="90" fill="#737373">Site</text>
-            <path d="M235 25 L210 65 L260 65 Z" fill="#ff0000" />
-            <path d="M200 10 L235 110 L270 10 L305 110 L340 10" fill="none" stroke="#737373" stroke-width="12" stroke-linejoin="round" />
-            <text x="245" y="90" font-family="Arial, sans-serif" font-weight="bold" font-style="italic" font-size="90" fill="#737373">erify</text>
+        <svg class="logo-svg" viewBox="0 0 500 150" xmlns="http://www.w3.org/2000/svg">
+            <text x="10" y="110" font-family="Arial, sans-serif" font-weight="bold" font-style="italic" font-size="100" fill="#737373">Site</text>
+            <path d="M255 35 L225 85 L285 85 Z" fill="#ff0000" />
+            <path d="M210 20 L255 130 L300 20 L345 130 L390 20" fill="none" stroke="#737373" stroke-width="15" stroke-linejoin="round" />
+            <text x="260" y="110" font-family="Arial, sans-serif" font-weight="bold" font-style="italic" font-size="100" fill="#737373">erify</text>
         </svg>
     </div>
 
     <div id="settings-ui">
-        <h3 style="color:var(--primary-red)">App Settings</h3>
+        <h3 style="color:var(--primary-red)">System Settings</h3>
         <label>User Name</label><input type="text" id="set-u-name">
-        <label>User Email</label><input type="email" id="set-u-email">
         <label>Recipient Email</label><input type="email" id="set-r-email">
-        <label>Recipient Phone (601...)</label><input type="text" id="set-r-phone">
+        <label>Recipient Phone</label><input type="text" id="set-r-phone">
         <button class="action-btn" onclick="saveSettings()">Save & Close</button>
     </div>
 
@@ -77,7 +79,7 @@
 
     <div class="nav-menu" id="main-nav">
         <button id="btn-nav-new" class="nav-btn active" onclick="switchSection('new')">New Capture</button>
-        <button id="btn-nav-resend" class="nav-btn" onclick="switchSection('resend')">Audit History</button>
+        <button id="btn-nav-resend" class="nav-btn" onclick="switchSection('resend')">Verify History</button>
     </div>
 
     <div id="sec-new" class="section active">
@@ -97,12 +99,11 @@
 
         <div id="post-verify-step" style="display:none;">
             <img id="final-view-img" style="width:100%; border-radius:12px; margin-bottom:10px; border:2px solid var(--brand-grey);">
-            <button id="save-to-device-btn" class="action-btn" style="background:#d69e2e;" onclick="saveToDevice()">Save to Device</button>
-            <div id="share-options-row" style="display:none; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <button id="btn-wa-new" onclick="shareWhatsApp('btn-wa-new')" class="action-btn" style="background:var(--wa-green);">WhatsApp</button>
-                <div id="smart-email-container-new"></div>
+            <div class="share-row">
+                <button id="btn-wa-new" onclick="shareWhatsApp()" class="action-btn" style="background:var(--wa-green);">WhatsApp</button>
+                <button id="btn-mail-new" onclick="handleEmailShare()" class="action-btn">Gmail Web</button>
             </div>
-            <button class="action-btn grey" onclick="resetToNew()">New Spot</button>
+            <button class="action-btn grey" onclick="resetToNew()">New Capture</button>
         </div>
     </div>
 
@@ -111,44 +112,50 @@
     </div>
 
     <div id="review-screen" style="display:none;">
-        <img id="review-img" src="" style="width:100%; border-radius:12px; margin-bottom:10px;">
+        <img id="review-img" src="" style="width:100%; border-radius:12px; margin-bottom:10px; border:1px solid #ddd;">
         <div class="review-details" id="review-data-text"></div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-            <button id="btn-wa-rev" onclick="shareWhatsApp('btn-wa-rev')" class="action-btn" style="background:var(--wa-green);">WhatsApp</button>
-            <div id="smart-email-container-review"></div>
+        <div class="share-row">
+            <button onclick="shareWhatsApp()" class="action-btn" style="background:var(--wa-green);">WhatsApp</button>
+            <button onclick="handleEmailShare()" class="action-btn">Gmail Web</button>
         </div>
-        <button class="action-btn" style="background:var(--brand-grey);" onclick="deleteCurrentRecord()">Delete Record</button>
-        <button class="action-btn grey" onclick="closeReview()">Back</button>
+        <button class="action-btn" style="background:var(--brand-grey);" onclick="deleteRecord()">Delete Record</button>
+        <button class="action-btn grey" onclick="closeReview()">Back to List</button>
     </div>
 </div>
 
 <script>
     const DB_NAME = "SITEVERIFY_DB_V17"; 
     let db = null, videoStream, imageBlob, userLocation = "N/A", currentArea = "DETECTING...", unixTs = 0;
-    let currentRecordId = null, baseBodyText = "", cachedIP = null;
+    let currentRecordId = null, baseBodyText = "";
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
     async function fetchIP() {
         try {
-            const r = await fetch('https://api.ipify.org?format=json', { signal: AbortSignal.timeout(2500) });
-            const d = await r.json();
-            cachedIP = d.ip; return d.ip;
-        } catch (e) { return cachedIP || "LAN-ACTIVE"; }
+            const r = await fetch('https://api.ipify.org?format=json', { signal: AbortSignal.timeout(2000) });
+            const d = await r.json(); return d.ip;
+        } catch (e) { return "LAN-ACTIVE"; }
     }
 
     function getDB() {
-        return new Promise((resolve) => {
+        return new Promise((res) => {
             const req = indexedDB.open(DB_NAME, 1);
             req.onupgradeneeded = e => e.target.result.createObjectStore("captures", { keyPath: "id" });
-            req.onsuccess = e => { db = e.target.result; resolve(db); };
+            req.onsuccess = e => { db = e.target.result; res(db); };
         });
     }
 
+    function clearImages() {
+        document.getElementById('pin-view-img').src = "";
+        document.getElementById('final-view-img').src = "";
+        document.getElementById('review-img').src = "";
+    }
+
     async function switchSection(sect) {
+        clearImages();
         document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         document.getElementById('review-screen').style.display = 'none';
-        document.getElementById('main-nav').style.display = 'flex';
+        
         if(sect === 'new') {
             document.getElementById('sec-new').classList.add('active');
             document.getElementById('btn-nav-new').classList.add('active');
@@ -167,7 +174,7 @@
             document.getElementById('camera-container').style.display = 'block';
             document.getElementById('cameraBtn').style.display = 'none';
             document.getElementById('snapBtn').style.display = 'block';
-        } catch (e) { alert("Enable Camera Permissions."); }
+        } catch (e) { alert("Camera Access Required."); }
     }
 
     async function takePhoto() {
@@ -178,18 +185,18 @@
         ctx.drawImage(video, 0, 0);
         
         unixTs = Math.floor(Date.now() / 1000);
-        const liveIP = await fetchIP();
-        const devID = `WEB-${window.screen.width}-${navigator.platform.substring(0,4).toUpperCase()}`;
+        const ip = await fetchIP();
+        const dev = `WEB-${window.screen.width}-${navigator.platform.substring(0,4).toUpperCase()}`;
         
-        baseBodyText = `SiteVerify Report\nUser: ${localStorage.getItem('rv_u_name') || "User"}\nPIN: ${window.calculatedPin}\nTS: ${unixTs}\nLOC: ${currentArea}\nGPS: ${userLocation}\n< IP: ${liveIP} | ID: ${devID}`;
+        baseBodyText = `Verify Report\nUser: ${localStorage.getItem('rv_u_name') || "Field"}\nPIN: ${window.calculatedPin}\nTS: ${unixTs}\nLOC: ${currentArea}\nGPS: ${userLocation}\n< IP: ${ip} | ID: ${dev}`;
         
         const qrDiv = document.getElementById('qr-hidden');
         qrDiv.innerHTML = "";
         new QRCode(qrDiv, { text: baseBodyText, width: 256, height: 256 });
         
         setTimeout(() => {
-            const qrSize = Math.floor(canvas.width * 0.28); 
-            ctx.drawImage(qrDiv.querySelector('canvas'), canvas.width - qrSize - 30, canvas.height - qrSize - 30, qrSize, qrSize);
+            const qrS = Math.floor(canvas.width * 0.28); 
+            ctx.drawImage(qrDiv.querySelector('canvas'), canvas.width - qrS - 20, canvas.height - qrS - 20, qrS, qrS);
             canvas.toBlob(blob => {
                 imageBlob = blob;
                 if(videoStream) videoStream.getTracks().forEach(t => t.stop());
@@ -199,106 +206,80 @@
                 document.getElementById('pin-view-img').style.display = 'block';
                 document.getElementById('pin-step').style.display = 'block';
             }, 'image/jpeg', 0.9);
-        }, 500);
+        }, 400);
     }
 
     async function verifyPin() {
-        if (document.getElementById('pinInput').value !== window.calculatedPin) return alert("Incorrect PIN");
+        if (document.getElementById('pinInput').value !== window.calculatedPin) return alert("Incorrect Security PIN");
         document.getElementById('capture-ui-stack').style.display = 'none';
         document.getElementById('post-verify-step').style.display = 'block';
         document.getElementById('final-view-img').src = URL.createObjectURL(imageBlob);
         
-        const record = { id: `Audit_${unixTs}`, date: new Date().toLocaleDateString(), time: new Date().toLocaleTimeString(), blob: imageBlob, body: baseBodyText };
+        const rec = { id: `Verify_${unixTs}`, date: new Date().toLocaleDateString(), time: new Date().toLocaleTimeString(), blob: imageBlob, body: baseBodyText };
         const localDb = await getDB();
-        localDb.transaction("captures", "readwrite").objectStore("captures").put(record);
-        setupEmailButtons();
+        localDb.transaction("captures", "readwrite").objectStore("captures").put(rec);
     }
 
-    function setupEmailButtons() {
-        ['smart-email-container-new', 'smart-email-container-review'].forEach(id => {
-            const container = document.getElementById(id);
-            container.innerHTML = "";
-            const btn = document.createElement('button');
-            btn.className = "action-btn";
-            btn.style.background = "var(--primary-red)";
-            btn.style.marginTop = "0";
-            btn.innerText = isMobile ? "Email App" : "Gmail Web";
-            btn.onclick = () => isMobile ? shareGmail(id) : shareGmailWeb(id);
-            container.appendChild(btn);
-        });
+    async function shareWhatsApp() {
+        const phone = (localStorage.getItem('rv_r_phone') || "").replace(/\D/g,'');
+        const ip = await fetchIP();
+        const text = baseBodyText + `\n> IP: ${ip}`;
+        window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, '_blank');
     }
 
-    async function getVerifiedBody(id) {
-        const liveIP = await fetchIP();
-        return baseBodyText + `\n> IP: ${liveIP}`;
-    }
-
-    async function shareWhatsApp(btnID) {
-        const p = (localStorage.getItem('rv_r_phone') || "").replace(/\D/g,'');
-        const finalBody = await getVerifiedBody();
-        window.open(`https://wa.me/${p}?text=${encodeURIComponent(finalBody)}`, '_blank');
-    }
-
-    async function shareGmail(btnID) {
-        const e = localStorage.getItem('rv_r_email') || "";
-        const finalBody = await getVerifiedBody();
-        window.location.assign(`mailto:${e}?subject=SiteAudit_${unixTs}&body=${encodeURIComponent(finalBody)}`);
-    }
-
-    async function shareGmailWeb(btnID) {
-        const e = localStorage.getItem('rv_r_email') || "";
-        const finalBody = await getVerifiedBody();
-        window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${e}&su=SiteAudit_${unixTs}&body=${encodeURIComponent(finalBody)}`, '_blank');
-    }
-
-    function saveToDevice() {
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(imageBlob);
-        a.download = `SiteVerify_${unixTs}.jpg`;
-        a.click();
-        document.getElementById('save-to-device-btn').style.display = 'none';
-        document.getElementById('share-options-row').style.display = 'grid';
+    async function handleEmailShare() {
+        const email = localStorage.getItem('rv_r_email') || "";
+        const ip = await fetchIP();
+        const text = baseBodyText + `\n> IP: ${ip}`;
+        const sub = `VerifyStamp_${unixTs}`;
+        if(isMobile) {
+            window.location.assign(`mailto:${email}?subject=${sub}&body=${encodeURIComponent(text)}`);
+        } else {
+            window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${email}&su=${sub}&body=${encodeURIComponent(text)}`, '_blank');
+        }
     }
 
     function resetToNew() {
+        clearImages();
         document.getElementById('capture-ui-stack').style.display = 'block';
         document.getElementById('post-verify-step').style.display = 'none';
         document.getElementById('pin-step').style.display = 'none';
         document.getElementById('pin-view-img').style.display = 'none';
         document.getElementById('cameraBtn').style.display = 'block';
         document.getElementById('snapBtn').style.display = 'none';
+        document.getElementById('pinInput').value = "";
     }
 
     async function loadLogList() {
         const listDiv = document.getElementById('log-list');
-        listDiv.innerHTML = "<p style='padding:20px;'>Syncing...</p>";
+        listDiv.innerHTML = "<p style='padding:20px;'>Loading History...</p>";
         const localDb = await getDB();
         localDb.transaction("captures").objectStore("captures").getAll().onsuccess = e => {
             const data = e.target.result;
-            listDiv.innerHTML = data.length ? "" : "<p style='padding:20px;'>No audits found.</p>";
+            listDiv.innerHTML = data.length ? "" : "<p style='padding:20px;'>No history found.</p>";
             data.reverse().forEach(item => {
                 const row = document.createElement('div');
                 row.className = 'log-item';
                 row.onclick = () => showReview(item);
-                row.innerHTML = `<div><b>${item.id}</b><br><small>${item.date} ${item.time}</small></div><span>➔</span>`;
+                row.innerHTML = `<div><b>${item.id}</b><br><small>${item.date} ${item.time}</small></div><span style="color:var(--primary-red)">➔</span>`;
                 listDiv.appendChild(row);
             });
         };
     }
 
     function showReview(item) {
-        currentRecordId = item.id; baseBodyText = item.body;
+        clearImages();
+        currentRecordId = item.id; 
+        baseBodyText = item.body;
         document.getElementById('review-img').src = URL.createObjectURL(item.blob);
-        document.getElementById('review-data-text').innerHTML = `<b>Audit ID:</b> ${item.id}<br><b>Timestamp:</b> ${item.date} ${item.time}`;
-        setupEmailButtons();
-        document.getElementById('main-nav').style.display = 'none';
+        document.getElementById('review-data-text').innerHTML = `<b>Verify ID:</b> ${item.id}<br><b>Time:</b> ${item.date} ${item.time}`;
         document.getElementById('sec-new').classList.remove('active');
         document.getElementById('sec-resend').classList.remove('active');
         document.getElementById('review-screen').style.display = 'block';
     }
 
-    async function deleteCurrentRecord() {
-        if(confirm("Delete record?")) {
+    async function deleteRecord() {
+        if(confirm("Permanently delete this verification?")) {
             const localDb = await getDB();
             localDb.transaction("captures", "readwrite").objectStore("captures").delete(currentRecordId).onsuccess = () => switchSection('resend');
         }
@@ -308,7 +289,6 @@
     function toggleSettings() { document.getElementById('settings-ui').style.display = 'block'; }
     function saveSettings() {
         localStorage.setItem('rv_u_name', document.getElementById('set-u-name').value);
-        localStorage.setItem('rv_u_email', document.getElementById('set-u-email').value);
         localStorage.setItem('rv_r_email', document.getElementById('set-r-email').value);
         localStorage.setItem('rv_r_phone', document.getElementById('set-r-phone').value);
         document.getElementById('settings-ui').style.display = 'none';
@@ -316,7 +296,6 @@
 
     window.onload = () => {
         document.getElementById('set-u-name').value = localStorage.getItem('rv_u_name') || "";
-        document.getElementById('set-u-email').value = localStorage.getItem('rv_u_email') || "";
         document.getElementById('set-r-email').value = localStorage.getItem('rv_r_email') || "";
         document.getElementById('set-r-phone').value = localStorage.getItem('rv_r_phone') || "";
         setInterval(() => {
@@ -331,7 +310,7 @@
             window.calculatedPin = (Math.round((lat % 1) * 10000) + Math.round((lng % 1) * 10000)).toString();
             document.getElementById('pin-display').innerText = window.calculatedPin;
             fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`).then(r => r.json()).then(d => {
-                currentArea = d.address.suburb || d.address.town || d.address.city || "Site Location";
+                currentArea = d.address.suburb || d.address.town || d.address.city || "Site Spot";
                 document.getElementById('location-name').innerText = `📍 ${currentArea.toUpperCase()}`;
             });
         }, null, { enableHighAccuracy: true });
