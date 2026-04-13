@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SiteVerify - Professional V17.3</title>
+    <title>SiteVerify - Professional V17.4</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root { 
@@ -13,35 +13,18 @@
             --wa-green: #25d366;
         }
         body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--light-bg); display: flex; justify-content: center; padding: 10px; margin: 0; color: var(--brand-grey); overflow-x: hidden; }
-        .card { background: white; width: 100%; max-width: 460px; padding: 20px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); position: relative; min-height: 92vh; border: 1px solid #e2e8f0; box-sizing: border-box; display: flex; flex-direction: column; }
+        .card { background: white; width: 100%; max-width: 460px; padding: 20px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); position: relative; min-height: 95vh; border: 1px solid #e2e8f0; box-sizing: border-box; display: flex; flex-direction: column; }
         
-        /* Bulletproof CSS Logo */
-        .logo-container { text-align: center; margin-bottom: 15px; padding: 10px 0; }
-        .brand-wrap { 
-            display: flex; 
-            align-items: baseline; 
-            justify-content: center; 
-            font-weight: bold; 
-            font-style: italic;
-            font-size: 58px; 
-            letter-spacing: -2px;
-        }
-        .text-grey { color: var(--brand-grey); }
-        .v-outer { color: var(--brand-grey); position: relative; display: inline-block; }
-        .v-inner { 
-            position: absolute; 
-            top: -10px; 
-            left: 50%; 
-            transform: translateX(-50%); 
-            color: var(--primary-red); 
-            font-size: 32px; 
-        }
+        /* High-Precision SVG Logo */
+        .logo-container { text-align: center; margin-bottom: 10px; padding: 10px 0; }
+        .logo-svg { width: 100%; max-width: 320px; height: auto; }
 
         .header { display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; margin-bottom: 15px; border-bottom: 2px solid #edf2f7; padding-bottom: 10px; align-items: center; }
         
         .nav-menu { display: flex; gap: 8px; margin-bottom: 20px; }
-        .nav-btn { flex: 1; padding: 12px; border-radius: 8px; border: 2px solid var(--brand-grey); background: white; cursor: pointer; font-weight: bold; font-size: 13px; color: var(--brand-grey); }
+        .nav-btn { flex: 1; padding: 12px; border-radius: 8px; border: 2px solid var(--brand-grey); background: white; cursor: pointer; font-weight: bold; font-size: 13px; color: var(--brand-grey); transition: 0.3s; }
         .nav-btn.active { background: var(--brand-grey); color: white; }
+        .nav-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
         .live-clock { text-align: center; font-family: monospace; font-size: 18px; background: #f1f5f9; padding: 12px; border-radius: 8px; margin-bottom: 15px; color: var(--primary-red); border: 1px solid #cbd5e0; }
         
@@ -51,11 +34,10 @@
         .action-btn { width: 100%; padding: 14px; border: none; border-radius: 8px; background: var(--primary-red); color: white; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 14px; text-transform: uppercase; }
         .action-btn.grey { background: var(--brand-grey); }
 
-        /* Row Alignment Fix */
         .share-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; width: 100%; }
         .share-row .action-btn { margin-top: 0; }
 
-        .log-container { flex-grow: 1; overflow-y: auto; border: 1px solid #edf2f7; border-radius: 12px; margin-top: 10px; }
+        .log-container { flex-grow: 1; overflow-y: auto; border: 1px solid #edf2f7; border-radius: 12px; }
         .log-item { padding: 15px; border-bottom: 1px solid #edf2f7; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #fff; }
         
         input { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px; margin-bottom: 15px; display: block; box-sizing: border-box; }
@@ -71,11 +53,12 @@
 
 <div class="card">
     <div class="logo-container">
-        <div class="brand-wrap">
-            <span class="text-grey">Site</span>
-            <span class="v-outer">V<span class="v-inner">▼</span></span>
-            <span class="text-grey">erify</span>
-        </div>
+        <svg class="logo-svg" viewBox="0 0 500 150" xmlns="http://www.w3.org/2000/svg">
+            <text x="20" y="115" font-family="Arial, sans-serif" font-weight="bold" font-style="italic" font-size="95" fill="#737373">Site</text>
+            <path d="M210 20 L275 140 L340 20" fill="none" stroke="#737373" stroke-width="16" stroke-linejoin="miter" />
+            <path d="M255 35 L235 65 L275 65 Z" fill="#ff0000" />
+            <text x="270" y="115" font-family="Arial, sans-serif" font-weight="bold" font-style="italic" font-size="95" fill="#737373">erify</text>
+        </svg>
     </div>
 
     <div id="settings-ui">
@@ -129,20 +112,20 @@
     </div>
 
     <div id="review-screen" style="display:none;">
-        <img id="review-img" src="" style="width:100%; border-radius:12px; margin-bottom:10px; border:1px solid #ddd;">
+        <img id="review-img" src="" style="width:100%; border-radius:12px; margin-bottom:10px;">
         <div class="review-details" id="review-data-text"></div>
         <div class="share-row">
             <button onclick="shareWhatsApp()" class="action-btn" style="background:var(--wa-green);">WhatsApp</button>
             <button onclick="handleEmailShare()" class="action-btn">Gmail Web</button>
         </div>
         <button class="action-btn" style="background:var(--brand-grey);" onclick="deleteRecord()">Delete Record</button>
-        <button class="action-btn grey" onclick="closeReview()">Back to List</button>
+        <button class="action-btn grey" onclick="closeReview()">Back to History</button>
     </div>
 </div>
 
 <script>
     const DB_NAME = "SITEVERIFY_DB_V17"; 
-    let db = null, videoStream, imageBlob, userLocation = "N/A", currentArea = "DETECTING...", unixTs = 0;
+    let db = null, videoStream, imageBlob, userLocation = "N/A", currentArea = "DETECTING...", unixTs = 0, isCapturing = false;
     let currentRecordId = null, baseBodyText = "";
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
@@ -161,17 +144,19 @@
         });
     }
 
-    function clearImages() {
-        const ids = ['pin-view-img', 'final-view-img', 'review-img'];
-        ids.forEach(id => {
-            const el = document.getElementById(id);
-            el.src = "";
-            if(id !== 'review-img') el.style.display = 'none';
-        });
+    function clearUI() {
+        document.getElementById('pin-view-img').src = "";
+        document.getElementById('final-view-img').src = "";
+        document.getElementById('review-img').src = "";
+        if(videoStream) videoStream.getTracks().forEach(t => t.stop());
+        document.getElementById('camera-container').style.display = 'none';
+        isCapturing = false;
+        document.getElementById('btn-nav-resend').disabled = false;
     }
 
     async function switchSection(sect) {
-        clearImages();
+        if(isCapturing && sect === 'resend') return; 
+        clearUI();
         document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         document.getElementById('review-screen').style.display = 'none';
@@ -189,12 +174,14 @@
 
     async function startCamera() {
         try {
+            isCapturing = true;
+            document.getElementById('btn-nav-resend').disabled = true;
             videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
             document.getElementById('video-preview').srcObject = videoStream;
             document.getElementById('camera-container').style.display = 'block';
             document.getElementById('cameraBtn').style.display = 'none';
             document.getElementById('snapBtn').style.display = 'block';
-        } catch (e) { alert("Enable Camera Permissions."); }
+        } catch (e) { alert("Camera Error"); isCapturing = false; document.getElementById('btn-nav-resend').disabled = false; }
     }
 
     async function takePhoto() {
@@ -238,13 +225,14 @@
         const rec = { id: `Verify_${unixTs}`, date: new Date().toLocaleDateString(), time: new Date().toLocaleTimeString(), blob: imageBlob, body: baseBodyText };
         const localDb = await getDB();
         localDb.transaction("captures", "readwrite").objectStore("captures").put(rec);
+        isCapturing = false;
+        document.getElementById('btn-nav-resend').disabled = false;
     }
 
     async function shareWhatsApp() {
         const phone = (localStorage.getItem('rv_r_phone') || "").replace(/\D/g,'');
         const ip = await fetchIP();
-        const text = baseBodyText + `\n> IP: ${ip}`;
-        window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, '_blank');
+        window.open(`https://wa.me/${phone}?text=${encodeURIComponent(baseBodyText + "\n> IP: " + ip)}`, '_blank');
     }
 
     async function handleEmailShare() {
@@ -252,18 +240,16 @@
         const ip = await fetchIP();
         const text = baseBodyText + `\n> IP: ${ip}`;
         const sub = `VerifyStamp_${unixTs}`;
-        if(isMobile) {
-            window.location.assign(`mailto:${email}?subject=${sub}&body=${encodeURIComponent(text)}`);
-        } else {
-            window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${email}&su=${sub}&body=${encodeURIComponent(text)}`, '_blank');
-        }
+        if(isMobile) window.location.assign(`mailto:${email}?subject=${sub}&body=${encodeURIComponent(text)}`);
+        else window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${email}&su=${sub}&body=${encodeURIComponent(text)}`, '_blank');
     }
 
     function resetToNew() {
-        clearImages();
+        clearUI();
         document.getElementById('capture-ui-stack').style.display = 'block';
         document.getElementById('post-verify-step').style.display = 'none';
         document.getElementById('pin-step').style.display = 'none';
+        document.getElementById('pin-view-img').style.display = 'none';
         document.getElementById('cameraBtn').style.display = 'block';
         document.getElementById('snapBtn').style.display = 'none';
         document.getElementById('pinInput').value = "";
@@ -271,11 +257,11 @@
 
     async function loadLogList() {
         const listDiv = document.getElementById('log-list');
-        listDiv.innerHTML = "<p style='padding:20px;'>Reading Database...</p>";
+        listDiv.innerHTML = "<p style='padding:20px;'>Loading...</p>";
         const localDb = await getDB();
         localDb.transaction("captures").objectStore("captures").getAll().onsuccess = e => {
             const data = e.target.result;
-            listDiv.innerHTML = data.length ? "" : "<p style='padding:20px;'>No Verify History.</p>";
+            listDiv.innerHTML = data.length ? "" : "<p style='padding:20px;'>No history.</p>";
             data.reverse().forEach(item => {
                 const row = document.createElement('div');
                 row.className = 'log-item';
@@ -287,18 +273,18 @@
     }
 
     function showReview(item) {
-        clearImages();
+        clearUI();
         currentRecordId = item.id; 
         baseBodyText = item.body;
         document.getElementById('review-img').src = URL.createObjectURL(item.blob);
-        document.getElementById('review-data-text').innerHTML = `<b>Verify ID:</b> ${item.id}<br><b>Captured:</b> ${item.date} ${item.time}`;
+        document.getElementById('review-data-text').innerHTML = `<b>Verify ID:</b> ${item.id}<br><b>Stamp:</b> ${item.date} ${item.time}`;
         document.getElementById('sec-new').classList.remove('active');
         document.getElementById('sec-resend').classList.remove('active');
         document.getElementById('review-screen').style.display = 'block';
     }
 
     async function deleteRecord() {
-        if(confirm("Delete this Verify record?")) {
+        if(confirm("Delete record?")) {
             const localDb = await getDB();
             localDb.transaction("captures", "readwrite").objectStore("captures").delete(currentRecordId).onsuccess = () => switchSection('resend');
         }
